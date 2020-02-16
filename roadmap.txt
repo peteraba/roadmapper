@@ -8,5 +8,3 @@ idea-pool [https://github.com/abtercms/abterphp/issues?q=is%3Aopen+is%3Aissue+mi
   Layout logic [2020-03-15, 2020-03-18, 70%]
   Map wysiwg editor languages
     Investigations [2020-03-10, 2020-03-15, 0.006]
-idea-pool2 [2020-02-12, 2020-02-18]
-

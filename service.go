@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/middleware"
@@ -26,11 +28,36 @@ func server(port uint, certFile, keyFile, inputFile string) {
 	e.GET("/roadmap", func(c echo.Context) error {
 		output, err := html(inputFile)
 		if err != nil {
-			return err
+			log.Print(err)
+			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))
 		}
 
 		return c.HTML(http.StatusOK, output)
 	})
+
+	var putRoadmap = func(c echo.Context) error {
+		content := c.FormValue("roadmap")
+
+		err := save(inputFile, content)
+		if err != nil {
+			log.Print(err)
+			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))
+		}
+
+		return c.Redirect(http.StatusSeeOther, "/roadmap")
+	}
+
+	e.POST("/roadmap", func(c echo.Context) error {
+		m := c.FormValue("_method")
+
+		if m == "PUT" {
+			return putRoadmap(c)
+		}
+
+		return c.HTML(http.StatusMethodNotAllowed, "")
+	})
+
+	e.PUT("/roadmap", putRoadmap)
 
 	// Start server
 	go func() {
@@ -108,4 +135,19 @@ func html(inputFile string) (string, error) {
 	r := roadmap.ToPublic(roadmap.GetFrom(), roadmap.GetTo())
 
 	return bootstrapRoadmap(r, lines)
+}
+
+func save(inputFile, content string) error {
+	if content == "" {
+		return errors.New("content must not be empty.")
+	}
+
+	lines := strings.Split(content, "\r\n")
+
+	_, err := parseRoadmap(lines)
+	if err != nil {
+		return err
+	}
+
+	return writeRoadmap(inputFile, content)
 }

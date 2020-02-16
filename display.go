@@ -40,10 +40,11 @@ const layoutTemplate = `<!doctype html>
 		<form id="control"></form>
 	</div>
 	<div class="container-fluid roadmap-edit section" id="roadmap-edit">
-		<form>
+		<form action="/roadmap" method="POST">
+			<input type="hidden" name="_method" value="PUT" />
 			<div class="form-group">
 				<label for="roadmapRaw">Raw roadmap</label>
-				<textarea class="form-control" id="roadmapRaw" aria-describedby="roadmapRaw" rows="20">{{ .Raw }}</textarea>
+				<textarea class="form-control" id="roadmapRaw" name="roadmap" aria-describedby="roadmapRaw" rows="20">{{ .Raw }}</textarea>
 				<small id="roadmapRaw" class="form-text text-muted">We'll never share your email with anyone else.</small>
 			</div>
 			<button type="submit" class="btn btn-primary">Submit</button>

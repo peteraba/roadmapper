@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"io/ioutil"
 	"log"
 	"os"
 )
@@ -24,4 +25,11 @@ func readRoadmap(filename string) ([]string, error) {
 	}
 
 	return lines, nil
+}
+
+func writeRoadmap(filename, content string) error {
+	d1 := []byte(content)
+	err := ioutil.WriteFile(filename, d1, 0644)
+
+	return err
 }
