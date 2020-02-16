@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 	"os"
 	"time"
@@ -26,7 +25,7 @@ func main() {
 					&cli.StringFlag{Name: "key", Aliases: []string{"k"}},
 				},
 				Action: func(c *cli.Context) error {
-					serve(0, "", "", c.String("roadmap"))
+					server(0, "", "", c.String("roadmap"))
 					return nil
 				},
 			},
@@ -38,14 +37,8 @@ func main() {
 					&cli.StringFlag{Name: "roadmap", Aliases: []string{"r"}, Usage: "path to the roadmap file", Value: "roadmap.txt"},
 				},
 				Action: func(c *cli.Context) error {
-					output, err := html(c.String("roadmap"))
-					if err != nil {
-						return err
-					}
-
-					fmt.Println(output)
-
-					return nil
+					err := commandLine(c.String("roadmap"))
+					return err
 				},
 			},
 		},
@@ -55,20 +48,4 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func html(inputFile string) (string, error) {
-	lines, err := readRoadmap(inputFile)
-	if err != nil {
-		return "", err
-	}
-
-	roadmap, err := parseRoadmap(lines)
-	if err != nil {
-		return "", err
-	}
-
-	r := roadmap.ToPublic(roadmap.GetFrom(), roadmap.GetTo())
-
-	return bootstrapRoadmap(r, lines)
 }

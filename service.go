@@ -14,7 +14,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-func serve(port uint, certFile, keyFile, inputFile string) {
+func server(port uint, certFile, keyFile, inputFile string) {
 	// Setup
 	e := echo.New()
 
@@ -81,4 +81,31 @@ func startWrapper(e *echo.Echo, certFile, keyFile string) func(port uint) error 
 	return func(port uint) error {
 		return e.StartTLS(fmt.Sprintf(":%d", port), certFile, keyFile)
 	}
+}
+
+func commandLine(inputFile string) error {
+	output, err := html(inputFile)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(output)
+
+	return nil
+}
+
+func html(inputFile string) (string, error) {
+	lines, err := readRoadmap(inputFile)
+	if err != nil {
+		return "", err
+	}
+
+	roadmap, err := parseRoadmap(lines)
+	if err != nil {
+		return "", err
+	}
+
+	r := roadmap.ToPublic(roadmap.GetFrom(), roadmap.GetTo())
+
+	return bootstrapRoadmap(r, lines)
 }
