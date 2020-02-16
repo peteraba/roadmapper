@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"image/color"
@@ -30,16 +31,6 @@ type Project struct {
 	URL        string
 }
 
-func ProjectToPublic(project *internalProject, roadmapFrom, roadmapTo time.Time) Project {
-	p := Project{Title: project.Title, From: project.GetFrom(), To: project.GetTo(), Color: project.GetColor(), Percentage: project.GetPercentage(), URL: project.GetURL()}
-
-	for _, c := range project.GetChildren() {
-		p.Children = append(p.Children, ProjectToPublic(c, roadmapFrom, roadmapTo))
-	}
-
-	return p
-}
-
 const dateFormat = "2006-01-02"
 
 type internalProject struct {
@@ -60,7 +51,11 @@ func (p internalProject) GetFrom() time.Time {
 		return *p.from
 	}
 
-	return *p.childrenFrom
+	if p.childrenFrom != nil {
+		return *p.childrenFrom
+	}
+
+	return time.Time{}
 }
 
 func (p internalProject) GetTo() time.Time {
@@ -68,7 +63,11 @@ func (p internalProject) GetTo() time.Time {
 		return *p.to
 	}
 
-	return *p.childrenTo
+	if p.childrenTo != nil {
+		return *p.childrenTo
+	}
+
+	return time.Time{}
 }
 
 func (p internalProject) GetChildren() []*internalProject {
@@ -85,6 +84,25 @@ func (p internalProject) GetPercentage() uint8 {
 
 func (p internalProject) GetURL() string {
 	return p.url
+}
+
+func (p *internalProject) ToPublic(roadmapFrom, roadmapTo time.Time) Project {
+	res := Project{Title: p.Title, From: p.GetFrom(), To: p.GetTo(), Color: p.GetColor(), Percentage: p.GetPercentage(), URL: p.GetURL()}
+
+	for _, c := range p.GetChildren() {
+		res.Children = append(res.Children, c.ToPublic(roadmapFrom, roadmapTo))
+	}
+
+	return res
+}
+
+func (p internalProject) String() string {
+	b, err := json.Marshal(p.ToPublic(p.GetFrom(), p.GetTo()))
+	if err != nil {
+		return ""
+	}
+
+	return string(b)
 }
 
 func parseRoadmap(lines []string) (*internalProject, error) {
@@ -107,6 +125,10 @@ func parseRoadmap(lines []string) (*internalProject, error) {
 		}
 	}
 
+	if len(roadmap.children) == 0 {
+		return &roadmap, nil
+	}
+
 	_, _, err = setChildrenDates(&roadmap)
 	if err != nil {
 		return nil, err
@@ -117,30 +139,31 @@ func parseRoadmap(lines []string) (*internalProject, error) {
 
 func createProject(line string, previousProject *internalProject, pi int, colorNum *uint8) (*internalProject, int, error) {
 	trimmed := strings.TrimLeft(line, " ")
-	ci := len(line) - len(trimmed)
+	ni := len(line) - len(trimmed)
 
 	newProject, err := parseProject(trimmed, colorNum)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	switch ci {
-	case pi + 2:
-		newProject.parent = previousProject
-		break
-	case pi:
-		newProject.parent = previousProject.parent
-		break
-	case pi - 2:
-		newProject.parent = previousProject.parent.parent
-		break
-	default:
-		return nil, 0, errors.New("invalid indentation")
+	pp := previousProject
+
+	for ci := pi + 2; ci >= 0; ci -= 2 {
+		if ci == ni {
+			newProject.parent = pp
+			break
+		}
+
+		if pp.parent == nil {
+			return nil, 0, errors.New("invalid indentation")
+		}
+
+		pp = pp.parent
 	}
 
 	newProject.parent.children = append(newProject.parent.children, newProject)
 
-	return newProject, ci, nil
+	return newProject, ni, nil
 }
 
 func parseProject(trimmed string, colorNum *uint8) (*internalProject, error) {
@@ -154,63 +177,57 @@ func parseProject(trimmed string, colorNum *uint8) (*internalProject, error) {
 		return &internalProject{Title: string(res[0][1]), color: getNextColor(colorNum), percentage: 100}, nil
 	}
 
-	var f, t *time.Time
 	parts := strings.Split(string(res[0][3]), ", ")
 
-	if len(parts) > 0 && parts[0] != "" {
-		fv, err := time.Parse(dateFormat, parts[0])
-		if err != nil {
-			return nil, err
-		}
-		f = &fv
-	}
-
-	if len(parts) > 1 && parts[1] != "" {
-		tv, err := time.Parse(dateFormat, parts[1])
-		if err != nil {
-			return nil, err
-		}
-		t = &tv
-	}
-
 	var (
-		u string
-		p uint8       = 100
-		c color.Color = color.RGBA{}
+		title = strings.Trim(string(res[0][1]), " ")
+		f, t  *time.Time
+		u     string
+		p     uint8       = 100
+		c     color.Color = color.RGBA{}
 	)
 
-	for i := 2; i < len(parts); i++ {
+	for i := 0; i < len(parts); i++ {
 		if parts[i] == "" {
 			break
 		}
 
-		u, p, c = parseProjectExtra(parts[i], u, p, c)
+		f, t, u, p, c = parseProjectExtra(parts[i], f, t, u, p, c)
 	}
 
 	if (reflect.DeepEqual(c, color.RGBA{})) {
 		c = getNextColor(colorNum)
 	}
 
-	return &internalProject{Title: string(res[0][1]), from: f, to: t, color: c, percentage: p, url: u}, nil
+	return &internalProject{Title: title, from: f, to: t, color: c, percentage: p, url: u}, nil
 }
 
-func parseProjectExtra(part, u string, p uint8, c color.Color) (string, uint8, color.Color) {
-	_, err := url.ParseRequestURI(part)
+func parseProjectExtra(part string, f, t *time.Time, u string, p uint8, c color.Color) (*time.Time, *time.Time, string, uint8, color.Color) {
+	t2, err := time.Parse(dateFormat, part)
 	if err == nil {
-		return part, p, c
+		if f == nil {
+			return &t2, t, u, p, c
+		}
+
+		return f, &t2, u, p, c
+	}
+
+	_, err = url.ParseRequestURI(part)
+	if err == nil {
+		return f, t, part, p, c
 	}
 
 	n, err := parsePercentage(part)
 	if err == nil {
-		return u, n, c
+		return f, t, u, n, c
 	}
 
 	c2, err := parseColor(part)
 	if err == nil {
-		return u, p, c2
+		return f, t, u, p, c2
 	}
 
-	return u, p, c
+	return f, t, u, p, c
 }
 
 func parsePercentage(part string) (uint8, error) {
@@ -226,6 +243,9 @@ func parsePercentage(part string) (uint8, error) {
 
 	n, err := strconv.ParseUint(part, 10, 8)
 	if err == nil {
+		if n < 0 || n > 100 {
+			return 0, errors.New("invalid uint8 string")
+		}
 		return uint8(n), nil
 	}
 
@@ -258,13 +278,19 @@ func parseColor(part string) (color.Color, error) {
 		return nil, err
 	}
 
-	return color.RGBA{R: s[0], G: s[1], B: s[2], A: 100}, nil
+	return color.RGBA{R: s[0], G: s[1], B: s[2], A: 255}, nil
 }
 
 func charsToUint8(part string) ([3]uint8, error) {
+	if len(part) != 3 && len(part) != 6 {
+		return [3]uint8{}, errors.New("invalid hexadecimal color string")
+	}
+
+	part = strings.ToLower(part)
+
 	tmp := []int{}
-	for i := 0; i < len(part); i++ {
-		if idx := strings.Index("0123456789abcdef", string(part[i])); idx > -1 {
+	for _, runeValue := range part {
+		if idx := strings.IndexRune("0123456789abcdef", runeValue); idx > -1 {
 			tmp = append(tmp, idx)
 			if len(part) == 3 {
 				tmp = append(tmp, idx)
@@ -284,6 +310,9 @@ func setChildrenDates(p *internalProject) (*time.Time, *time.Time, error) {
 	if len(p.children) == 0 {
 		if p.from == nil || p.to == nil {
 			return nil, nil, fmt.Errorf("project needs starting and ending dates: %s", p.Title)
+		}
+		if p.to.Sub(*p.from) < 0 {
+			return nil, nil, fmt.Errorf("starting must not be before ending date: %s", p.Title)
 		}
 
 		return p.from, p.to, nil

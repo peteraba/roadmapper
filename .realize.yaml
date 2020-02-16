@@ -15,14 +15,11 @@ settings:
   legacy:
     force: false
     interval: 0s
-server:
-  status: false               // server status
-  open: false                 // open browser at start
-  host: localhost             // server host
-  port: 5001                  // server port
 schema:
-- name: roadmapper
+- name: server
   path: /media/peter/LinuxData/projects/roadmapper
+  args:
+  - s
   commands:
     vet:
       status: true

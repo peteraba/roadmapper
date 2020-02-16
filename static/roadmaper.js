@@ -111,12 +111,17 @@
                 l = (from.getTime() - projectFrom.getTime()) / fullDiff * 100,
                 tooltip = `${p.Percentage}%, ${from.toLocaleDateString()} - ${to.toLocaleDateString()}, ${durationDays} days`;
 
+            let nbsp, a, i;
+
             projectTitle.textContent = p.Title;
             projectTitle.setAttribute('title', tooltip);
             projectTitle.classList.add('project-title');
             projectTitle.onclick = (_ => toggleSubprojects(projectTitle));
 
             if (p.URL) {
+                nbsp = document.createElement('a');
+                nbsp.innerHTML = '&nbsp;';
+
                 a = document.createElement('a');
                 a.href = p.URL;
                 a.setAttribute('target', '_blank');
@@ -126,6 +131,7 @@
                 i.classList.add('fa-external-link-alt');
 
                 a.appendChild(i);
+                projectTitle.appendChild(nbsp);
                 projectTitle.appendChild(a);
             }
 
@@ -188,28 +194,36 @@
         }
 
         function buildControl(roadmap, control) {
-            const clearBtn = document.createElement('button'),
-                clearIcon = document.createElement('i');
+            const toggleBtn = document.createElement('button'),
+                clearIcon = document.createElement('i'),
+                levels = document.querySelectorAll('.level'),
+                level1s = document.querySelectorAll('.level1');
 
             clearIcon.classList.add('fas');
             clearIcon.classList.add('fa-eye-slash');
 
-            clearBtn.classList.add('btn');
-            clearBtn.classList.add('btn-primary');
-            clearBtn.innerHTML = 'Hide Sublevels&nbsp;';
-            clearBtn.type = 'button';
-            clearBtn.appendChild(clearIcon);
+            toggleBtn.classList.add('btn');
+            toggleBtn.classList.add('btn-primary');
+            toggleBtn.innerHTML = 'Hide Sublevels&nbsp;';
+            toggleBtn.type = 'button';
+            toggleBtn.appendChild(clearIcon);
 
-            control.appendChild(clearBtn);
+            control.appendChild(toggleBtn);
 
-            clearBtn.addEventListener('click',function(event){
+            toggleBtn.addEventListener('click',function(event){
                 event.preventDefault();
 
-                document.querySelectorAll('.level')
-                    .forEach(elem => elem.style.display = 'none');
+                let hide = true;
 
-                document.querySelectorAll('.level1')
-                    .forEach(elem => elem.style.display = 'table-row');
+                levels.forEach(function(l) {
+                    if (l.style.display === 'none') {
+                        hide = false;
+                    }
+                });
+
+                levels.forEach(elem => elem.style.display = hide ? 'none' : 'table-row');
+
+                level1s.forEach(elem => elem.style.display = 'table-row');
             });
 
             // clearBtn.click();

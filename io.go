@@ -17,7 +17,7 @@ func createRoadmap(inputFile string) (Project, error) {
 		return Project{}, err
 	}
 
-	r := ProjectToPublic(roadmap, roadmap.GetFrom(), roadmap.GetTo())
+	r := roadmap.ToPublic(roadmap.GetFrom(), roadmap.GetTo())
 
 	return r, nil
 }
