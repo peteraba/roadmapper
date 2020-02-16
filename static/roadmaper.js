@@ -210,12 +210,12 @@
 
             control.appendChild(toggleBtn);
 
-            toggleBtn.addEventListener('click',function(event){
+            toggleBtn.addEventListener('click',event => {
                 event.preventDefault();
 
                 let hide = true;
 
-                levels.forEach(function(l) {
+                levels.forEach(l => {
                     if (l.style.display === 'none') {
                         hide = false;
                     }
@@ -234,8 +234,32 @@
         buildControl(roadmap, control);
     }
 
+    function nav() {
+        const dashboard = document.getElementById('roadmap-dashboard'),
+            sections = document.querySelectorAll('.section'),
+            links = document.querySelectorAll('a.nav-link');
+
+        sections.forEach(section => section.style.display = 'none');
+
+        dashboard.style.display = 'block';
+
+        links.forEach(link => {
+            link.addEventListener('click', _ => {
+                const id = link.getAttribute('href').substr(1);
+
+                sections.forEach(section => section.style.display = 'none');
+
+                document.getElementById(id).style.display = 'block';
+
+                links.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+            })
+        })
+    }
+
     window.addEventListener('DOMContentLoaded', function () {
         refreshRoadmap();
+        nav();
 
         $('[data-toggle="tooltip"]').tooltip();
     });
