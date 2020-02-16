@@ -1,0 +1,44 @@
+.roadmap th:first-child {
+  width: 25%;
+}
+
+.table th.timeline {
+  padding: 0;
+}
+
+.table td.timeline {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.roadmap .project-title {
+  cursor: pointer;
+}
+
+.roadmap .progress {
+  height: 2em;
+}
+
+.roadmap .progress-bar {
+  height: 2em;
+}
+
+.roadmap .level1 th {
+  padding-left: 2em;
+}
+
+.roadmap .level2 th {
+  padding-left: 4em;
+}
+
+.roadmap .level3 th {
+  padding-left: 6em;
+}
+
+.roadmap .level4 th {
+  padding-left: 8em;
+}
+
+.roadmap-edit {
+  display: none;
+}
