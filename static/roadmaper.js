@@ -135,6 +135,11 @@
                 projectTitle.appendChild(a);
             }
 
+            p.Color.A /= 255;
+            if (p.Percentage === 100) {
+                p.Color.A = 0.5;
+            }
+
             projectBar.classList.add('progress-bar');
             projectBar.classList.add('progress-bar-striped');
             projectBar.role = 'progressbar';
