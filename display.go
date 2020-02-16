@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"html/template"
+	"strings"
 )
 
 const layoutTemplate = `<!doctype html>
@@ -17,7 +18,7 @@ const layoutTemplate = `<!doctype html>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous" />
 	<link rel="stylesheet" href="/static/roadmaper.css">
 
-    <title>{{.Title}}</title>
+    <title>{{.Roadmap.Title}}</title>
 </head>
 <body>
 	<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -27,22 +28,22 @@ const layoutTemplate = `<!doctype html>
 		</button>
 		<div class="collapse navbar-collapse" id="navbarNavAltMarkup">
 			<div class="navbar-nav">
-				<a class="nav-item nav-link active" href="#">Dashboard <span class="sr-only">(current)</span></a>
-				<a class="nav-item nav-link" href="#">Edit</a>
+				<a class="nav-item nav-link active" href="#roadmap-dashboard">Dashboard <span class="sr-only">(current)</span></a>
+				<a class="nav-item nav-link" href="#roadmap-edit">Edit</a>
 			</div>
 		</div>
 	</nav>
-	<div class="container-fluid roadmap-dashboard">
+	<div class="container-fluid roadmap-dashboard section" id="roadmap-dashboard">
 		<table class="table table-bordered roadmap" id="roadmap">
 		  <!-- Content here -->
 		</table>
 		<form id="control"></form>
 	</div>
-	<div class="container-fluid roadmap-edit">
+	<div class="container-fluid roadmap-edit section" id="roadmap-edit">
 		<form>
 			<div class="form-group">
-				<label for="roadmapRaw">Roadmap</label>
-				<textarea class="form-control" id="roadmapRaw" aria-describedby="roadmapRaw" rows="20"></textarea>
+				<label for="roadmapRaw">Raw roadmap</label>
+				<textarea class="form-control" id="roadmapRaw" aria-describedby="roadmapRaw" rows="20">{{ .Raw }}</textarea>
 				<small id="roadmapRaw" class="form-text text-muted">We'll never share your email with anyone else.</small>
 			</div>
 			<button type="submit" class="btn btn-primary">Submit</button>
@@ -50,7 +51,7 @@ const layoutTemplate = `<!doctype html>
 	</div>
 
 	<script>
-	var roadmap = {{ . }};
+	var roadmap = {{ .Roadmap }};
 	</script>
 	
 	<!-- Optional JavaScript -->
@@ -64,7 +65,7 @@ const layoutTemplate = `<!doctype html>
 </html>
 `
 
-func bootstrapRoadmap(roadmap Project) (string, error) {
+func bootstrapRoadmap(roadmap Project, lines []string) (string, error) {
 	writer := bytes.NewBufferString("")
 
 	t, err := template.New("layout").Parse(layoutTemplate)
@@ -72,7 +73,13 @@ func bootstrapRoadmap(roadmap Project) (string, error) {
 		return "", err
 	}
 
-	data := roadmap
+	data := struct {
+		Roadmap Project
+		Raw     string
+	}{
+		Roadmap: roadmap,
+		Raw:     strings.Join(lines, "\n"),
+	}
 
 	err = t.Execute(writer, data)
 	if err != nil {

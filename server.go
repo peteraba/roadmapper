@@ -14,7 +14,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-func serve(port uint, certFile, keyFile string) {
+func serve(port uint, certFile, keyFile, inputFile string) {
 	// Setup
 	e := echo.New()
 
@@ -24,12 +24,7 @@ func serve(port uint, certFile, keyFile string) {
 	e.Static("/static", "static")
 
 	e.GET("/roadmap", func(c echo.Context) error {
-		roadmap, err := createRoadmap(inputFile)
-		if err != nil {
-			return err
-		}
-
-		output, err := bootstrapRoadmap(roadmap)
+		output, err := html(inputFile)
 		if err != nil {
 			return err
 		}
