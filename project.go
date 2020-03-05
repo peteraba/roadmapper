@@ -243,13 +243,16 @@ func parsePercentage(part string) (uint8, error) {
 
 	n, err := strconv.ParseUint(part, 10, 8)
 	if err == nil {
-		if n < 0 || n > 100 {
+		if n > 100 {
 			return 0, errors.New("invalid uint8 string")
 		}
 		return uint8(n), nil
 	}
 
 	n2, err := strconv.ParseFloat(part, 64)
+	if err != nil {
+		return 0, err
+	}
 	if n2 < 0 {
 		return 0, errors.New("invalid uint8 string")
 	}

@@ -2,21 +2,19 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
-	"github.com/labstack/echo/middleware"
-
+	"github.com/gosuri/uitable"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
 )
 
-func server(port uint, certFile, keyFile, inputFile string) {
+func Serve(port uint, certFile, keyFile string, rw ReadWriter) {
 	// Setup
 	e := echo.New()
 
@@ -25,8 +23,22 @@ func server(port uint, certFile, keyFile, inputFile string) {
 
 	e.Static("/static", "static")
 
-	e.GET("/roadmap", func(c echo.Context) error {
-		output, err := html(inputFile)
+	e.GET("/:identifier", func(c echo.Context) error {
+		code, err := NewCode64FromString(c.Param("identifier"))
+		if err != nil {
+			log.Print(err)
+			return c.HTML(http.StatusBadRequest, fmt.Sprintf("%v", err))
+		}
+
+		lines, err := rw.Read(code)
+		if err != nil {
+			log.Print(err)
+			// TODO: Proper 404 check
+			// TODO: Proper 404 message
+			return c.HTML(http.StatusNotFound, fmt.Sprintf("%v", err))
+		}
+
+		output, err := html(lines)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))
@@ -35,29 +47,37 @@ func server(port uint, certFile, keyFile, inputFile string) {
 		return c.HTML(http.StatusOK, output)
 	})
 
-	var putRoadmap = func(c echo.Context) error {
+	var putRoadmap = func(c echo.Context, identifier string) error {
+		code, err := NewCode64FromString(identifier)
+		if err != nil {
+			log.Print(err)
+			return c.HTML(http.StatusBadRequest, fmt.Sprintf("%v", err))
+		}
+
 		content := c.FormValue("roadmap")
 
-		err := save(inputFile, content)
+		err = rw.Write(code, content)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))
 		}
 
-		return c.Redirect(http.StatusSeeOther, "/roadmap")
+		return c.Redirect(http.StatusSeeOther, c.Request().URL.String())
 	}
 
-	e.POST("/roadmap", func(c echo.Context) error {
+	e.POST("/:identifier", func(c echo.Context) error {
 		m := c.FormValue("_method")
 
 		if m == "PUT" {
-			return putRoadmap(c)
+			return putRoadmap(c, c.Param("identifier"))
 		}
 
 		return c.HTML(http.StatusMethodNotAllowed, "")
 	})
 
-	e.PUT("/roadmap", putRoadmap)
+	e.PUT("/:identifier", func(c echo.Context) error {
+		return putRoadmap(c, c.Param("identifier"))
+	})
 
 	// Start server
 	go func() {
@@ -110,9 +130,22 @@ func startWrapper(e *echo.Echo, certFile, keyFile string) func(port uint) error 
 	}
 }
 
-func commandLine(inputFile string) error {
-	output, err := html(inputFile)
+func Render(rw ReadWriter, identifier string) error {
+	code, err := NewCode64FromString(identifier)
 	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	lines, err := rw.Read(code)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	output, err := html(lines)
+	if err != nil {
+		log.Print(err)
 		return err
 	}
 
@@ -121,12 +154,7 @@ func commandLine(inputFile string) error {
 	return nil
 }
 
-func html(inputFile string) (string, error) {
-	lines, err := readRoadmap(inputFile)
-	if err != nil {
-		return "", err
-	}
-
+func html(lines []string) (string, error) {
 	roadmap, err := parseRoadmap(lines)
 	if err != nil {
 		return "", err
@@ -137,17 +165,43 @@ func html(inputFile string) (string, error) {
 	return bootstrapRoadmap(r, lines)
 }
 
-func save(inputFile, content string) error {
-	if content == "" {
-		return errors.New("content must not be empty.")
+func Random(count int) error {
+	table := uitable.New()
+	table.MaxColWidth = 80
+	table.Wrap = true // wrap columns
+
+	table.AddRow("ID", "CODE")
+	for i := 0; i < count; i++ {
+		n := NewCode64()
+
+		table.AddRow(int64(n), n.String())
+	}
+	fmt.Println(table)
+
+	return nil
+}
+
+func Convert(id int, code string) error {
+	var n Code64
+	var err error
+
+	if id > 0 {
+		n = Code64(id)
+	} else if code != "" {
+		n, err = NewCode64FromString(code)
+		if err != nil {
+			log.Print(err)
+			return err
+		}
 	}
 
-	lines := strings.Split(content, "\r\n")
+	table := uitable.New()
+	table.MaxColWidth = 80
+	table.Wrap = true // wrap columns
 
-	_, err := parseRoadmap(lines)
-	if err != nil {
-		return err
-	}
+	table.AddRow("ID", "CODE")
+	table.AddRow(int64(n), n.String())
+	fmt.Println(table)
 
-	return writeRoadmap(inputFile, content)
+	return nil
 }

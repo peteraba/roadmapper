@@ -2,20 +2,102 @@ package main
 
 import (
 	"bufio"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
+
+	"github.com/go-pg/pg"
 )
 
-func readRoadmap(filename string) ([]string, error) {
-	file, err := os.Open(filename)
+type ReadWriter interface {
+	Read(code Code64) ([]string, error)
+	Write(code Code64, content string) error
+}
+
+func CreateReadWriter(dbHost, dbPort, dbName, dbUser, dbPass string) ReadWriter {
+	if dbHost != "" && dbPort != "" && dbName != "" && dbUser != "" {
+		pgOptions := &pg.Options{
+			Addr:                  fmt.Sprintf("%s:%s", dbHost, dbPort),
+			User:                  dbUser,
+			Password:              dbPass,
+			Database:              dbName,
+			ApplicationName:       "roadmapper",
+			TLSConfig:             nil,
+			MaxRetries:            5,
+			RetryStatementTimeout: false,
+		}
+		return DbReadWriter{pgOptions: pgOptions}
+	}
+
+	return FileReadWriter{}
+}
+
+type DbReadWriter struct {
+	pgOptions *pg.Options
+}
+
+type roadmap struct {
+	Id     int64
+	PrevId int64
+	Txt    string
+}
+
+func (d DbReadWriter) Read(code Code64) ([]string, error) {
+	db := pg.Connect(d.pgOptions)
+	defer db.Close()
+
+	r := &roadmap{Id: int64(code)}
+
+	err := db.Select(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(r.Txt, "\n"), nil
+}
+
+func (d DbReadWriter) Write(code Code64, content string) error {
+	db := pg.Connect(d.pgOptions)
+	defer db.Close()
+
+	// we must find a code that does not yet exist
+	var newCode Code64
+	var found bool
+	for {
+		newCode = NewCode64()
+		_, err := d.Read(newCode)
+		if err != nil {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return errors.New("no new code found during insert")
+	}
+
+	r := &roadmap{Id: int64(newCode), PrevId: int64(code), Txt: content}
+
+	err := db.Insert(r)
+
+	return err
+}
+
+type FileReadWriter struct {
+}
+
+func (f FileReadWriter) Read(code Code64) ([]string, error) {
+	file, err := os.Open(code.String())
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	lines := []string{}
+	var lines []string
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
@@ -27,9 +109,9 @@ func readRoadmap(filename string) ([]string, error) {
 	return lines, nil
 }
 
-func writeRoadmap(filename, content string) error {
+func (f FileReadWriter) Write(code Code64, content string) error {
 	d1 := []byte(content)
-	err := ioutil.WriteFile(filename, d1, 0644)
+	err := ioutil.WriteFile(code.String(), d1, 0644)
 
 	return err
 }

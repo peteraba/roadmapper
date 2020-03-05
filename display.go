@@ -40,7 +40,7 @@ const layoutTemplate = `<!doctype html>
 		<form id="control"></form>
 	</div>
 	<div class="container-fluid roadmap-edit section" id="roadmap-edit">
-		<form action="/roadmap" method="POST">
+		<form action="" method="POST">
 			<input type="hidden" name="_method" value="PUT" />
 			<div class="form-group">
 				<label for="roadmapRaw">Raw roadmap</label>

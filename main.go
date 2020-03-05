@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/labstack/gommon/log"
-	cli "gopkg.in/urfave/cli.v2"
+	cli "github.com/urfave/cli/v2"
 )
 
 func main() {
@@ -19,13 +19,18 @@ func main() {
 				Aliases: []string{"s"},
 				Usage:   "start server",
 				Flags: []cli.Flag{
-					&cli.StringFlag{Name: "roadmap", Aliases: []string{"r"}, Usage: "path to the roadmap file", Value: "roadmap.txt"},
 					&cli.UintFlag{Name: "port", Aliases: []string{"p"}},
 					&cli.StringFlag{Name: "cert", Aliases: []string{"c"}},
 					&cli.StringFlag{Name: "key", Aliases: []string{"k"}},
+					&cli.StringFlag{Name: "dbHost", Usage: "database host", Value: "localhost", EnvVars: []string{"DB_HOST"}},
+					&cli.StringFlag{Name: "dbPort", Usage: "database port", Value: "5432", EnvVars: []string{"DB_PORT"}},
+					&cli.StringFlag{Name: "dbName", Usage: "database name", Value: "rdmp", EnvVars: []string{"DB_NAME"}},
+					&cli.StringFlag{Name: "dbUser", Usage: "database user", Value: "rdmp", EnvVars: []string{"DB_USER"}},
+					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
 				},
 				Action: func(c *cli.Context) error {
-					server(0, "", "", c.String("roadmap"))
+					rw := CreateReadWriter(c.String("dbHost"), c.String("dbPort"), c.String("dbName"), c.String("dbUser"), c.String("dbPass"))
+					Serve(0, "", "", rw)
 					return nil
 				},
 			},
@@ -34,10 +39,41 @@ func main() {
 				Aliases: []string{"c"},
 				Usage:   "render static assets",
 				Flags: []cli.Flag{
-					&cli.StringFlag{Name: "roadmap", Aliases: []string{"r"}, Usage: "path to the roadmap file", Value: "roadmap.txt"},
+					&cli.StringFlag{Name: "identifier", Aliases: []string{"r"}, Usage: "roadmap identifier"},
+					&cli.StringFlag{Name: "dbHost", Usage: "database host", Value: "localhost", EnvVars: []string{"DB_HOST"}},
+					&cli.StringFlag{Name: "dbPort", Usage: "database port", Value: "5432", EnvVars: []string{"DB_PORT"}},
+					&cli.StringFlag{Name: "dbName", Usage: "database name", Value: "rdmp", EnvVars: []string{"DB_NAME"}},
+					&cli.StringFlag{Name: "dbUser", Usage: "database user", Value: "rdmp", EnvVars: []string{"DB_USER"}},
+					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
 				},
 				Action: func(c *cli.Context) error {
-					err := commandLine(c.String("roadmap"))
+					rw := CreateReadWriter(c.String("dbHost"), c.String("dbPort"), c.String("dbName"), c.String("dbUser"), c.String("dbPass"))
+					err := Render(rw, c.String("identifier"))
+					return err
+				},
+			},
+			{
+				Name:    "random",
+				Aliases: []string{"r"},
+				Usage:   "generate random numbers",
+				Flags: []cli.Flag{
+					&cli.IntFlag{Name: "count", Aliases: []string{"c"}, Usage: "count of random numbers to generate", Value: 5},
+				},
+				Action: func(c *cli.Context) error {
+					err := Random(c.Int("count"))
+					return err
+				},
+			},
+			{
+				Name:    "convert",
+				Aliases: []string{"co"},
+				Usage:   "convert between id and code",
+				Flags: []cli.Flag{
+					&cli.IntFlag{Name: "id", Aliases: []string{"i"}, Usage: "id to convert to code"},
+					&cli.StringFlag{Name: "code", Aliases: []string{"c"}, Usage: "code to convert to id"},
+				},
+				Action: func(c *cli.Context) error {
+					err := Convert(c.Int("id"), c.String("code"))
 					return err
 				},
 			},

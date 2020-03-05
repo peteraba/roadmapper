@@ -1,2 +1,7 @@
 .idea
 *.pem
+data
+*.log
+docker\-compose.yaml
+airtmp/
+build/

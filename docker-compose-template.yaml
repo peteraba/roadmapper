@@ -1,0 +1,15 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres:alpine
+    restart: always
+    environment:
+      POSTGRES_DB: rdmp
+      POSTGRES_USER: rdmp
+      POSTGRES_PASSWORD:
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    ports:
+      - 6532:5432
