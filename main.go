@@ -12,6 +12,8 @@ import (
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
+	cb := NewCodeBuilder()
+
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
@@ -30,7 +32,7 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					rw := CreateReadWriter(c.String("dbHost"), c.String("dbPort"), c.String("dbName"), c.String("dbUser"), c.String("dbPass"))
-					Serve(0, "", "", rw)
+					Serve(0, "", "", rw, cb)
 					return nil
 				},
 			},
@@ -48,7 +50,7 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					rw := CreateReadWriter(c.String("dbHost"), c.String("dbPort"), c.String("dbName"), c.String("dbUser"), c.String("dbPass"))
-					err := Render(rw, c.String("identifier"))
+					err := Render(rw, cb, c.String("identifier"))
 					return err
 				},
 			},
@@ -60,7 +62,7 @@ func main() {
 					&cli.IntFlag{Name: "count", Aliases: []string{"c"}, Usage: "count of random numbers to generate", Value: 5},
 				},
 				Action: func(c *cli.Context) error {
-					err := Random(c.Int("count"))
+					err := Random(cb, c.Int("count"))
 					return err
 				},
 			},
@@ -69,11 +71,11 @@ func main() {
 				Aliases: []string{"co"},
 				Usage:   "convert between id and code",
 				Flags: []cli.Flag{
-					&cli.IntFlag{Name: "id", Aliases: []string{"i"}, Usage: "id to convert to code"},
+					&cli.Int64Flag{Name: "id", Aliases: []string{"i"}, Usage: "id to convert to code"},
 					&cli.StringFlag{Name: "code", Aliases: []string{"c"}, Usage: "code to convert to id"},
 				},
 				Action: func(c *cli.Context) error {
-					err := Convert(c.Int("id"), c.String("code"))
+					err := Convert(cb, c.Int64("id"), c.String("code"))
 					return err
 				},
 			},

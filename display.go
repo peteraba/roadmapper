@@ -41,7 +41,6 @@ const layoutTemplate = `<!doctype html>
 	</div>
 	<div class="container-fluid roadmap-edit section" id="roadmap-edit">
 		<form action="" method="POST">
-			<input type="hidden" name="_method" value="PUT" />
 			<div class="form-group">
 				<label for="roadmapRaw">Raw roadmap</label>
 				<textarea class="form-control" id="roadmapRaw" name="roadmap" aria-describedby="roadmapRaw" rows="20">{{ .Raw }}</textarea>

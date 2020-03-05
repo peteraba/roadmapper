@@ -14,7 +14,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-func Serve(port uint, certFile, keyFile string, rw ReadWriter) {
+func Serve(port uint, certFile, keyFile string, rw ReadWriter, cb CodeBuilder) {
 	// Setup
 	e := echo.New()
 
@@ -23,8 +23,33 @@ func Serve(port uint, certFile, keyFile string, rw ReadWriter) {
 
 	e.Static("/static", "static")
 
-	e.GET("/:identifier", func(c echo.Context) error {
-		code, err := NewCode64FromString(c.Param("identifier"))
+	e.GET("/:identifier", createGetRoadmap(rw, cb))
+	e.POST("/:identifier", createPostRoadmap(rw, cb))
+
+	// Start server
+	go func() {
+		if err := startServer(e, port, certFile, keyFile); err != nil {
+			e.Logger.Info("shutting down the server")
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 10 seconds.
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
+}
+
+func createGetRoadmap(rw ReadWriter, cb CodeBuilder) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		identifier := c.Param("identifier")
+
+		code, err := cb.NewFromString(identifier)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusBadRequest, fmt.Sprintf("%v", err))
@@ -45,10 +70,14 @@ func Serve(port uint, certFile, keyFile string, rw ReadWriter) {
 		}
 
 		return c.HTML(http.StatusOK, output)
-	})
+	}
+}
 
-	var putRoadmap = func(c echo.Context, identifier string) error {
-		code, err := NewCode64FromString(identifier)
+func createPostRoadmap(rw ReadWriter, cb CodeBuilder) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		identifier := c.Param("identifier")
+
+		code, err := cb.NewFromString(identifier)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusBadRequest, fmt.Sprintf("%v", err))
@@ -56,45 +85,13 @@ func Serve(port uint, certFile, keyFile string, rw ReadWriter) {
 
 		content := c.FormValue("roadmap")
 
-		err = rw.Write(code, content)
+		err = rw.Write(cb, code, content)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))
 		}
 
 		return c.Redirect(http.StatusSeeOther, c.Request().URL.String())
-	}
-
-	e.POST("/:identifier", func(c echo.Context) error {
-		m := c.FormValue("_method")
-
-		if m == "PUT" {
-			return putRoadmap(c, c.Param("identifier"))
-		}
-
-		return c.HTML(http.StatusMethodNotAllowed, "")
-	})
-
-	e.PUT("/:identifier", func(c echo.Context) error {
-		return putRoadmap(c, c.Param("identifier"))
-	})
-
-	// Start server
-	go func() {
-		if err := startServer(e, port, certFile, keyFile); err != nil {
-			e.Logger.Info("shutting down the server")
-		}
-	}()
-
-	// Wait for interrupt signal to gracefully shutdown the server with
-	// a timeout of 10 seconds.
-	quit := make(chan os.Signal)
-	signal.Notify(quit, os.Interrupt)
-	<-quit
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := e.Shutdown(ctx); err != nil {
-		e.Logger.Fatal(err)
 	}
 }
 
@@ -130,8 +127,8 @@ func startWrapper(e *echo.Echo, certFile, keyFile string) func(port uint) error 
 	}
 }
 
-func Render(rw ReadWriter, identifier string) error {
-	code, err := NewCode64FromString(identifier)
+func Render(rw ReadWriter, cb CodeBuilder, identifier string) error {
+	code, err := cb.NewFromString(identifier)
 	if err != nil {
 		log.Print(err)
 		return err
@@ -165,43 +162,46 @@ func html(lines []string) (string, error) {
 	return bootstrapRoadmap(r, lines)
 }
 
-func Random(count int) error {
-	table := uitable.New()
-	table.MaxColWidth = 80
-	table.Wrap = true // wrap columns
-
-	table.AddRow("ID", "CODE")
+func Random(cb CodeBuilder, count int) error {
+	var codes []Code
 	for i := 0; i < count; i++ {
-		n := NewCode64()
-
-		table.AddRow(int64(n), n.String())
+		codes = append(codes, cb.New())
 	}
-	fmt.Println(table)
+
+	displayCodes(codes...)
 
 	return nil
 }
 
-func Convert(id int, code string) error {
-	var n Code64
+func Convert(cb CodeBuilder, id int64, code string) error {
+	var n Code
 	var err error
 
 	if id > 0 {
-		n = Code64(id)
+		n, err = cb.NewFromID(id)
 	} else if code != "" {
-		n, err = NewCode64FromString(code)
-		if err != nil {
-			log.Print(err)
-			return err
-		}
+		n, err = cb.NewFromString(code)
 	}
 
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+
+	displayCodes(n)
+
+	return nil
+}
+
+func displayCodes(codes ...Code) {
 	table := uitable.New()
 	table.MaxColWidth = 80
 	table.Wrap = true // wrap columns
 
 	table.AddRow("ID", "CODE")
-	table.AddRow(int64(n), n.String())
-	fmt.Println(table)
+	for _, code := range codes {
+		table.AddRow(code.ID(), code.String())
+	}
 
-	return nil
+	fmt.Println(table)
 }

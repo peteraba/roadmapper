@@ -10,6 +10,30 @@ import (
 
 const maxCode64 = 0xfffffffffff
 
+type CodeBuilder struct {
+}
+
+func (cb CodeBuilder) NewFromString(s string) (Code, error) {
+	return newCode64FromString(s)
+}
+
+func (cb CodeBuilder) NewFromID(id int64) (Code, error) {
+	return Code64(id), nil
+}
+
+func (cb CodeBuilder) New() Code {
+	return newCode64()
+}
+
+func NewCodeBuilder() CodeBuilder {
+	return CodeBuilder{}
+}
+
+type Code interface {
+	String() string
+	ID() int64
+}
+
 type Code64 int64
 
 func (c Code64) String() string {
@@ -19,12 +43,15 @@ func (c Code64) String() string {
 
 	return toCode64(int64(c))
 }
+func (c Code64) ID() int64 {
+	return int64(c)
+}
 
-func NewCode64() Code64 {
+func newCode64() Code64 {
 	return Code64(rand.Int63n(maxCode64))
 }
 
-func NewCode64FromString(s string) (Code64, error) {
+func newCode64FromString(s string) (Code64, error) {
 	var (
 		n   int64
 		m   = getAllowedMap()

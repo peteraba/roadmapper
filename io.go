@@ -13,8 +13,8 @@ import (
 )
 
 type ReadWriter interface {
-	Read(code Code64) ([]string, error)
-	Write(code Code64, content string) error
+	Read(code Code) ([]string, error)
+	Write(cb CodeBuilder, code Code, content string) error
 }
 
 func CreateReadWriter(dbHost, dbPort, dbName, dbUser, dbPass string) ReadWriter {
@@ -45,11 +45,11 @@ type roadmap struct {
 	Txt    string
 }
 
-func (d DbReadWriter) Read(code Code64) ([]string, error) {
+func (d DbReadWriter) Read(code Code) ([]string, error) {
 	db := pg.Connect(d.pgOptions)
 	defer db.Close()
 
-	r := &roadmap{Id: int64(code)}
+	r := &roadmap{Id: code.ID()}
 
 	err := db.Select(r)
 	if err != nil {
@@ -59,15 +59,15 @@ func (d DbReadWriter) Read(code Code64) ([]string, error) {
 	return strings.Split(r.Txt, "\n"), nil
 }
 
-func (d DbReadWriter) Write(code Code64, content string) error {
+func (d DbReadWriter) Write(cb CodeBuilder, code Code, content string) error {
 	db := pg.Connect(d.pgOptions)
 	defer db.Close()
 
 	// we must find a code that does not yet exist
-	var newCode Code64
+	var newCode Code
 	var found bool
 	for {
-		newCode = NewCode64()
+		newCode = cb.New()
 		_, err := d.Read(newCode)
 		if err != nil {
 			found = true
@@ -79,7 +79,7 @@ func (d DbReadWriter) Write(code Code64, content string) error {
 		return errors.New("no new code found during insert")
 	}
 
-	r := &roadmap{Id: int64(newCode), PrevId: int64(code), Txt: content}
+	r := &roadmap{Id: newCode.ID(), PrevId: code.ID(), Txt: content}
 
 	err := db.Insert(r)
 
@@ -89,7 +89,7 @@ func (d DbReadWriter) Write(code Code64, content string) error {
 type FileReadWriter struct {
 }
 
-func (f FileReadWriter) Read(code Code64) ([]string, error) {
+func (f FileReadWriter) Read(code Code) ([]string, error) {
 	file, err := os.Open(code.String())
 	if err != nil {
 		log.Fatal(err)
@@ -109,7 +109,7 @@ func (f FileReadWriter) Read(code Code64) ([]string, error) {
 	return lines, nil
 }
 
-func (f FileReadWriter) Write(code Code64, content string) error {
+func (f FileReadWriter) Write(cb CodeBuilder, code Code, content string) error {
 	d1 := []byte(content)
 	err := ioutil.WriteFile(code.String(), d1, 0644)
 
