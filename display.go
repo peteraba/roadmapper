@@ -64,8 +64,8 @@ const layoutTemplate = `<!doctype html>
 			<div class="form-group">
 				<label for="txt">Raw roadmap</label>
 				<textarea class="form-control" id="txt" name="txt" aria-describedby="txtHelp" rows="20">{{ .Raw }}</textarea>
-				<div class="valid-feedback" id="txt-valid">asd</div>
-				<div class="invalid-feedback" id="txt-invalid">asd</div>
+				<div class="valid-feedback" id="txt-valid"></div>
+				<div class="invalid-feedback" id="txt-invalid"></div>
 				<small id="txtHelp" class="form-text text-muted"><a href="#documentation-format">Format documentation</a></small>
 			</div>
 			<button type="submit" class="btn btn-primary" id="form-submit">Submit</button>

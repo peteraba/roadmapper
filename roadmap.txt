@@ -1,10 +1,10 @@
 beta.0 [2020-02-12, 2020-02-18]
 beta.1
-  12-factor-app [2020-02-12, 2020-02-18, 60%, #f00]
-  Validation improvements [2020-02-20, 2020-03-30, 0, https://github.com/abtercms/abterphp/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+milestone%3Abeta.1+label%3Avalidation+]
+	12-factor-app [2020-02-12, 2020-02-18, 60%, #f00]
+	Validation improvements [2020-02-20, 2020-03-30, 0, https://github.com/abtercms/abterphp/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+milestone%3Abeta.1+label%3Avalidation+]
 idea-pool [https://github.com/abtercms/abterphp/issues?q=is%3Aopen+is%3Aissue+milestone%3Aidea-pool]
-  Locking feature
-    Investigations [2020-03-10, 2020-03-15, 0.006]
-  Layout logic [2020-03-15, 2020-03-18, 70%]
-  Map wysiwg editor languages
-    Investigations [2020-03-10, 2020-03-15, 0.006]
+	Locking feature
+		Investigations [2020-03-10, 2020-03-15, 0.006]
+	Layout logic [2020-03-15, 2020-03-18, 70%]
+	Map wysiwg editor languages
+		Investigations [2020-03-10, 2020-03-15, 0.006]

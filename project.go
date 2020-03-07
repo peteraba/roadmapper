@@ -110,7 +110,7 @@ func parseRoadmap(lines []string) (*internalProject, error) {
 		err                error
 		roadmap                  = internalProject{}
 		currentProject           = &roadmap
-		currentIndentation       = -2
+		currentIndentation       = -1
 		colorNum           uint8 = 11
 	)
 
@@ -137,9 +137,9 @@ func parseRoadmap(lines []string) (*internalProject, error) {
 	return &roadmap, nil
 }
 
-func createProject(line string, previousProject *internalProject, pi int, colorNum *uint8) (*internalProject, int, error) {
-	trimmed := strings.TrimLeft(line, " ")
-	ni := len(line) - len(trimmed)
+func createProject(line string, previousProject *internalProject, parentIndentation int, colorNum *uint8) (*internalProject, int, error) {
+	trimmed := strings.TrimLeft(line, "\t")
+	lineIndentation := len(line) - len(trimmed)
 
 	newProject, err := parseProject(trimmed, colorNum)
 	if err != nil {
@@ -148,8 +148,8 @@ func createProject(line string, previousProject *internalProject, pi int, colorN
 
 	pp := previousProject
 
-	for ci := pi + 2; ci >= 0; ci -= 2 {
-		if ci == ni {
+	for currentIndentation := parentIndentation + 1; currentIndentation >= 0; currentIndentation -= 1 {
+		if currentIndentation == lineIndentation {
 			newProject.parent = pp
 			break
 		}
@@ -163,7 +163,7 @@ func createProject(line string, previousProject *internalProject, pi int, colorN
 
 	newProject.parent.children = append(newProject.parent.children, newProject)
 
-	return newProject, ni, nil
+	return newProject, lineIndentation, nil
 }
 
 func parseProject(trimmed string, colorNum *uint8) (*internalProject, error) {

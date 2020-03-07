@@ -21,9 +21,12 @@ func Serve(port uint, certFile, keyFile string, rw ReadWriter, cb CodeBuilder) {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{}))
 	e.Logger.SetLevel(log.INFO)
 
+	e.File("/favicon.ico", "static/favicon.ico")
+	e.Static("/static", "static")
 	e.Static("/static", "static")
 
 	e.GET("/", createNewRoadmap())
+	e.POST("/", createPostRoadmap(rw, cb))
 	e.GET("/:identifier", createGetRoadmap(rw, cb))
 	e.POST("/:identifier", createPostRoadmap(rw, cb))
 
@@ -86,12 +89,19 @@ func createGetRoadmap(rw ReadWriter, cb CodeBuilder) func(c echo.Context) error 
 
 func createPostRoadmap(rw ReadWriter, cb CodeBuilder) func(c echo.Context) error {
 	return func(c echo.Context) error {
+		var (
+			code = cb.New()
+			err  error
+		)
+
 		identifier := c.Param("identifier")
 
-		code, err := cb.NewFromString(identifier)
-		if err != nil {
-			log.Print(err)
-			return c.HTML(http.StatusBadRequest, fmt.Sprintf("%v", err))
+		if identifier != "" {
+			code, err = cb.NewFromString(identifier)
+			if err != nil {
+				log.Print(err)
+				return c.HTML(http.StatusBadRequest, fmt.Sprintf("%v", err))
+			}
 		}
 
 		content := c.FormValue("txt")

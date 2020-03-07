@@ -78,8 +78,8 @@ func Test_createProject(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *internalProject
-		want1   int
+		want1   *internalProject
+		want2   int
 		wantErr bool
 	}{
 		{
@@ -90,20 +90,20 @@ func Test_createProject(t *testing.T) {
 				pi:              4,
 				colorNum:        &a,
 			},
-			want:    nil,
-			want1:   0,
+			want1:   nil,
+			want2:   0,
 			wantErr: true,
 		},
 		{
 			name: "too many indentations",
 			args: args{
-				line:            "      asd",
+				line:            "\t\t\tasd",
 				previousProject: &internalProject{},
 				pi:              0,
 				colorNum:        &a,
 			},
-			want:    nil,
-			want1:   0,
+			want1:   nil,
+			want2:   0,
 			wantErr: true,
 		},
 		{
@@ -111,15 +111,15 @@ func Test_createProject(t *testing.T) {
 			args: args{
 				line:            "asd",
 				previousProject: &internalProject{},
-				pi:              -2,
+				pi:              -1,
 				colorNum:        &b,
 			},
-			want: &internalProject{
+			want1: &internalProject{
 				Title:      "asd",
 				color:      palette.WebSafe[71],
 				percentage: 100,
 			},
-			want1:   0,
+			want2:   0,
 			wantErr: false,
 		},
 		{
@@ -135,12 +135,12 @@ func Test_createProject(t *testing.T) {
 				pi:       0,
 				colorNum: &c,
 			},
-			want: &internalProject{
+			want1: &internalProject{
 				Title:      "asd",
 				color:      palette.WebSafe[71],
 				percentage: 100,
 			},
-			want1:   0,
+			want2:   0,
 			wantErr: false,
 		},
 		{
@@ -159,30 +159,30 @@ func Test_createProject(t *testing.T) {
 						},
 					},
 				},
-				pi:       4,
+				pi:       2,
 				colorNum: &d,
 			},
-			want: &internalProject{
+			want1: &internalProject{
 				Title:      "asd",
 				color:      palette.WebSafe[71],
 				percentage: 100,
 			},
-			want1:   0,
+			want2:   0,
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := createProject(tt.args.line, tt.args.previousProject, tt.args.pi, tt.args.colorNum)
+			got1, got2, err := createProject(tt.args.line, tt.args.previousProject, tt.args.pi, tt.args.colorNum)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("createProject() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != nil && !reflect.DeepEqual(got.String(), tt.want.String()) {
-				t.Errorf("createProject() got = %v, want %v", got, tt.want)
+			if got1 != nil && !reflect.DeepEqual(got1.String(), tt.want1.String()) {
+				t.Errorf("createProject() got1 = %v, want1 %v", got1, tt.want1)
 			}
-			if got1 != tt.want1 {
-				t.Errorf("createProject() got1 = %v, want %v", got1, tt.want1)
+			if got2 != tt.want2 {
+				t.Errorf("createProject() got2 = %v, want2 %v", got2, tt.want2)
 			}
 		})
 	}
@@ -622,7 +622,7 @@ func Test_parseRoadmap(t *testing.T) {
 			args: args{
 				lines: []string{
 					"Rather simple project",
-					"  Simple sub-project, dates only [2020-10-08, 2020-11-28]",
+					"\tSimple sub-project, dates only [2020-10-08, 2020-11-28]",
 				},
 			},
 			want: &internalProject{
