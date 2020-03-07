@@ -178,7 +178,7 @@ var roadmap = {{ .Roadmap }};
 <!-- SVG -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.0.16/svg.min.js" integrity="sha256-MCvBrhCuX8GNt0gmv06kZ4jGIi1R2QNaSkadjRzinFs=" crossorigin="anonymous"></script>
 <!-- Custom -->
-<script src="/static/roadmaper.js"></script>
+<script type="module" src="/static/roadmaper.mjs"></script>
 </body>
 </html>
 `
