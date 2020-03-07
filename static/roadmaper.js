@@ -1,6 +1,12 @@
 (() => {
+    const roadmap = window.roadmap || {}, $ = window.jQuery || document.querySelectorAll;
+
     const handleError = msg => {
         console.error(msg);
+    };
+
+    const handleErrorResolved = msg => {
+        console.info(msg);
     };
 
     const refreshTimeline = () => {
@@ -249,13 +255,61 @@
     };
 
     window.addEventListener('DOMContentLoaded', () => {
-        const txt = document.getElementById('txt');
+        const form = document.getElementById('roadmap-form'),
+            txt = document.getElementById('txt'),
+            txtValid = document.getElementById('txt-valid'),
+            txtInvalid = document.getElementById('txt-invalid');
 
         if (!roadmap || !roadmap.Children) {
             $('#roadmap-dashboard, .roadmap-dashboard-link').remove();
         } else {
             refreshRoadmap();
         }
+
+        const handleInvalidTextarea = (field, msg, lines) => {
+            field.classList.add('is-invalid');
+
+            txtValid.innerText = '';
+            txtValid.style.display = 'none';
+            txtInvalid.innerText = msg + " on lines: " + lines.join(",");
+            txtInvalid.style.display = 'block';
+        };
+
+        const handleValidTextarea = (field, msg) => {
+            if (txtInvalid.innerText === '') {
+                return;
+            }
+
+            form.classList.add('was-validated');
+            field.classList.remove('is-invalid');
+
+            txtValid.innerText = msg;
+            txtValid.style.display = 'block';
+            txtInvalid.innerText = '';
+            txtInvalid.style.display = 'none';
+
+            window.setTimeout(() => {
+                form.classList.remove('was-validated');
+                txtValid.innerText = '';
+                txtValid.style.display = 'none';
+            }, 2000);
+        };
+
+        const lineStart = (text, start) => {
+            const prevNL = text.substr(0, start).lastIndexOf("\n");
+
+            if (prevNL >= 0) {
+                return prevNL + 1;
+            }
+
+            return 0;
+        };
+
+        const getOpeningTabs = (text) => {
+            const m = text.match(/^\t/);
+
+            return m && m.length > 0 ? m[0] : '';
+        };
 
         txt.addEventListener('paste', e => {
             let lines = (e.clipboardData || window.clipboardData).getData('text').split("\n");
@@ -266,7 +320,7 @@
             }
 
             if (lines.length === 0) {
-                return handleError('empty lines');
+                return handleInvalidTextarea(txt, 'empty lines', [0]);
             }
 
             // Find out if all lines are indented
@@ -279,7 +333,7 @@
                     });
 
             if (!allIndented) {
-                return handleError('not all indented');
+                return handleInvalidTextarea(txt, 'some lines are not indented', []);
             }
 
             // Remove common indentation
@@ -312,15 +366,6 @@
 
         const handleTab = (e, field) => {
             const
-                lineStart = (text, start) => {
-                    const prevNL = text.substr(0, start).lastIndexOf("\n");
-
-                    if (prevNL >= 0) {
-                        return prevNL;
-                    }
-
-                    return 0;
-                },
                 lineEnd = (text, end) => {
                     const nextNL = text.substr(end).indexOf("\n");
 
@@ -341,7 +386,7 @@
             const text = field.value,
                 s0 = field.selectionStart,
                 e0 = field.selectionEnd,
-                s1 = lineStart(text, s0),
+                s1 = lineStart(text, s0) - 1,
                 e1 = lineEnd(text, e0),
                 v0 = text.substring(s1, e1),
                 v1 = applyShift(v0, e.shiftKey);
@@ -363,15 +408,6 @@
                 text = field.value,
                 s0 = field.selectionStart,
                 e0 = field.selectionEnd,
-                lineStart = (text, start) => {
-                    const prevNL = text.substr(0, start).lastIndexOf("\n");
-
-                    if (prevNL >= 0) {
-                        return prevNL + 1;
-                    }
-
-                    return 0;
-                },
                 start = lineStart(field.value, s0),
                 lineToCur = text.substr(start, s0 - start),
                 m = lineToCur.match(/^\s+$/);
@@ -389,16 +425,64 @@
             e.preventDefault();
         };
 
+        const handleEnter = (e, field) => {
+            const
+                text = field.value,
+                s0 = field.selectionStart,
+                e0 = field.selectionEnd,
+                ls = lineStart(text, s0),
+                tabs = getOpeningTabs(text.substr(ls, s0 - ls));
+
+            field.value = text.substring(0, s0) + "\n" + tabs + text.substring(e0);
+
+            field.selectionStart = s0 + 1 + tabs.length;
+            field.selectionEnd = e0 + 1 + tabs.length;
+
+            e.preventDefault();
+        };
+
         txt.addEventListener('keydown', e => {
             switch (e.key) {
                 case 'Tab':
                     return handleTab(e, txt);
+                case 'Enter':
+                    return handleEnter(e, txt);
                 case ' ':
                     return handleSpace(e, txt);
             }
         });
 
-        $('[data-toggle="tooltip"]').tooltip();
+        const validateRoadmap = (e, field) => {
+            let prevIndCount = 0, errors = [];
+
+            field.value.split("\n").forEach((val, idx) => {
+                const m = val.match(/^\t*/),
+                    curIndCount = m && m[0] ? m[0].length : 0;
+
+                if (idx === 0 && curIndCount > 0) {
+                    errors.push(idx);
+                } else if (prevIndCount < curIndCount - 1) {
+                    errors.push(idx);
+                }
+
+                prevIndCount = curIndCount;
+            });
+
+            if (errors.length > 0) {
+                return handleInvalidTextarea(field, 'invalid indentation', errors);
+            }
+
+            return handleValidTextarea(field, 'valid roadmap');
+        };
+
+        txt.addEventListener('keydown', e => {
+            validateRoadmap(e, txt);
+        });
+
+        const tt = $('[data-toggle="tooltip"]');
+        if (tt && tt['tooltip'] && typeof tt['tooltip'] === 'function') {
+            tt['tooltip']();
+        }
     });
 
     window.addEventListener('resize', () => {
