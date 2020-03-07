@@ -2,12 +2,11 @@ import { refreshTimeline, refreshProjects } from './roadmap-dashboard.mjs';
 import { roadmapForm } from './roadmap-form.mjs';
 
 const app = () => {
-    const $ = window.jQuery || document.querySelectorAll;
-
     roadmapForm();
 
     if (!roadmap || !roadmap.Children) {
-        $('#roadmap-dashboard, .roadmap-dashboard-link').remove();
+        document.querySelectorAll('.roadmap-dashboard-link').forEach(element => element.classList.add('disabled'));
+        document.getElementById('roadmap-dashboard').remove();
     } else {
         refreshProjects();
     }
