@@ -1,4 +1,4 @@
-(function () {
+(() => {
     const handleError = msg => {
         console.error(msg);
     };
@@ -61,7 +61,7 @@
 
         table.innerHTML = '';
 
-        function buildTable(p, container) {
+        const buildTable = (p, container) => {
             const
                 thead = document.createElement('thead'),
                 tbody = document.createElement('tbody'),
@@ -77,7 +77,7 @@
             if (p.Children !== null) {
                 p.Children.forEach(c => displayProject(c, tbody, 1, projectFrom, fullDiff));
             }
-        }
+        };
 
         const displayHeader = (p, container, projectFrom, projectTo) => {
             const row = document.createElement('tr'),
@@ -239,11 +239,13 @@
 
                 level1s.forEach(elem => elem.style.display = 'table-row');
             });
+        };
+
+        if (roadmap) {
+            buildTable(roadmap, table);
+
+            buildControl(roadmap, control);
         }
-
-        buildTable(roadmap, table);
-
-        buildControl(roadmap, control);
     };
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -269,7 +271,7 @@
 
             // Find out if all lines are indented
             const ws = lines[0].match(/^\s+/g),
-                ind = ws.length === 0 ? '' : ws[0],
+                ind = (ws && ws.length > 0 ? ws[0] : ''),
                 allIndented =
                     ind.length === 0 ||
                     lines.every(line => {
@@ -308,9 +310,9 @@
             e.preventDefault();
         });
 
-        txt.addEventListener('keydown', e => {
+        const handleTab = (e, field) => {
             const
-                start = (text, start) => {
+                lineStart = (text, start) => {
                     const prevNL = text.substr(0, start).lastIndexOf("\n");
 
                     if (prevNL >= 0) {
@@ -319,7 +321,7 @@
 
                     return 0;
                 },
-                end = (text, end) => {
+                lineEnd = (text, end) => {
                     const nextNL = text.substr(end).indexOf("\n");
 
                     if (nextNL >= 0) {
@@ -328,7 +330,7 @@
 
                     return end;
                 },
-                shift = (text, hasShift) => {
+                applyShift = (text, hasShift) => {
                     if (hasShift) {
                         return text.replace(/\n\t/g, "\n");
                     }
@@ -336,24 +338,64 @@
                     return text.replace(/\n/g, "\n\t");
                 };
 
-            if (e.key !== 'Tab') {
+            const text = field.value,
+                s0 = field.selectionStart,
+                e0 = field.selectionEnd,
+                s1 = lineStart(text, s0),
+                e1 = lineEnd(text, e0),
+                v0 = text.substring(s1, e1),
+                v1 = applyShift(v0, e.shiftKey);
+
+            field.value = text.substring(0, s1) + v1 + text.substring(e1);
+
+            field.selectionStart = s1 + 1;
+            field.selectionEnd = field.selectionStart + v1.length - 1;
+
+            e.preventDefault();
+        };
+
+        const handleSpace = (e, field) => {
+            if (field.selectionStart !== field.selectionEnd) {
                 return;
             }
 
-            const val = txt.value,
-                s0 = txt.selectionStart,
-                e0 = txt.selectionEnd,
-                s1 = start(val, s0),
-                e1 = end(val, e0),
-                v0 = val.substring(s1, e1),
-                v1 = shift(v0, e.shiftKey);
+            const
+                text = field.value,
+                s0 = field.selectionStart,
+                e0 = field.selectionEnd,
+                lineStart = (text, start) => {
+                    const prevNL = text.substr(0, start).lastIndexOf("\n");
 
-            txt.value = val.substring(0, s1) + v1 + val.substring(e1);
+                    if (prevNL >= 0) {
+                        return prevNL + 1;
+                    }
 
-            txt.selectionStart = s1 + 1;
-            txt.selectionEnd = txt.selectionStart + v1.length - 1;
+                    return 0;
+                },
+                start = lineStart(field.value, s0),
+                lineToCur = text.substr(start, s0 - start),
+                m = lineToCur.match(/^\s+$/);
+
+            // Do nothing if we're not somewhere inside the task definition
+            if (m === null) {
+                return;
+            }
+
+            field.value = text.substring(0, s0) + "\t" + text.substring(e0);
+
+            field.selectionStart = s0 + 1;
+            field.selectionEnd = e0 + 1;
 
             e.preventDefault();
+        };
+
+        txt.addEventListener('keydown', e => {
+            switch (e.key) {
+                case 'Tab':
+                    return handleTab(e, txt);
+                case ' ':
+                    return handleSpace(e, txt);
+            }
         });
 
         $('[data-toggle="tooltip"]').tooltip();

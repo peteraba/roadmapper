@@ -88,7 +88,7 @@ const layoutTemplate = `<!doctype html>
 
 		<h3 class="h3">Example</h3>
 		<pre>
-beta.0 - tabs[2020-02-12, 2020-02-18]
+beta.0 - tabs [2020-02-12, 2020-02-18]
 beta.1
 	12-factor-app [2020-02-12, 2020-02-18, 60%, #f00]
 	Validation improvements [2020-02-20, 2020-03-30, 0, beta.1]
