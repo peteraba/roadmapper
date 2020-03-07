@@ -1,7 +1,16 @@
-(function() {
-    function refreshTimeline() {
-        const drawing = document.getElementById('drawing'),
-            h = 75,
+(function () {
+    const handleError = msg => {
+        console.error(msg);
+    };
+
+    const refreshTimeline = () => {
+        const drawing = document.getElementById('drawing');
+
+        if (!drawing || !drawing.dataset || !drawing.dataset.from || !drawing.dataset.to) {
+            return;
+        }
+
+        const h = 75,
             projectFrom = new Date(drawing.dataset.from),
             projectTo = new Date(drawing.dataset.to),
             lineColor = window.getComputedStyle(drawing, null).borderColor,
@@ -11,7 +20,7 @@
 
         drawing.innerHTML = '';
 
-        window.setTimeout(function() {
+        window.setTimeout(() => {
             const w = drawing.offsetWidth,
                 today = new Date(),
                 pink = '#f88',
@@ -44,9 +53,9 @@
                 text.move(left, 45).font({fill: red, anchor: 'middle'});
             }
         }, 0);
-    }
+    };
 
-    function refreshRoadmap() {
+    const refreshRoadmap = () => {
         const table = document.getElementById('roadmap'),
             control = document.getElementById('control');
 
@@ -70,7 +79,7 @@
             }
         }
 
-        function displayHeader(p, container, projectFrom, projectTo) {
+        const displayHeader = (p, container, projectFrom, projectTo) => {
             const row = document.createElement('tr'),
                 left = document.createElement('th'),
                 right = document.createElement('th'),
@@ -94,9 +103,9 @@
             container.appendChild(row);
 
             refreshTimeline();
-        }
+        };
 
-        function displayProject(p, container, level, projectFrom, fullDiff) {
+        const displayProject = (p, container, level, projectFrom, fullDiff) => {
             const row = document.createElement('tr'),
                 left = document.createElement('th'),
                 right = document.createElement('td'),
@@ -171,9 +180,9 @@
             if (p.Children !== null) {
                 p.Children.forEach(c => displayProject(c, container, level + 1, projectFrom, fullDiff));
             }
-        }
+        };
 
-        function toggleSubprojects(project) {
+        const toggleSubprojects = (project) => {
             const tr = project.parentElement.parentElement,
                 tbody = tr.parentElement;
 
@@ -196,9 +205,9 @@
                     cur.style.display = hide ? 'none' : 'table-row';
                 }
             }
-        }
+        };
 
-        function buildControl(roadmap, control) {
+        const buildControl = (roadmap, control) => {
             const toggleBtn = document.createElement('button'),
                 clearIcon = document.createElement('i'),
                 levels = document.querySelectorAll('.level'),
@@ -215,7 +224,7 @@
 
             control.appendChild(toggleBtn);
 
-            toggleBtn.addEventListener('click',event => {
+            toggleBtn.addEventListener('click', event => {
                 event.preventDefault();
 
                 let hide = true;
@@ -230,46 +239,127 @@
 
                 level1s.forEach(elem => elem.style.display = 'table-row');
             });
-
-            // clearBtn.click();
         }
 
         buildTable(roadmap, table);
 
         buildControl(roadmap, control);
-    }
+    };
 
-    function nav() {
-        const dashboard = document.getElementById('roadmap-dashboard'),
-            sections = document.querySelectorAll('.section'),
-            links = document.querySelectorAll('a.nav-link');
+    window.addEventListener('DOMContentLoaded', () => {
+        const txt = document.getElementById('txt');
 
-        sections.forEach(section => section.style.display = 'none');
+        if (!roadmap || !roadmap.Children) {
+            $('#roadmap-dashboard, .roadmap-dashboard-link').remove();
+        } else {
+            refreshRoadmap();
+        }
 
-        dashboard.style.display = 'block';
+        txt.addEventListener('paste', e => {
+            let lines = (e.clipboardData || window.clipboardData).getData('text').split("\n");
 
-        links.forEach(link => {
-            link.addEventListener('click', _ => {
-                const id = link.getAttribute('href').substr(1);
+            // Remove empty lines from the top
+            while (lines.length > 0 && lines[0].trim() === "") {
+                lines.shift();
+            }
 
-                sections.forEach(section => section.style.display = 'none');
+            if (lines.length === 0) {
+                return handleError('empty lines');
+            }
 
-                document.getElementById(id).style.display = 'block';
+            // Find out if all lines are indented
+            const ws = lines[0].match(/^\s+/g),
+                ind = ws.length === 0 ? '' : ws[0],
+                allIndented =
+                    ind.length === 0 ||
+                    lines.every(line => {
+                        return line.indexOf(ind) === 0;
+                    });
 
-                links.forEach(l => l.classList.remove('active'));
-                link.classList.add('active');
-            })
-        })
-    }
+            if (!allIndented) {
+                return handleError('not all indented');
+            }
 
-    window.addEventListener('DOMContentLoaded', function () {
-        refreshRoadmap();
-        nav();
+            // Remove common indentation
+            if (ind.length > 0) {
+                for (const x in lines) {
+                    lines[x] = lines[x].substr(ind.length).trimRight();
+                }
+            }
+
+            // Find the indentation of the first indented line
+            let t;
+            for (const line of lines) {
+                const m = line.match(/^\s+/g);
+                if (m && m.length) {
+                    t = m[0];
+                    break;
+                }
+            }
+
+            // Turn indentation into tabs
+            let val = lines.join("\n");
+            if (t !== "\t") {
+                val = val.replace(new RegExp(`${t}`, 'g'), "\t");
+            }
+
+            txt.value = val;
+
+            e.preventDefault();
+        });
+
+        txt.addEventListener('keydown', e => {
+            const
+                start = (text, start) => {
+                    const prevNL = text.substr(0, start).lastIndexOf("\n");
+
+                    if (prevNL >= 0) {
+                        return prevNL;
+                    }
+
+                    return 0;
+                },
+                end = (text, end) => {
+                    const nextNL = text.substr(end).indexOf("\n");
+
+                    if (nextNL >= 0) {
+                        return end + nextNL;
+                    }
+
+                    return end;
+                },
+                shift = (text, hasShift) => {
+                    if (hasShift) {
+                        return text.replace(/\n\t/g, "\n");
+                    }
+
+                    return text.replace(/\n/g, "\n\t");
+                };
+
+            if (e.key !== 'Tab') {
+                return;
+            }
+
+            const val = txt.value,
+                s0 = txt.selectionStart,
+                e0 = txt.selectionEnd,
+                s1 = start(val, s0),
+                e1 = end(val, e0),
+                v0 = val.substring(s1, e1),
+                v1 = shift(v0, e.shiftKey);
+
+            txt.value = val.substring(0, s1) + v1 + val.substring(e1);
+
+            txt.selectionStart = s1 + 1;
+            txt.selectionEnd = txt.selectionStart + v1.length - 1;
+
+            e.preventDefault();
+        });
 
         $('[data-toggle="tooltip"]').tooltip();
     });
 
-    window.addEventListener('resize', function () {
+    window.addEventListener('resize', () => {
         refreshTimeline();
     });
 })();

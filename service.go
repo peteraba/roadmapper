@@ -23,6 +23,7 @@ func Serve(port uint, certFile, keyFile string, rw ReadWriter, cb CodeBuilder) {
 
 	e.Static("/static", "static")
 
+	e.GET("/", createNewRoadmap())
 	e.GET("/:identifier", createGetRoadmap(rw, cb))
 	e.POST("/:identifier", createPostRoadmap(rw, cb))
 
@@ -35,13 +36,25 @@ func Serve(port uint, certFile, keyFile string, rw ReadWriter, cb CodeBuilder) {
 
 	// Wait for interrupt signal to gracefully shutdown the server with
 	// a timeout of 10 seconds.
-	quit := make(chan os.Signal)
+	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := e.Shutdown(ctx); err != nil {
 		e.Logger.Fatal(err)
+	}
+}
+
+func createNewRoadmap() func(c echo.Context) error {
+	return func(c echo.Context) error {
+		output, err := html([]string{})
+		if err != nil {
+			log.Print(err)
+			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))
+		}
+
+		return c.HTML(http.StatusOK, output)
 	}
 }
 
@@ -57,9 +70,7 @@ func createGetRoadmap(rw ReadWriter, cb CodeBuilder) func(c echo.Context) error 
 
 		lines, err := rw.Read(code)
 		if err != nil {
-			log.Print(err)
-			// TODO: Proper 404 check
-			// TODO: Proper 404 message
+			log.Printf("%v", err)
 			return c.HTML(http.StatusNotFound, fmt.Sprintf("%v", err))
 		}
 
@@ -83,15 +94,17 @@ func createPostRoadmap(rw ReadWriter, cb CodeBuilder) func(c echo.Context) error
 			return c.HTML(http.StatusBadRequest, fmt.Sprintf("%v", err))
 		}
 
-		content := c.FormValue("roadmap")
+		content := c.FormValue("txt")
 
-		err = rw.Write(cb, code, content)
+		newCode, err := rw.Write(cb, code, content)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))
 		}
 
-		return c.Redirect(http.StatusSeeOther, c.Request().URL.String())
+		newURL := fmt.Sprintf("/%s", newCode.String())
+
+		return c.Redirect(http.StatusSeeOther, newURL)
 	}
 }
 

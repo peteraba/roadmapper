@@ -90,14 +90,6 @@ func TestCode64_String(t *testing.T) {
 	})
 }
 
-func TestNewCode64(t *testing.T) {
-	t.Run("valid", func(t *testing.T) {
-		if got := NewCode64(); int64(got) < 0 || int64(got) > maxCode64 {
-			t.Errorf("NewCode64() is invalid: %v", got)
-		}
-	})
-}
-
 func Test_toCode64(t *testing.T) {
 	type args struct {
 		n int64

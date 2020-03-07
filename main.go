@@ -21,9 +21,9 @@ func main() {
 				Aliases: []string{"s"},
 				Usage:   "start server",
 				Flags: []cli.Flag{
-					&cli.UintFlag{Name: "port", Aliases: []string{"p"}},
-					&cli.StringFlag{Name: "cert", Aliases: []string{"c"}},
-					&cli.StringFlag{Name: "key", Aliases: []string{"k"}},
+					&cli.UintFlag{Name: "port", Aliases: []string{"p"}, Value: 0, EnvVars: []string{"PORT"}},
+					&cli.StringFlag{Name: "cert", Aliases: []string{"c"}, EnvVars: []string{"SSH_CERT"}},
+					&cli.StringFlag{Name: "key", Aliases: []string{"k"}, EnvVars: []string{"SSH_KEY"}},
 					&cli.StringFlag{Name: "dbHost", Usage: "database host", Value: "localhost", EnvVars: []string{"DB_HOST"}},
 					&cli.StringFlag{Name: "dbPort", Usage: "database port", Value: "5432", EnvVars: []string{"DB_PORT"}},
 					&cli.StringFlag{Name: "dbName", Usage: "database name", Value: "rdmp", EnvVars: []string{"DB_NAME"}},
@@ -31,8 +31,14 @@ func main() {
 					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
 				},
 				Action: func(c *cli.Context) error {
-					rw := CreateReadWriter(c.String("dbHost"), c.String("dbPort"), c.String("dbName"), c.String("dbUser"), c.String("dbPass"))
-					Serve(0, "", "", rw, cb)
+					rw := CreateReadWriter(
+						c.String("dbHost"),
+						c.String("dbPort"),
+						c.String("dbName"),
+						c.String("dbUser"),
+						c.String("dbPass"),
+					)
+					Serve(c.Uint("port"), c.String("cert"), c.String("key"), rw, cb)
 					return nil
 				},
 			},
@@ -49,7 +55,13 @@ func main() {
 					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
 				},
 				Action: func(c *cli.Context) error {
-					rw := CreateReadWriter(c.String("dbHost"), c.String("dbPort"), c.String("dbName"), c.String("dbUser"), c.String("dbPass"))
+					rw := CreateReadWriter(
+						c.String("dbHost"),
+						c.String("dbPort"),
+						c.String("dbName"),
+						c.String("dbUser"),
+						c.String("dbPass"),
+					)
 					err := Render(rw, cb, c.String("identifier"))
 					return err
 				},

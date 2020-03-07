@@ -8,13 +8,14 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/go-pg/pg"
 )
 
 type ReadWriter interface {
 	Read(code Code) ([]string, error)
-	Write(cb CodeBuilder, code Code, content string) error
+	Write(cb CodeBuilder, code Code, content string) (Code, error)
 }
 
 func CreateReadWriter(dbHost, dbPort, dbName, dbUser, dbPass string) ReadWriter {
@@ -40,9 +41,10 @@ type DbReadWriter struct {
 }
 
 type roadmap struct {
-	Id     int64
-	PrevId int64
-	Txt    string
+	Id        int64
+	PrevId    int64
+	Txt       string
+	UpdatedAt time.Time
 }
 
 func (d DbReadWriter) Read(code Code) ([]string, error) {
@@ -56,34 +58,40 @@ func (d DbReadWriter) Read(code Code) ([]string, error) {
 		return nil, err
 	}
 
+	r.UpdatedAt = time.Now()
+	err = db.Update(r)
+	if err != nil {
+		return nil, err
+	}
+
 	return strings.Split(r.Txt, "\n"), nil
 }
 
-func (d DbReadWriter) Write(cb CodeBuilder, code Code, content string) error {
+func (d DbReadWriter) Write(cb CodeBuilder, code Code, content string) (Code, error) {
 	db := pg.Connect(d.pgOptions)
 	defer db.Close()
 
 	// we must find a code that does not yet exist
-	var newCode Code
-	var found bool
-	for {
-		newCode = cb.New()
+	newCode := cb.New()
+	found := false
+	for i := 0; i < 100; i++ {
 		_, err := d.Read(newCode)
 		if err != nil {
 			found = true
 			break
 		}
+		newCode = cb.New()
 	}
 
 	if !found {
-		return errors.New("no new code found during insert")
+		return nil, errors.New("no new code found during insert")
 	}
 
 	r := &roadmap{Id: newCode.ID(), PrevId: code.ID(), Txt: content}
 
 	err := db.Insert(r)
 
-	return err
+	return newCode, err
 }
 
 type FileReadWriter struct {
@@ -109,9 +117,9 @@ func (f FileReadWriter) Read(code Code) ([]string, error) {
 	return lines, nil
 }
 
-func (f FileReadWriter) Write(cb CodeBuilder, code Code, content string) error {
+func (f FileReadWriter) Write(cb CodeBuilder, code Code, content string) (Code, error) {
 	d1 := []byte(content)
 	err := ioutil.WriteFile(code.String(), d1, 0644)
 
-	return err
+	return code, err
 }

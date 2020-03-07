@@ -1,6 +1,6 @@
 build:
-	#golangci-lint run
-	#go test .
+	golangci-lint run
+	go test .
 	mkdir -p ./airtmp
 	go build -o ./build/roadmapper .
 
