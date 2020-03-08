@@ -11,6 +11,7 @@ require (
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
 	github.com/mattn/go-runewidth v0.0.8 // indirect
+	github.com/peteraba/go-svg v0.0.0-20200308201636-0f5abca4c589
 	github.com/urfave/cli/v2 v2.1.1
 	gopkg.in/yaml.v2 v2.2.4 // indirect
 )
