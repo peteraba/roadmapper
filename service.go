@@ -80,7 +80,7 @@ func createGetRoadRoadmapSVG(rw ReadWriter, cb CodeBuilder, dateFormat string) f
 			return c.HTML(http.StatusInternalServerError, fmt.Sprintf("%v", err))
 		}
 
-		svg := createSvgHeader(roadmap.From, roadmap.To, float64(w), float64(h), dateFormat)
+		svg := createSvg(roadmap, float64(w), float64(h), dateFormat)
 
 		return c.XML(http.StatusOK, svg)
 	}
