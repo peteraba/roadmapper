@@ -2,7 +2,6 @@ CREATE TABLE "roadmaps" (
     "id" bigint NOT NULL,
     "prev_id" bigint NULL,
     "txt" text NOT NULL,
-    "svg" text NULL,
     "created_at" timestamp NOT NULL DEFAULT NOW(),
     "updated_at" timestamp NOT NULL DEFAULT NOW()
 );
