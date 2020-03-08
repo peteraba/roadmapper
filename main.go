@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"time"
@@ -29,6 +30,7 @@ func main() {
 					&cli.StringFlag{Name: "dbName", Usage: "database name", Value: "rdmp", EnvVars: []string{"DB_NAME"}},
 					&cli.StringFlag{Name: "dbUser", Usage: "database user", Value: "rdmp", EnvVars: []string{"DB_USER"}},
 					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
+					&cli.StringFlag{Name: "dateFormat", Usage: "date format", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
 				},
 				Action: func(c *cli.Context) error {
 					rw := CreateReadWriter(
@@ -38,7 +40,7 @@ func main() {
 						c.String("dbUser"),
 						c.String("dbPass"),
 					)
-					Serve(c.Uint("port"), c.String("cert"), c.String("key"), rw, cb)
+					Serve(c.Uint("port"), c.String("cert"), c.String("key"), rw, cb, c.String("dateFormat"))
 					return nil
 				},
 			},
@@ -53,6 +55,7 @@ func main() {
 					&cli.StringFlag{Name: "dbName", Usage: "database name", Value: "rdmp", EnvVars: []string{"DB_NAME"}},
 					&cli.StringFlag{Name: "dbUser", Usage: "database user", Value: "rdmp", EnvVars: []string{"DB_USER"}},
 					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
+					&cli.StringFlag{Name: "dateFormat", Usage: "dateFormat", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
 				},
 				Action: func(c *cli.Context) error {
 					rw := CreateReadWriter(
@@ -62,8 +65,15 @@ func main() {
 						c.String("dbUser"),
 						c.String("dbPass"),
 					)
-					err := Render(rw, cb, c.String("identifier"))
-					return err
+					output, err := Render(rw, cb, c.String("identifier"), c.String("dateFormat"))
+					if err != nil {
+						log.Print(err)
+						return err
+					}
+
+					fmt.Println(output)
+
+					return nil
 				},
 			},
 			{

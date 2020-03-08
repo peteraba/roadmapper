@@ -31,8 +31,6 @@ type Project struct {
 	URL        string
 }
 
-const dateFormat = "2006-01-02"
-
 type internalProject struct {
 	Title        string
 	from         *time.Time
@@ -105,7 +103,7 @@ func (p internalProject) String() string {
 	return string(b)
 }
 
-func parseRoadmap(lines []string) (*internalProject, error) {
+func parseRoadmap(lines []string, dateFormat string) (*internalProject, error) {
 	var (
 		err                error
 		roadmap                  = internalProject{}
@@ -119,7 +117,7 @@ func parseRoadmap(lines []string) (*internalProject, error) {
 			continue
 		}
 
-		currentProject, currentIndentation, err = createProject(line, currentProject, currentIndentation, &colorNum)
+		currentProject, currentIndentation, err = createProject(line, currentProject, currentIndentation, &colorNum, dateFormat)
 		if err != nil {
 			return nil, err
 		}
@@ -137,11 +135,11 @@ func parseRoadmap(lines []string) (*internalProject, error) {
 	return &roadmap, nil
 }
 
-func createProject(line string, previousProject *internalProject, parentIndentation int, colorNum *uint8) (*internalProject, int, error) {
+func createProject(line string, previousProject *internalProject, parentIndentation int, colorNum *uint8, dateFormat string) (*internalProject, int, error) {
 	trimmed := strings.TrimLeft(line, "\t")
 	lineIndentation := len(line) - len(trimmed)
 
-	newProject, err := parseProject(trimmed, colorNum)
+	newProject, err := parseProject(trimmed, colorNum, dateFormat)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -166,7 +164,7 @@ func createProject(line string, previousProject *internalProject, parentIndentat
 	return newProject, lineIndentation, nil
 }
 
-func parseProject(trimmed string, colorNum *uint8) (*internalProject, error) {
+func parseProject(trimmed string, colorNum *uint8, dateFormat string) (*internalProject, error) {
 	res := roadmapRegexp.FindAllSubmatch([]byte(trimmed), -1)
 
 	if res == nil {
@@ -192,7 +190,7 @@ func parseProject(trimmed string, colorNum *uint8) (*internalProject, error) {
 			break
 		}
 
-		f, t, u, p, c = parseProjectExtra(parts[i], f, t, u, p, c)
+		f, t, u, p, c = parseProjectExtra(parts[i], f, t, u, p, c, dateFormat)
 	}
 
 	if (reflect.DeepEqual(c, color.RGBA{})) {
@@ -202,7 +200,7 @@ func parseProject(trimmed string, colorNum *uint8) (*internalProject, error) {
 	return &internalProject{Title: title, from: f, to: t, color: c, percentage: p, url: u}, nil
 }
 
-func parseProjectExtra(part string, f, t *time.Time, u string, p uint8, c color.Color) (*time.Time, *time.Time, string, uint8, color.Color) {
+func parseProjectExtra(part string, f, t *time.Time, u string, p uint8, c color.Color, dateFormat string) (*time.Time, *time.Time, string, uint8, color.Color) {
 	t2, err := time.Parse(dateFormat, part)
 	if err == nil {
 		if f == nil {
@@ -267,18 +265,18 @@ func parsePercentage(part string) (uint8, error) {
 	return 0, errors.New("invalid uint8 string")
 }
 
-func parseColor(part string) (color.Color, error) {
+func parseColor(part string) (color.RGBA, error) {
 	if len(part) != 4 && len(part) != 7 {
-		return nil, errors.New("invalid hexa color length")
+		return color.RGBA{}, errors.New("invalid hexa color length")
 	}
 
 	if part[0] != '#' {
-		return nil, errors.New("invalid first character for hexa color")
+		return color.RGBA{}, errors.New("invalid first character for hexa color")
 	}
 
 	s, err := charsToUint8(part[1:])
 	if err != nil {
-		return nil, err
+		return color.RGBA{}, err
 	}
 
 	return color.RGBA{R: s[0], G: s[1], B: s[2], A: 255}, nil

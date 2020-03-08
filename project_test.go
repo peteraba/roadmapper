@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+const dateFormat = "2006-01-02"
+
 func Test_charsToUint8(t *testing.T) {
 	type args struct {
 		part string
@@ -173,7 +175,7 @@ func Test_createProject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got1, got2, err := createProject(tt.args.line, tt.args.previousProject, tt.args.pi, tt.args.colorNum)
+			got1, got2, err := createProject(tt.args.line, tt.args.previousProject, tt.args.pi, tt.args.colorNum, dateFormat)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("createProject() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -370,19 +372,19 @@ func Test_parseColor(t *testing.T) {
 		{
 			name:    "332133",
 			args:    args{part: "332133"},
-			want:    nil,
+			want:    color.RGBA{},
 			wantErr: true,
 		},
 		{
 			name:    "#33",
 			args:    args{part: "#33"},
-			want:    nil,
+			want:    color.RGBA{},
 			wantErr: true,
 		},
 		{
 			name:    "#33213",
 			args:    args{part: "#33213"},
-			want:    nil,
+			want:    color.RGBA{},
 			wantErr: true,
 		},
 	}
@@ -557,7 +559,7 @@ func Test_parseProject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseProject(tt.args.trimmed, tt.args.colorNum)
+			got, err := parseProject(tt.args.trimmed, tt.args.colorNum, dateFormat)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseProject() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -654,7 +656,7 @@ func Test_parseRoadmap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseRoadmap(tt.args.lines)
+			got, err := parseRoadmap(tt.args.lines, dateFormat)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseRoadmap() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -914,7 +916,7 @@ func Test_parseProjectExtra(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, got3, got4 := parseProjectExtra(tt.args.part, tt.args.f, tt.args.t, tt.args.u, tt.args.p, tt.args.c)
+			got, got1, got2, got3, got4 := parseProjectExtra(tt.args.part, tt.args.f, tt.args.t, tt.args.u, tt.args.p, tt.args.c, dateFormat)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("parseProjectExtra() got = %v, want %v", got, tt.want)
 			}
