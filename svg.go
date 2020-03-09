@@ -9,7 +9,9 @@ import (
 func createSvg(roadmap Project, width, height float64, dateFormat string) svg.SVG {
 	var children []interface{}
 
-	children = append(children, createSvgHeader(roadmap.From, roadmap.To, width, height, 0, 0, dateFormat)...)
+	if roadmap.IsPlanned() {
+		children = append(children, createSvgHeader(roadmap.Dates.Start, roadmap.Dates.End, width, height, 0, 0, dateFormat)...)
+	}
 
 	return svg.NewSVG(width, height, children...)
 }

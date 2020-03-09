@@ -1,13 +1,13 @@
 export const refreshTimeline = () => {
     const drawing = document.getElementById('drawing');
 
-    if (!drawing || !drawing.dataset || !drawing.dataset.from || !drawing.dataset.to) {
+    if (!drawing || !drawing.dataset || !drawing.dataset.start || !drawing.dataset.end) {
         return;
     }
 
     const h = 75,
-        projectFrom = new Date(drawing.dataset.from),
-        projectTo = new Date(drawing.dataset.to),
+        projectStart = new Date(drawing.dataset.start),
+        projectEnd = new Date(drawing.dataset.end),
         lineColor = window.getComputedStyle(drawing, null).borderColor,
         textColor = window.getComputedStyle(drawing, null).color;
 
@@ -20,7 +20,7 @@ export const refreshTimeline = () => {
             today = new Date(),
             pink = '#f88',
             red = '#f33',
-            left = (today.getTime() - projectFrom.getTime()) / (projectTo.getTime() - projectFrom.getTime()) * w;
+            left = (today.getTime() - projectStart.getTime()) / (projectEnd.getTime() - projectStart.getTime()) * w;
 
         draw = SVG().addTo(drawing).size(w, h);
 
@@ -31,17 +31,17 @@ export const refreshTimeline = () => {
         // first day
         line = draw.line(0, 0, 0, 10).move(10, 35);
         line.stroke({color: textColor, width: 2});
-        text = draw.text(projectFrom.toLocaleDateString());
+        text = draw.text(projectStart.toLocaleDateString());
         text.move(5, 10).font({});
 
         // last day
         line = draw.line(0, 0, 0, 10).move(w - 10, 35);
         line.stroke({color: textColor, width: 2});
-        text = draw.text(projectTo.toLocaleDateString());
+        text = draw.text(projectEnd.toLocaleDateString());
         text.move(w - 5, 10).font({anchor: 'end'});
 
         // today
-        if (projectFrom.getTime() < today.getTime() && projectTo.getTime() > today.getTime()) {
+        if (projectStart.getTime() < today.getTime() && projectEnd.getTime() > today.getTime()) {
             line = draw.line(0, 0, 0, h).move(left, 0);
             line.stroke({color: pink, width: 1});
             text = draw.text(today.toLocaleDateString());
@@ -60,21 +60,21 @@ export const refreshProjects = () => {
         const
             thead = document.createElement('thead'),
             tbody = document.createElement('tbody'),
-            projectFrom = new Date(p.From),
-            projectTo = new Date(p.To),
-            fullDiff = projectTo.getTime() - projectFrom.getTime();
+            projectStart = new Date(p.Dates.Start),
+            projectEnd = new Date(p.Dates.End),
+            fullDiff = projectEnd.getTime() - projectStart.getTime();
 
         container.appendChild(thead);
         container.appendChild(tbody);
 
-        displayHeader(p, thead, p.From, p.To);
+        displayHeader(p, thead, p.Dates.Start, p.Dates.End);
 
         if (p.Children !== null) {
-            p.Children.forEach(c => displayProject(c, tbody, 1, projectFrom, fullDiff));
+            p.Children.forEach(c => displayProject(c, tbody, 1, projectStart, fullDiff));
         }
     };
 
-    const displayHeader = (p, container, projectFrom, projectTo) => {
+    const displayHeader = (p, container, projectStart, projectEnd) => {
         const row = document.createElement('tr'),
             left = document.createElement('th'),
             right = document.createElement('th'),
@@ -87,8 +87,8 @@ export const refreshProjects = () => {
         row.appendChild(right);
 
         drawing.id = 'drawing';
-        drawing.dataset.from = projectFrom;
-        drawing.dataset.to = projectTo;
+        drawing.dataset.start = projectStart;
+        drawing.dataset.end = projectEnd;
 
         right.append(drawing);
         right.classList.add('timeline');
@@ -100,20 +100,20 @@ export const refreshProjects = () => {
         refreshTimeline();
     };
 
-    const displayProject = (p, container, level, projectFrom, fullDiff) => {
+    const displayProject = (p, container, level, projectStart, fullDiff) => {
         const row = document.createElement('tr'),
             left = document.createElement('th'),
             right = document.createElement('td'),
             projectTitle = document.createElement('span'),
             projectContainer = document.createElement('div'),
             projectBar = document.createElement('div'),
-            from = new Date(p.From),
-            to = new Date(p.To),
-            diff = to.getTime() - from.getTime(),
+            start = new Date(p.Dates.Start),
+            end = new Date(p.Dates.End),
+            diff = end.getTime() - start.getTime(),
             durationDays = diff / 86400000,
             w = diff / fullDiff * 100,
-            l = (from.getTime() - projectFrom.getTime()) / fullDiff * 100,
-            tooltip = `${p.Percentage}%, ${from.toLocaleDateString()} - ${to.toLocaleDateString()}, ${durationDays} days`;
+            l = (start.getTime() - projectStart.getTime()) / fullDiff * 100,
+            tooltip = `${p.Percentage}%, ${start.toLocaleDateString()} - ${end.toLocaleDateString()}, ${durationDays} days`;
 
         let nbsp, a, i;
 
@@ -173,7 +173,7 @@ export const refreshProjects = () => {
         container.appendChild(row);
 
         if (p.Children !== null) {
-            p.Children.forEach(c => displayProject(c, container, level + 1, projectFrom, fullDiff));
+            p.Children.forEach(c => displayProject(c, container, level + 1, projectStart, fullDiff));
         }
     };
 

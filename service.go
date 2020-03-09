@@ -220,7 +220,7 @@ func linesToRoadmap(lines []string, dateFormat string) (Project, error) {
 		return Project{}, err
 	}
 
-	return roadmap.ToPublic(roadmap.GetFrom(), roadmap.GetTo()), nil
+	return roadmap.ToPublic(roadmap.GetStart(), roadmap.GetEnd()), nil
 }
 
 func Random(cb CodeBuilder, count int) error {

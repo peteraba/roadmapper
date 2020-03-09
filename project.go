@@ -21,51 +21,59 @@ func init() {
 	roadmapRegexp = regexp.MustCompile(`^([^\]]*)(\s*\[(.*)\]\s*)?$`)
 }
 
+type Dates struct {
+	Start time.Time
+	End   time.Time
+}
+
 type Project struct {
 	Title      string
-	From       time.Time
-	To         time.Time
+	Dates      *Dates
 	Children   []Project
 	Color      color.Color
 	Percentage uint8
 	URL        string
 }
 
+func (p Project) IsPlanned() bool {
+	return p.Dates != nil
+}
+
 type internalProject struct {
-	Title        string
-	from         *time.Time
-	to           *time.Time
-	parent       *internalProject
-	color        color.Color
-	percentage   uint8
-	url          string
-	children     []*internalProject
-	childrenFrom *time.Time
-	childrenTo   *time.Time
+	Title         string
+	start         *time.Time
+	end           *time.Time
+	parent        *internalProject
+	color         color.Color
+	percentage    uint8
+	url           string
+	children      []*internalProject
+	childrenStart *time.Time
+	childrenEnd   *time.Time
 }
 
-func (p internalProject) GetFrom() time.Time {
-	if p.from != nil {
-		return *p.from
+func (p internalProject) GetStart() *time.Time {
+	if p.start != nil {
+		return p.start
 	}
 
-	if p.childrenFrom != nil {
-		return *p.childrenFrom
+	if p.childrenStart != nil {
+		return p.childrenStart
 	}
 
-	return time.Time{}
+	return nil
 }
 
-func (p internalProject) GetTo() time.Time {
-	if p.to != nil {
-		return *p.to
+func (p internalProject) GetEnd() *time.Time {
+	if p.end != nil {
+		return p.end
 	}
 
-	if p.childrenTo != nil {
-		return *p.childrenTo
+	if p.childrenEnd != nil {
+		return p.childrenEnd
 	}
 
-	return time.Time{}
+	return nil
 }
 
 func (p internalProject) GetChildren() []*internalProject {
@@ -84,18 +92,38 @@ func (p internalProject) GetURL() string {
 	return p.url
 }
 
-func (p *internalProject) ToPublic(roadmapFrom, roadmapTo time.Time) Project {
-	res := Project{Title: p.Title, From: p.GetFrom(), To: p.GetTo(), Color: p.GetColor(), Percentage: p.GetPercentage(), URL: p.GetURL()}
+func (p *internalProject) ToPublic(roadmapStart, roadmapEnd *time.Time) Project {
+	project := Project{Title: p.Title, Color: p.GetColor(), Percentage: p.GetPercentage(), URL: p.GetURL()}
+	project.Dates = p.GetDates()
 
 	for _, c := range p.GetChildren() {
-		res.Children = append(res.Children, c.ToPublic(roadmapFrom, roadmapTo))
+		project.Children = append(project.Children, c.ToPublic(roadmapStart, roadmapEnd))
 	}
 
-	return res
+	return project
+}
+
+func (p *internalProject) GetDates() *Dates {
+	if p.start == nil && p.childrenStart == nil {
+		return nil
+	}
+	if p.end == nil && p.childrenEnd == nil {
+		return nil
+	}
+
+	s, e := p.start, p.end
+	if s == nil {
+		s = p.childrenStart
+	}
+	if e == nil {
+		e = p.childrenEnd
+	}
+
+	return &Dates{Start: *s, End: *e}
 }
 
 func (p internalProject) String() string {
-	b, err := json.Marshal(p.ToPublic(p.GetFrom(), p.GetTo()))
+	b, err := json.Marshal(p.ToPublic(p.GetStart(), p.GetEnd()))
 	if err != nil {
 		return ""
 	}
@@ -178,11 +206,11 @@ func parseProject(trimmed string, colorNum *uint8, dateFormat string) (*internal
 	parts := strings.Split(string(res[0][3]), ", ")
 
 	var (
-		title = strings.Trim(string(res[0][1]), " ")
-		f, t  *time.Time
-		u     string
-		p     uint8       = 100
-		c     color.Color = color.RGBA{}
+		title      = strings.Trim(string(res[0][1]), " ")
+		start, end *time.Time
+		u          string
+		p          uint8       = 100
+		c          color.Color = color.RGBA{}
 	)
 
 	for i := 0; i < len(parts); i++ {
@@ -190,14 +218,14 @@ func parseProject(trimmed string, colorNum *uint8, dateFormat string) (*internal
 			break
 		}
 
-		f, t, u, p, c = parseProjectExtra(parts[i], f, t, u, p, c, dateFormat)
+		start, end, u, p, c = parseProjectExtra(parts[i], start, end, u, p, c, dateFormat)
 	}
 
 	if (reflect.DeepEqual(c, color.RGBA{})) {
 		c = getNextColor(colorNum)
 	}
 
-	return &internalProject{Title: title, from: f, to: t, color: c, percentage: p, url: u}, nil
+	return &internalProject{Title: title, start: start, end: end, color: c, percentage: p, url: u}, nil
 }
 
 func parseProjectExtra(part string, f, t *time.Time, u string, p uint8, c color.Color, dateFormat string) (*time.Time, *time.Time, string, uint8, color.Color) {
@@ -309,50 +337,43 @@ func charsToUint8(part string) ([3]uint8, error) {
 
 func setChildrenDates(p *internalProject) (*time.Time, *time.Time, error) {
 	if len(p.children) == 0 {
-		if p.from == nil || p.to == nil {
-			return nil, nil, fmt.Errorf("project needs starting and ending dates: %s", p.Title)
-		}
-		if p.to.Sub(*p.from) < 0 {
+		if p.end != nil && p.start != nil && p.end.Sub(*p.start) < 0 {
 			return nil, nil, fmt.Errorf("starting must not be before ending date: %s", p.Title)
 		}
 
-		return p.from, p.to, nil
+		return p.start, p.end, nil
 	}
 
-	var minF, maxT *time.Time
-
-	tmpF := time.Date(3000, 0, 0, 0, 0, 0, 0, time.UTC)
-	minF = &tmpF
-
-	tmpT := time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC)
-	maxT = &tmpT
+	var minStart, maxEnd *time.Time
 
 	for _, c := range p.children {
-		f, t, err := setChildrenDates(c)
+		start, end, err := setChildrenDates(c)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		if minF.Sub(*f) > 0 {
-			minF = f
-		}
-		if maxT.Sub(*t) < 0 {
-			maxT = t
+		if start != nil && end != nil {
+			if minStart == nil || minStart.Sub(*start) > 0 {
+				minStart = start
+			}
+			if maxEnd == nil || maxEnd.Sub(*end) < 0 {
+				maxEnd = end
+			}
 		}
 	}
 
-	p.childrenFrom = minF
-	p.childrenTo = maxT
+	p.childrenStart = minStart
+	p.childrenEnd = maxEnd
 
-	if p.from != nil && p.from != p.childrenFrom {
+	if p.start != nil && p.start != p.childrenStart {
 		return nil, nil, fmt.Errorf("project from date does not match calculated value: %s", p.Title)
 	}
 
-	if p.to != nil && p.to != p.childrenTo {
+	if p.end != nil && p.end != p.childrenEnd {
 		return nil, nil, fmt.Errorf("project from date does not match calculated value: %s", p.Title)
 	}
 
-	return minF, maxT, nil
+	return minStart, maxEnd, nil
 }
 
 func getNextColor(colorNum *uint8) color.Color {
