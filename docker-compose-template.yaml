@@ -9,7 +9,23 @@ services:
       POSTGRES_DB: rdmp
       POSTGRES_USER: rdmp
       POSTGRES_PASSWORD:
+      TZ: "Europe/Berlin"
     volumes:
       - ./data:/var/lib/postgresql/data
     ports:
       - 6532:5432
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 6533:8080
+
+  roadmapper:
+    image: peteraba/roadmapper:latest
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_PASS:
+    ports:
+      - 6534:1323
