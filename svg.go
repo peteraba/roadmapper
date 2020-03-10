@@ -15,59 +15,59 @@ func createSvg(roadmap Project, fullWidth, headerHeight float64, dateFormat stri
 	var elements []interface{}
 
 	if roadmap.IsPlanned() {
-		elements = append(elements, createSvgHeader(roadmap.Dates.Start, roadmap.Dates.End, fullWidth/3*2, headerHeight, fullWidth/3, 0, dateFormat)...)
+		elements = append(elements, createSvgHeader(roadmap.Dates.Start, roadmap.Dates.End, fullWidth/3*2, headerHeight, fullWidth/3, 0, dateFormat))
 		roadmapDy += headerHeight
 	}
 
-	roadmapElements, roadmapDy := createSvgRoadmap(roadmap, fullWidth, roadmapDy, lineHeight, dateFormat)
+	svgRoadmap, roadmapDy := createSvgRoadmap(roadmap, fullWidth, roadmapDy, lineHeight, dateFormat)
 
-	elements = append(elements, roadmapElements...)
+	elements = append(elements, svgRoadmap)
 
 	if roadmap.IsPlanned() {
-		elements = append(elements, createSvgTableLines(fullWidth, roadmapDy, fullWidth/3, headerHeight)...)
+		elements = append(elements, createSvgTableLines(fullWidth, roadmapDy, fullWidth/3, headerHeight))
 	}
 
 	return svg.NewSVG(fullWidth, roadmapDy, elements...)
 }
 
-func createSvgHeader(start, end time.Time, width, height, dx, dy float64, dateFormat string) []interface{} {
+func createSvgHeader(start, end time.Time, width, height, dx, dy float64, dateFormat string) svg.Group {
 	var elements []interface{}
 
 	elements = append(elements, createSvgHeaderLines(width, height, dx, dy))
 	elements = append(elements, createSvgHeaderDates(start, end, width, height, dx, dy, dateFormat))
 	elements = append(elements, createSvgHeaderToday(start, end, width, height, dx, dy, dateFormat))
 
-	return elements
+	return svg.NewGroup(elements)
 }
 
-func createSvgHeaderLines(width, height, dx, dy float64) []interface{} {
+func createSvgHeaderLines(width, height, dx, dy float64) svg.Group {
 	var elements []interface{}
 
-	strokeColor1, _ := svg.ParseHexaColor("#212529")
-	elements = append(elements, svg.NewLine(width-10+dx, (height/2)-5+dy, width-10+dx, (height/2)+5+dy).SetStrokeWidth(2).SetStroke(strokeColor1))
-	elements = append(elements, svg.NewLine(0+dx, height/2+dy, width+dx, height/2+dy).SetStrokeWidth(2).SetStroke(strokeColor1))
-	elements = append(elements, svg.NewLine(10+dx, (height/2)-5+dy, 10+dx, (height/2)+5+dy).SetStrokeWidth(2).SetStroke(strokeColor1))
+	strokeColor1, _ := svg.ColorFromHexaString("#212529")
+	elements = append(elements, svg.L(width-10+dx, (height/2)-5+dy, width-10+dx, (height/2)+5+dy).SetStrokeWidth(2).SetStroke(strokeColor1))
+	elements = append(elements, svg.L(0+dx, height/2+dy, width+dx, height/2+dy).SetStrokeWidth(2).SetStroke(strokeColor1))
+	elements = append(elements, svg.L(10+dx, (height/2)-5+dy, 10+dx, (height/2)+5+dy).SetStrokeWidth(2).SetStroke(strokeColor1))
 
-	return elements
+	return svg.NewGroup(elements)
 }
 
-func createSvgHeaderDates(start, end time.Time, width, height, dx, dy float64, dateFormat string) []interface{} {
+func createSvgHeaderDates(start, end time.Time, width, height, dx, dy float64, dateFormat string) svg.Group {
 	var elements []interface{}
 
-	tspan1 := svg.NewTSpan(start.Format(dateFormat))
-	elements = append(elements, svg.NewText(12+dx, (height/2)-10+dy, tspan1))
+	tspan1 := svg.TS(start.Format(dateFormat))
+	elements = append(elements, svg.T(12+dx, (height/2)-10+dy, tspan1))
 
-	tspan2 := svg.NewTSpan(end.Format(dateFormat))
-	elements = append(elements, svg.NewText(width-12+dx, (height/2)-10+dy, tspan2).SetTextAnchor(svg.End))
+	tspan2 := svg.TS(end.Format(dateFormat))
+	elements = append(elements, svg.T(width-12+dx, (height/2)-10+dy, tspan2).SetTextAnchor(svg.End))
 
-	return elements
+	return svg.NewGroup(elements)
 }
 
-func createSvgHeaderToday(start, end time.Time, width, height, dx, dy float64, dateFormat string) []interface{} {
+func createSvgHeaderToday(start, end time.Time, width, height, dx, dy float64, dateFormat string) svg.Group {
 	var elements []interface{}
 
 	if time.Until(end) < 0 {
-		return elements
+		return svg.NewGroup()
 	}
 
 	now := time.Now()
@@ -76,69 +76,80 @@ func createSvgHeaderToday(start, end time.Time, width, height, dx, dy float64, d
 
 	pos := untilToday / startToEnd * width
 
-	strokeColor, _ := svg.ParseHexaColor("#ff8888")
-	elements = append(elements, svg.NewLine(pos+dx, 0+dy, pos+dx, height+dy).SetStrokeWidth(2).SetStroke(strokeColor))
+	strokeColor, _ := svg.ColorFromHexaString("#ff8888")
+	elements = append(elements, svg.L(pos+dx, 0+dy, pos+dx, height+dy).SetStrokeWidth(2).SetStroke(strokeColor))
 
-	fillColor, _ := svg.ParseHexaColor("#ff3333")
-	tspan3 := svg.NewTSpan(now.Format(dateFormat))
-	elements = append(elements, svg.NewText(pos+dx, (height/2)+20+dy, tspan3).SetFill(fillColor).SetTextAnchor(svg.Middle))
+	fillColor, _ := svg.ColorFromHexaString("#ff3333")
+	tspan3 := svg.TS(now.Format(dateFormat))
+	elements = append(elements, svg.T(pos+dx, (height/2)+20+dy, tspan3).SetFill(fillColor).SetTextAnchor(svg.Middle))
 
-	return elements
+	return svg.NewGroup(elements)
 }
 
-func createSvgRoadmap(roadmap Project, fullWidth, dy, lineHeight float64, dateFormat string) ([]interface{}, float64) {
+func createSvgRoadmap(roadmap Project, fullWidth, dy, lineHeight float64, dateFormat string) (svg.Group, float64) {
 	var (
-		elements, result []interface{}
+		project  svg.Group
+		projects []svg.Group
 	)
 
 	for _, p := range roadmap.Children {
-		elements, dy = createSvgProject(roadmap, p, fullWidth, dy, 10, lineHeight, 30, dateFormat)
-		result = append(result, elements)
+		project, dy = createSvgProject(roadmap, p, fullWidth, dy, 10, lineHeight, 30, dateFormat)
+		projects = append(projects, project)
 	}
 
-	return result, dy
+	return svg.NewGroup(projects), dy
 }
 
-func createSvgProject(roadmap, project Project, fullWidth, dy, dx, lineHeight, indentWidth float64, dateFormat string) ([]interface{}, float64) {
+func createSvgProject(roadmap, project Project, fullWidth, dy, dx, lineHeight, indentWidth float64, dateFormat string) (svg.Group, float64) {
 	var (
-		elements, result []interface{}
+		subProject  svg.Group
+		subProjects []interface{}
 	)
 
-	strokeColor, _ := svg.ParseHexaColor("#eee")
+	strokeColor, _ := svg.ColorFromHexaString("#eee")
 
-	result = append(result, svg.NewText(dx, dy+lineHeight/2+5, svg.NewTSpan(project.Title)))
+	subProjects = append(subProjects, svg.T(dx, dy+lineHeight/2+5, svg.TS(project.Title)))
 
-	if roadmap.IsPlanned() {
+	if project.IsPlanned() {
 		rd, pd := roadmap.Dates, project.Dates
 		rs, rw := fullWidth/3+12, fullWidth/3*2-24
 		ps := rs + (rw * pd.Start.Sub(rd.Start).Hours() / rd.End.Sub(rd.Start).Hours())
 		pe := rs + (rw * pd.End.Sub(rd.Start).Hours() / rd.End.Sub(rd.Start).Hours())
 
-		r, g, b, a := project.Color.RGBA()
-		strokeColor := svg.Color{RGBA: color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)}}
-		result = append(result, svg.NewLine(ps, dy+lineHeight/2, pe, dy+lineHeight/2).SetStrokeWidth(15).SetStroke(strokeColor))
+		r, g, b, _ := project.Color.RGBA()
+		strokeColor := svg.Color{RGBA: color.RGBA{uint8(r), uint8(g), uint8(b), 255}}
+		s := svg.R(ps, dy+lineHeight/2-7, pe-ps, 15).
+			SetStrokeWidth(2).
+			SetStroke(strokeColor).
+			SetFill(strokeColor)
+
+		if project.Percentage >= 100 {
+			s = s.SetFillOpacity(svg.Opacity{Number: .2})
+		}
+
+		subProjects = append(subProjects, s)
 	}
 
 	dy += lineHeight
 
 	for _, c := range project.Children {
-		result = append(result, svg.NewLine(0, dy, fullWidth, dy).SetStrokeWidth(1).SetStroke(strokeColor))
+		subProjects = append(subProjects, svg.L(0, dy, fullWidth, dy).SetStrokeWidth(1).SetStroke(strokeColor))
 
-		elements, dy = createSvgProject(roadmap, c, fullWidth, dy, dx+indentWidth, lineHeight, indentWidth, dateFormat)
-		result = append(result, elements)
+		subProject, dy = createSvgProject(roadmap, c, fullWidth, dy, dx+indentWidth, lineHeight, indentWidth, dateFormat)
+		subProjects = append(subProjects, subProject)
 	}
 
-	result = append(result, svg.NewLine(0, dy, fullWidth, dy).SetStrokeWidth(1).SetStroke(strokeColor))
+	subProjects = append(subProjects, svg.L(0, dy, fullWidth, dy).SetStrokeWidth(1).SetStroke(strokeColor))
 
-	return result, dy
+	return svg.NewGroup(subProjects), dy
 }
 
 func createSvgTableLines(fullWidth, fullHeight, headerX, headerHeight float64) []interface{} {
 	var result []interface{}
 
-	strokeColor, _ := svg.ParseHexaColor("#999")
-	result = append(result, svg.NewLine(headerX, 0, headerX, fullHeight).SetStrokeWidth(1).SetStroke(strokeColor))
-	result = append(result, svg.NewLine(0, headerHeight, fullWidth, headerHeight).SetStrokeWidth(1).SetStroke(strokeColor))
+	strokeColor, _ := svg.ColorFromHexaString("#999")
+	result = append(result, svg.L(headerX, 0, headerX, fullHeight).SetStrokeWidth(1).SetStroke(strokeColor))
+	result = append(result, svg.L(0, headerHeight, fullWidth, headerHeight).SetStrokeWidth(1).SetStroke(strokeColor))
 
 	return result
 }
