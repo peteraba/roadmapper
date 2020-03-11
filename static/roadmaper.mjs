@@ -1,5 +1,5 @@
-import { refreshTimeline, refreshProjects } from './roadmap-dashboard.mjs';
 import { roadmapForm } from './roadmap-form.mjs';
+import { refreshSvg } from './roadmap-svg.mjs';
 
 const app = () => {
     roadmapForm();
@@ -7,13 +7,15 @@ const app = () => {
     if (!roadmap || !roadmap.Children) {
         document.querySelectorAll('.roadmap-dashboard-link').forEach(element => element.classList.add('disabled'));
         document.getElementById('roadmap-dashboard').remove();
-    } else {
-        refreshProjects();
-    }
 
+        return;
+    }
+    
     window.addEventListener('resize', () => {
-        refreshTimeline();
+        refreshSvg();
     });
+
+    refreshSvg();
 
     const tt = $('[data-toggle="tooltip"]');
     if (tt && tt['tooltip'] && typeof tt['tooltip'] === 'function') {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"strings"
 	"time"
@@ -136,7 +137,7 @@ func createSvgProject(roadmap, project Project, fullWidth, dy, dx, lineHeight, i
 	subProjects = append(subProjects, createProjectTitle(project, dx, dy, lineHeight))
 
 	if project.IsPlanned() {
-		subProjects = append(subProjects, createProjectVisual(*roadmap.Dates, project, fullWidth, dy, lineHeight)...)
+		subProjects = append(subProjects, createProjectVisual(*roadmap.Dates, project, fullWidth, dy, lineHeight, dateFormat)...)
 	}
 
 	dy += lineHeight
@@ -164,7 +165,7 @@ func createProjectTitle(project Project, dx, dy, lineHeight float64) svg.Text {
 	return svg.T(dx, dy+lineHeight/2+5, title)
 }
 
-func createProjectVisual(roadmapDates Dates, project Project, fullWidth, dy, lineHeight float64) []interface{} {
+func createProjectVisual(roadmapDates Dates, project Project, fullWidth, dy, lineHeight float64, dateFormat string) []interface{} {
 	wl := lineHeight * 0.6
 	rd, pd := roadmapDates, project.Dates
 	rs, rw := fullWidth/3+12, fullWidth/3*2-24
@@ -173,22 +174,26 @@ func createProjectVisual(roadmapDates Dates, project Project, fullWidth, dy, lin
 
 	r, g, b, _ := project.Color.RGBA()
 	strokeColor := svg.Color{RGBA: color.RGBA{uint8(r), uint8(g), uint8(b), 255}}
-	s := svg.R(ps, dy+lineHeight/2-wl/2, pe-ps, wl).
+	base := svg.R(ps, dy+lineHeight/2-wl/2, pe-ps, wl).
 		SetFill(strokeColor).
 		AddAttr("rx", "5").
 		AddAttr("ry", "5")
 
-	s2 := svg.R(ps, dy+lineHeight/2-wl/2, pe-ps, wl).
+	start := project.Dates.Start
+	end := project.Dates.End
+	tooltip := fmt.Sprintf("%d%%, %s - %s, %d days", project.Percentage, start.Format(dateFormat), end.Format(dateFormat), int64(end.Sub(start).Hours()/24))
+	title := svg.E("title", "", tooltip, nil)
+	stripes := svg.R(ps, dy+lineHeight/2-wl/2, pe-ps, wl, title).
 		AddAttr("rx", "5").
 		AddAttr("ry", "5").
 		AddAttr("fill", `url(#stripes)`).
 		SetFillOpacity(svg.Opacity{Number: .2})
 
 	if project.Percentage >= 100 {
-		s = s.SetFillOpacity(svg.Opacity{Number: .6})
+		base = base.SetFillOpacity(svg.Opacity{Number: .6})
 	}
 
-	return []interface{}{s, s2}
+	return []interface{}{base, stripes}
 }
 
 func createSvgTableLines(fullWidth, fullHeight, headerX, headerHeight float64) []interface{} {

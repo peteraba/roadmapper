@@ -88,6 +88,8 @@ func createGetRoadRoadmapSVG(rw ReadWriter, cb CodeBuilder, dateFormat string) f
 
 		svg := createSvg(roadmap, float64(fw), float64(fh), float64(lh), dateFormat)
 
+		c.Response().Header().Set(echo.HeaderContentType, "image/svg+xml")
+
 		return c.XML(http.StatusOK, svg)
 	}
 }

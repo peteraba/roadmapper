@@ -51,6 +51,7 @@ const layoutTemplate = `<!doctype html>
 
 	<div class="container-fluid roadmap-dashboard section" id="roadmap-dashboard">
 		<h1 class="h1">Dashboard</h1>
+		<div id="roadmap-svg"></div>
 		<table class="table table-bordered roadmap" id="roadmap">
 		  <!-- Content here -->
 		</table>
