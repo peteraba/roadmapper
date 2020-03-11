@@ -2,17 +2,20 @@ package main
 
 import (
 	"image/color"
+	"strings"
 	"time"
 
-	"github.com/peteraba/go-svg"
+	svg "github.com/peteraba/go-svg"
 )
 
-func createSvg(roadmap Project, fullWidth, headerHeight float64, dateFormat string) svg.SVG {
+func createSvg(roadmap Project, fullWidth, headerHeight, lineHeight float64, dateFormat string) svg.SVG {
 	var (
-		roadmapDy, lineHeight = 0.0, 30.0
+		roadmapDy = 0.0
 	)
 
 	var elements []interface{}
+
+	elements = append(elements, createStripesPattern(), createStyle())
 
 	if roadmap.IsPlanned() {
 		elements = append(elements, createSvgHeader(roadmap.Dates.Start, roadmap.Dates.End, fullWidth/3*2, headerHeight, fullWidth/3, 0, dateFormat))
@@ -28,6 +31,30 @@ func createSvg(roadmap Project, fullWidth, headerHeight float64, dateFormat stri
 	}
 
 	return svg.NewSVG(fullWidth, roadmapDy, elements...)
+}
+
+func createStripesPattern() svg.Element {
+	polygons := []interface{}{
+		svg.E("polygon", "", "", map[string]string{"points": "0,4 0,8 8,0 4,0", "fill": "white"}),
+		svg.E("polygon", "", "", map[string]string{"points": "4,8 8,8 8,4", "fill": "white"}),
+	}
+	pattern := svg.E("pattern", "", "", map[string]string{"id": "stripes", "viewBox": "0,0,8,8", "width": "16", "height": "16", "patternUnits": "userSpaceOnUse"}, polygons...)
+
+	def := svg.E("defs", "", "", nil, pattern)
+
+	return def
+}
+
+func createStyle() svg.Element {
+	rules := []string{
+		`tspan {font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";}`,
+		`.strong {font-weight: bold;}`,
+		`a {fill: #06D; text-decoration: underline; cursor: pointer;}`,
+		`a:hover, a:active {outline: dotted 1px blue; color: #06D;}`,
+	}
+	el := svg.E("style", "", strings.Join(rules, "\n"), nil)
+
+	return el
 }
 
 func createSvgHeader(start, end time.Time, width, height, dx, dy float64, dateFormat string) svg.Group {
@@ -106,32 +133,15 @@ func createSvgProject(roadmap, project Project, fullWidth, dy, dx, lineHeight, i
 		subProjects []interface{}
 	)
 
-	strokeColor, _ := svg.ColorFromHexaString("#eee")
-
-	subProjects = append(subProjects, svg.T(dx, dy+lineHeight/2+5, svg.TS(project.Title)))
+	subProjects = append(subProjects, createProjectTitle(project, dx, dy, lineHeight))
 
 	if project.IsPlanned() {
-		rd, pd := roadmap.Dates, project.Dates
-		rs, rw := fullWidth/3+12, fullWidth/3*2-24
-		ps := rs + (rw * pd.Start.Sub(rd.Start).Hours() / rd.End.Sub(rd.Start).Hours())
-		pe := rs + (rw * pd.End.Sub(rd.Start).Hours() / rd.End.Sub(rd.Start).Hours())
-
-		r, g, b, _ := project.Color.RGBA()
-		strokeColor := svg.Color{RGBA: color.RGBA{uint8(r), uint8(g), uint8(b), 255}}
-		s := svg.R(ps, dy+lineHeight/2-7, pe-ps, 15).
-			SetStrokeWidth(2).
-			SetStroke(strokeColor).
-			SetFill(strokeColor)
-
-		if project.Percentage >= 100 {
-			s = s.SetFillOpacity(svg.Opacity{Number: .2})
-		}
-
-		subProjects = append(subProjects, s)
+		subProjects = append(subProjects, createProjectVisual(*roadmap.Dates, project, fullWidth, dy, lineHeight)...)
 	}
 
 	dy += lineHeight
 
+	strokeColor, _ := svg.ColorFromHexaString("#eee")
 	for _, c := range project.Children {
 		subProjects = append(subProjects, svg.L(0, dy, fullWidth, dy).SetStrokeWidth(1).SetStroke(strokeColor))
 
@@ -142,6 +152,43 @@ func createSvgProject(roadmap, project Project, fullWidth, dy, dx, lineHeight, i
 	subProjects = append(subProjects, svg.L(0, dy, fullWidth, dy).SetStrokeWidth(1).SetStroke(strokeColor))
 
 	return svg.NewGroup(subProjects), dy
+}
+
+func createProjectTitle(project Project, dx, dy, lineHeight float64) svg.Text {
+	title := svg.TS(project.Title).AddAttr("class", "strong")
+	if project.URL != "" {
+		a := svg.NewA(project.URL, svg.TS(" "), title)
+		return svg.T(dx, dy+lineHeight/2+5, a)
+	}
+
+	return svg.T(dx, dy+lineHeight/2+5, title)
+}
+
+func createProjectVisual(roadmapDates Dates, project Project, fullWidth, dy, lineHeight float64) []interface{} {
+	wl := lineHeight * 0.6
+	rd, pd := roadmapDates, project.Dates
+	rs, rw := fullWidth/3+12, fullWidth/3*2-24
+	ps := rs + (rw * pd.Start.Sub(rd.Start).Hours() / rd.End.Sub(rd.Start).Hours())
+	pe := rs + (rw * pd.End.Sub(rd.Start).Hours() / rd.End.Sub(rd.Start).Hours())
+
+	r, g, b, _ := project.Color.RGBA()
+	strokeColor := svg.Color{RGBA: color.RGBA{uint8(r), uint8(g), uint8(b), 255}}
+	s := svg.R(ps, dy+lineHeight/2-wl/2, pe-ps, wl).
+		SetFill(strokeColor).
+		AddAttr("rx", "5").
+		AddAttr("ry", "5")
+
+	s2 := svg.R(ps, dy+lineHeight/2-wl/2, pe-ps, wl).
+		AddAttr("rx", "5").
+		AddAttr("ry", "5").
+		AddAttr("fill", `url(#stripes)`).
+		SetFillOpacity(svg.Opacity{Number: .2})
+
+	if project.Percentage >= 100 {
+		s = s.SetFillOpacity(svg.Opacity{Number: .6})
+	}
+
+	return []interface{}{s, s2}
 }
 
 func createSvgTableLines(fullWidth, fullHeight, headerX, headerHeight float64) []interface{} {

@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	defaultSvgHeaderWidth  = 915
+	defaultSvgWidth        = 915
 	defaultSvgHeaderHeight = 80
+	defaultSvgLineHeight   = 40
 )
 
 func Serve(port uint, certFile, keyFile string, rw ReadWriter, cb CodeBuilder, dateFormat string) {
@@ -58,14 +59,19 @@ func Serve(port uint, certFile, keyFile string, rw ReadWriter, cb CodeBuilder, d
 
 func createGetRoadRoadmapSVG(rw ReadWriter, cb CodeBuilder, dateFormat string) func(c echo.Context) error {
 	return func(c echo.Context) error {
-		w, err := strconv.ParseInt(c.QueryParam("width"), 10, 64)
+		fw, err := strconv.ParseInt(c.QueryParam("width"), 10, 64)
 		if err != nil {
-			w = defaultSvgHeaderWidth
+			fw = defaultSvgWidth
 		}
 
-		h, err := strconv.ParseInt(c.QueryParam("height"), 10, 64)
+		fh, err := strconv.ParseInt(c.QueryParam("height"), 10, 64)
 		if err != nil {
-			h = defaultSvgHeaderHeight
+			fh = defaultSvgHeaderHeight
+		}
+
+		lh, err := strconv.ParseInt(c.QueryParam("line-height"), 10, 64)
+		if err != nil {
+			lh = defaultSvgLineHeight
 		}
 
 		lines, code, err := load(rw, cb, c.Param("identifier"))
@@ -80,7 +86,7 @@ func createGetRoadRoadmapSVG(rw ReadWriter, cb CodeBuilder, dateFormat string) f
 			return c.HTML(http.StatusInternalServerError, fmt.Sprintf("%v", err))
 		}
 
-		svg := createSvg(roadmap, float64(w), float64(h), dateFormat)
+		svg := createSvg(roadmap, float64(fw), float64(fh), float64(lh), dateFormat)
 
 		return c.XML(http.StatusOK, svg)
 	}
