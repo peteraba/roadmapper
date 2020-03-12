@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	defaultSvgWidth        = 915
+	defaultSvgWidth        = 800
 	defaultSvgHeaderHeight = 80
 	defaultSvgLineHeight   = 40
 )
@@ -60,7 +60,7 @@ func Serve(port uint, certFile, keyFile string, rw ReadWriter, cb CodeBuilder, d
 func createGetRoadRoadmapSVG(rw ReadWriter, cb CodeBuilder, dateFormat string) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		fw, err := strconv.ParseInt(c.QueryParam("width"), 10, 64)
-		if err != nil {
+		if err != nil || fw < defaultSvgWidth {
 			fw = defaultSvgWidth
 		}
 
