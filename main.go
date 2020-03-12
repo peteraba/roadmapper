@@ -10,6 +10,8 @@ import (
 	cli "github.com/urfave/cli/v2"
 )
 
+var version = "development"
+
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -99,6 +101,15 @@ func main() {
 				Action: func(c *cli.Context) error {
 					err := Convert(cb, c.Int64("id"), c.String("code"))
 					return err
+				},
+			},
+			{
+				Name:    "version",
+				Aliases: []string{"v"},
+				Usage:   "display version",
+				Action: func(c *cli.Context) error {
+					fmt.Println(version)
+					return nil
 				},
 			},
 		},

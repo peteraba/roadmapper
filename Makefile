@@ -1,8 +1,6 @@
 test:
 	go test .
 	golangci-lint run
-	mkdir -p ./airtmp
-	go build -o ./build/roadmapper .
 
 build: test
 	mkdir -p ./airtmp
@@ -20,4 +18,8 @@ install:
 update:
 	go get -u ./...
 
-.PHONY: build docker install update
+release:
+	$(eval GIT_REV=$(shell git rev-parse HEAD | cut -c1-8))
+	go build -o ./build/roadmapper -ldflags "-X main.version=${GIT_REV}" .
+
+.PHONY: build docker install update release
