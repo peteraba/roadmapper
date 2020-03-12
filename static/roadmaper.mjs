@@ -10,7 +10,7 @@ const app = () => {
 
         return;
     }
-    
+
     window.addEventListener('resize', () => {
         refreshSvg();
     });
