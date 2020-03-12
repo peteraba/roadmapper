@@ -49,7 +49,10 @@ export const roadmapForm = () => {
         return m && m.length > 0 ? m[0] : '';
     };
 
-    txt.addEventListener('paste', e => {
+    const handlePaste = (e, field) => {
+        const before = field.value.substr(0, field.selectionStart),
+            after = field.value.substr(field.selectionEnd);
+
         let lines = (e.clipboardData || window.clipboardData).getData('text').split("\n");
 
         // Remove empty lines from the top
@@ -97,9 +100,13 @@ export const roadmapForm = () => {
             val = val.replace(new RegExp(`${t}`, 'g'), "\t");
         }
 
-        txt.value = val;
+        txt.value = before + val + after;
 
         e.preventDefault();
+    };
+
+    txt.addEventListener('paste', e => {
+        handlePaste(e, txt);
     });
 
     const handleTab = (e, field) => {
