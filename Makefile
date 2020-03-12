@@ -20,6 +20,7 @@ update:
 
 release:
 	$(eval GIT_REV=$(shell git rev-parse HEAD | cut -c1-8))
-	go build -o ./build/roadmapper -ldflags "-X main.version=${GIT_REV}" .
+	$(eval GIT_TAG=$(shell git describe --exact-match --tags $(git log -n1 --pretty='%h')))
+	go build -o ./build/roadmapper -ldflags "-X main.version=${GIT_REV}" -ldflags "-X main.tag=${GIT_TAG}" .
 
 .PHONY: build docker install update release

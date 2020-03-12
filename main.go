@@ -10,6 +10,8 @@ import (
 	cli "github.com/urfave/cli/v2"
 )
 
+var name = "roadmapper"
+var tag = ""
 var version = "development"
 
 func main() {
@@ -108,7 +110,7 @@ func main() {
 				Aliases: []string{"v"},
 				Usage:   "display version",
 				Action: func(c *cli.Context) error {
-					fmt.Println(version)
+					fmt.Println(name, version, tag)
 					return nil
 				},
 			},
