@@ -205,9 +205,16 @@ func createProjectVisual(roadmapDates Dates, project Project, fullWidth, dy, lin
 	pe := rs + (rw * pd.End.Sub(rd.Start).Hours() / rd.End.Sub(rd.Start).Hours())
 
 	r, g, b, _ := project.Color.RGBA()
-	strokeColor := svg.Color{RGBA: color.RGBA{uint8(r), uint8(g), uint8(b), 255}}
+
+	baseColor, _ := svg.ColorFromHexaString("#dedede")
 	base := svg.R(ps, dy+lineHeight/2-wl/2, pe-ps, wl).
-		SetFill(strokeColor).
+		SetFill(baseColor).
+		AddAttr("rx", "5").
+		AddAttr("ry", "5")
+
+	stripesColor := svg.Color{RGBA: color.RGBA{uint8(r), uint8(g), uint8(b), 255}}
+	stripesBase := svg.R(0, 0, pe-ps, wl).
+		SetFill(stripesColor).
 		AddAttr("rx", "5").
 		AddAttr("ry", "5")
 
@@ -215,25 +222,29 @@ func createProjectVisual(roadmapDates Dates, project Project, fullWidth, dy, lin
 	end := project.Dates.End
 	tooltip := fmt.Sprintf("%d%%, %s - %s, %d days", project.Percentage, start.Format(dateFormat), end.Format(dateFormat), int64(end.Sub(start).Hours()/24))
 	title := svg.E("title", "", tooltip, nil)
-	stripes := svg.R(ps, dy+lineHeight/2-wl/2, pe-ps, wl, title).
+	stripes := svg.R(0, 0, pe-ps, wl, title).
 		AddAttr("rx", "5").
 		AddAttr("ry", "5").
 		AddAttr("fill", `url(#stripes)`).
 		SetFillOpacity(svg.Opacity{Number: .2})
 
+	stripesWidth := fs((pe - ps) * float64(project.Percentage) / 100)
+	stripesY := fs(dy + lineHeight/2 - wl/2)
+	stripesContainer := svg.E("svg", "", "", map[string]string{"width": stripesWidth, "height": fs(wl), "x": fs(ps), "y": stripesY}, stripesBase, stripes)
+
 	if project.Percentage >= 100 {
-		base = base.SetFillOpacity(svg.Opacity{Number: .6})
+		stripesBase = stripesBase.SetFillOpacity(svg.Opacity{Number: .4})
 	}
 
-	return []interface{}{base, stripes}
+	return []interface{}{base, stripesContainer}
 }
 
 func createSvgTableLines(fullWidth, fullHeight, headerX, headerHeight, lineHeight float64) []interface{} {
 	var result []interface{}
 
 	light, _ := svg.ColorFromHexaString("#eee")
-	for y := headerHeight + fullHeight; y < fullHeight; y += lineHeight {
-		result = append(result, svg.L(0, y, fullWidth, y).SetStrokeWidth(1).SetStroke(light))
+	for y := headerHeight + lineHeight; y < fullHeight; y += lineHeight {
+		result = append(result, svg.L(0, y, fullWidth, y).SetStrokeWidth(2).SetStroke(light))
 	}
 
 	dark, _ := svg.ColorFromHexaString("#999")
