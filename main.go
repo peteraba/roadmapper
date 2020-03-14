@@ -10,7 +10,7 @@ import (
 	cli "github.com/urfave/cli/v2"
 )
 
-var name = "roadmapper"
+var applicationName = "roadmapper"
 var tag = ""
 var version = "development"
 
@@ -26,18 +26,19 @@ func main() {
 				Aliases: []string{"s"},
 				Usage:   "start server",
 				Flags: []cli.Flag{
-					&cli.UintFlag{Name: "port", Aliases: []string{"p"}, Value: 0, EnvVars: []string{"PORT"}},
-					&cli.StringFlag{Name: "cert", Aliases: []string{"c"}, EnvVars: []string{"SSH_CERT"}},
-					&cli.StringFlag{Name: "key", Aliases: []string{"k"}, EnvVars: []string{"SSH_KEY"}},
+					&cli.UintFlag{Name: "port", Usage: "port to be used by the server", Aliases: []string{"p"}, Value: 0, EnvVars: []string{"PORT"}},
+					&cli.StringFlag{Name: "cert", Usage: "SSH cert used for https", Aliases: []string{"c"}, EnvVars: []string{"SSH_CERT"}},
+					&cli.StringFlag{Name: "key", Usage: "SSH key used for https", Aliases: []string{"k"}, EnvVars: []string{"SSH_KEY"}},
 					&cli.StringFlag{Name: "dbHost", Usage: "database host", Value: "localhost", EnvVars: []string{"DB_HOST"}},
 					&cli.StringFlag{Name: "dbPort", Usage: "database port", Value: "5432", EnvVars: []string{"DB_PORT"}},
 					&cli.StringFlag{Name: "dbName", Usage: "database name", Value: "rdmp", EnvVars: []string{"DB_NAME"}},
 					&cli.StringFlag{Name: "dbUser", Usage: "database user", Value: "rdmp", EnvVars: []string{"DB_USER"}},
 					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
-					&cli.StringFlag{Name: "dateFormat", Usage: "date format", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
+					&cli.StringFlag{Name: "dateFormat", Usage: "date format to use", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
 				},
 				Action: func(c *cli.Context) error {
-					rw := CreateReadWriter(
+					rw := CreateDbReadWriter(
+						applicationName,
 						c.String("dbHost"),
 						c.String("dbPort"),
 						c.String("dbName"),
@@ -45,6 +46,7 @@ func main() {
 						c.String("dbPass"),
 					)
 					Serve(c.Uint("port"), c.String("cert"), c.String("key"), rw, cb, c.String("dateFormat"))
+
 					return nil
 				},
 			},
@@ -53,31 +55,29 @@ func main() {
 				Aliases: []string{"c"},
 				Usage:   "render static assets",
 				Flags: []cli.Flag{
-					&cli.StringFlag{Name: "identifier", Aliases: []string{"r"}, Usage: "roadmap identifier"},
-					&cli.StringFlag{Name: "dbHost", Usage: "database host", Value: "localhost", EnvVars: []string{"DB_HOST"}},
-					&cli.StringFlag{Name: "dbPort", Usage: "database port", Value: "5432", EnvVars: []string{"DB_PORT"}},
-					&cli.StringFlag{Name: "dbName", Usage: "database name", Value: "rdmp", EnvVars: []string{"DB_NAME"}},
-					&cli.StringFlag{Name: "dbUser", Usage: "database user", Value: "rdmp", EnvVars: []string{"DB_USER"}},
-					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
-					&cli.StringFlag{Name: "dateFormat", Usage: "dateFormat", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
+					&cli.StringFlag{Name: "input", Usage: "input file", Aliases: []string{"i"}},
+					&cli.StringFlag{Name: "output", Usage: "output file", Aliases: []string{"o"}},
+					&cli.Uint64Flag{Name: "width", Usage: "width of output file", Aliases: []string{"w"}},
+					&cli.Uint64Flag{Name: "headerHeight", Usage: "width of output file", Aliases: []string{"hh"}},
+					&cli.Uint64Flag{Name: "lineHeight", Usage: "width of output file", Aliases: []string{"lh"}},
+					&cli.StringFlag{Name: "dateFormat", Usage: "date format to use", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
 				},
 				Action: func(c *cli.Context) error {
-					rw := CreateReadWriter(
-						c.String("dbHost"),
-						c.String("dbPort"),
-						c.String("dbName"),
-						c.String("dbUser"),
-						c.String("dbPass"),
+					rw := CreateFileReadWriter()
+					err := Render(
+						rw,
+						c.String("input"),
+						c.String("output"),
+						c.String("dateFormat"),
+						c.Uint64("width"),
+						c.Uint64("headerHeight"),
+						c.Uint64("lineHeight"),
 					)
-					output, err := Render(rw, cb, c.String("identifier"), c.String("dateFormat"))
 					if err != nil {
 						log.Print(err)
-						return err
 					}
 
-					fmt.Println(output)
-
-					return nil
+					return err
 				},
 			},
 			{
@@ -89,6 +89,9 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					err := Random(cb, c.Int("count"))
+					if err != nil {
+						log.Print(err)
+					}
 					return err
 				},
 			},
@@ -110,7 +113,7 @@ func main() {
 				Aliases: []string{"v"},
 				Usage:   "display version",
 				Action: func(c *cli.Context) error {
-					fmt.Println(name, version, tag)
+					fmt.Println(applicationName, version, tag)
 					return nil
 				},
 			},

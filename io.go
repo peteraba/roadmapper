@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -13,27 +12,19 @@ import (
 	"github.com/go-pg/pg"
 )
 
-type ReadWriter interface {
-	Read(code Code) ([]string, error)
-	Write(cb CodeBuilder, code Code, content string) (Code, error)
-}
-
-func CreateReadWriter(dbHost, dbPort, dbName, dbUser, dbPass string) ReadWriter {
-	if dbHost != "" && dbPort != "" && dbName != "" && dbUser != "" {
-		pgOptions := &pg.Options{
-			Addr:                  fmt.Sprintf("%s:%s", dbHost, dbPort),
-			User:                  dbUser,
-			Password:              dbPass,
-			Database:              dbName,
-			ApplicationName:       "roadmapper",
-			TLSConfig:             nil,
-			MaxRetries:            5,
-			RetryStatementTimeout: false,
-		}
-		return DbReadWriter{pgOptions: pgOptions}
+func CreateDbReadWriter(applicationName, dbHost, dbPort, dbName, dbUser, dbPass string) DbReadWriter {
+	pgOptions := &pg.Options{
+		Addr:                  fmt.Sprintf("%s:%s", dbHost, dbPort),
+		User:                  dbUser,
+		Password:              dbPass,
+		Database:              dbName,
+		ApplicationName:       applicationName,
+		TLSConfig:             nil,
+		MaxRetries:            5,
+		RetryStatementTimeout: false,
 	}
 
-	return FileReadWriter{}
+	return DbReadWriter{pgOptions: pgOptions}
 }
 
 type DbReadWriter struct {
@@ -94,15 +85,25 @@ func (d DbReadWriter) Write(cb CodeBuilder, code Code, content string) (Code, er
 	return newCode, err
 }
 
+func CreateFileReadWriter() FileReadWriter {
+	return FileReadWriter{}
+}
+
 type FileReadWriter struct {
 }
 
-func (f FileReadWriter) Read(code Code) ([]string, error) {
-	file, err := os.Open(code.String())
-	if err != nil {
-		log.Fatal(err)
+func (f FileReadWriter) Read(input string) ([]string, error) {
+	var (
+		file = os.Stdin
+		err  error
+	)
+
+	if input != "" {
+		file, err = os.Open(input)
+		if err != nil {
+			return nil, err
+		}
 	}
-	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	var lines []string
@@ -117,9 +118,15 @@ func (f FileReadWriter) Read(code Code) ([]string, error) {
 	return lines, nil
 }
 
-func (f FileReadWriter) Write(cb CodeBuilder, code Code, content string) (Code, error) {
-	d1 := []byte(content)
-	err := ioutil.WriteFile(code.String(), d1, 0644)
+func (f FileReadWriter) Write(output string, content string) error {
+	if output == "" {
+		_, err := fmt.Print(content)
 
-	return code, err
+		return err
+	}
+
+	d1 := []byte(content)
+	err := ioutil.WriteFile(output, d1, 0644)
+
+	return err
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
 	"net/http"
 	"os"
@@ -21,7 +22,7 @@ const (
 	defaultSvgLineHeight   = 40
 )
 
-func Serve(port uint, certFile, keyFile string, rw ReadWriter, cb CodeBuilder, dateFormat string) {
+func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, dateFormat string) {
 	// Setup
 	e := echo.New()
 
@@ -57,22 +58,24 @@ func Serve(port uint, certFile, keyFile string, rw ReadWriter, cb CodeBuilder, d
 	}
 }
 
-func createGetRoadRoadmapSVG(rw ReadWriter, cb CodeBuilder, dateFormat string) func(c echo.Context) error {
+func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder, dateFormat string) func(c echo.Context) error {
 	return func(c echo.Context) error {
-		fw, err := strconv.ParseInt(c.QueryParam("width"), 10, 64)
-		if err != nil || fw < defaultSvgWidth {
+		fw, err := strconv.ParseUint(c.QueryParam("width"), 10, 64)
+		if err != nil {
 			fw = defaultSvgWidth
 		}
 
-		fh, err := strconv.ParseInt(c.QueryParam("height"), 10, 64)
+		hh, err := strconv.ParseUint(c.QueryParam("height"), 10, 64)
 		if err != nil {
-			fh = defaultSvgHeaderHeight
+			hh = defaultSvgHeaderHeight
 		}
 
-		lh, err := strconv.ParseInt(c.QueryParam("line-height"), 10, 64)
+		lh, err := strconv.ParseUint(c.QueryParam("lineHeight"), 10, 64)
 		if err != nil {
 			lh = defaultSvgLineHeight
 		}
+
+		fw, hh, lh = getSvgSizes(fw, hh, lh)
 
 		lines, code, err := load(rw, cb, c.Param("identifier"))
 		if err != nil {
@@ -86,7 +89,7 @@ func createGetRoadRoadmapSVG(rw ReadWriter, cb CodeBuilder, dateFormat string) f
 			return c.HTML(http.StatusInternalServerError, fmt.Sprintf("%v", err))
 		}
 
-		svg := createSvg(roadmap, float64(fw), float64(fh), float64(lh), dateFormat)
+		svg := createSvg(roadmap, float64(fw), float64(hh), float64(lh), dateFormat)
 
 		c.Response().Header().Set(echo.HeaderContentType, "image/svg+xml")
 
@@ -94,7 +97,7 @@ func createGetRoadRoadmapSVG(rw ReadWriter, cb CodeBuilder, dateFormat string) f
 	}
 }
 
-func createGetRoadmap(rw ReadWriter, cb CodeBuilder, dateFormat string) func(c echo.Context) error {
+func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, dateFormat string) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		lines, code, err := load(rw, cb, c.Param("identifier"))
 		if err != nil {
@@ -117,7 +120,7 @@ func createGetRoadmap(rw ReadWriter, cb CodeBuilder, dateFormat string) func(c e
 	}
 }
 
-func createPostRoadmap(rw ReadWriter, cb CodeBuilder) func(c echo.Context) error {
+func createPostRoadmap(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		var (
 			code = cb.New()
@@ -180,31 +183,46 @@ func startWrapper(e *echo.Echo, certFile, keyFile string) func(port uint) error 
 	}
 }
 
-func Render(rw ReadWriter, cb CodeBuilder, identifier, dateFormat string) (string, error) {
-	code, err := cb.NewFromString(identifier)
+func Render(rw FileReadWriter, input, output, dateFormat string, fw, hh, lh uint64) error {
+	lines, err := rw.Read(input)
 	if err != nil {
-		return "", err
-	}
-
-	lines, err := rw.Read(code)
-	if err != nil {
-		return "", err
+		return err
 	}
 
 	roadmap, err := linesToRoadmap(lines, dateFormat)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	output, err := bootstrapRoadmap(roadmap, lines)
+	fw, hh, lh = getSvgSizes(fw, hh, lh)
+
+	svg := createSvg(roadmap, float64(fw), float64(hh), float64(lh), dateFormat)
+
+	b, err := xml.Marshal(svg)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return output, nil
+	err = rw.Write(output, string(b))
+
+	return err
 }
 
-func load(rw ReadWriter, cb CodeBuilder, identifier string) ([]string, int, error) {
+func getSvgSizes(fw, hh, lh uint64) (uint64, uint64, uint64) {
+	if fw < defaultSvgWidth {
+		fw = defaultSvgWidth
+	}
+	if hh < defaultSvgHeaderHeight {
+		hh = defaultSvgHeaderHeight
+	}
+	if lh < defaultSvgLineHeight {
+		lh = defaultSvgLineHeight
+	}
+
+	return fw, hh, lh
+}
+
+func load(rw DbReadWriter, cb CodeBuilder, identifier string) ([]string, int, error) {
 	if identifier == "" {
 		return []string{}, 0, nil
 	}
