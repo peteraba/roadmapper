@@ -2,6 +2,6 @@
 *.pem
 data
 *.log
-docker\-compose.yaml
+docker\-compose.yml
 airtmp/
 build/
