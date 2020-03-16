@@ -4,8 +4,9 @@ import "testing"
 
 func Test_bootstrapRoadmap(t *testing.T) {
 	type args struct {
-		roadmap Project
-		lines   []string
+		roadmap      Project
+		lines        []string
+		matomoDomain string
 	}
 	tests := []struct {
 		name    string
@@ -17,7 +18,7 @@ func Test_bootstrapRoadmap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := bootstrapRoadmap(tt.args.roadmap, tt.args.lines)
+			got, err := bootstrapRoadmap(tt.args.roadmap, tt.args.lines, tt.args.matomoDomain)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("bootstrapRoadmap() error = %v, wantErr %v", err, tt.wantErr)
 				return

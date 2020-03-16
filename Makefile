@@ -1,3 +1,5 @@
+default: build
+
 test:
 	go test .
 	golangci-lint run
@@ -23,4 +25,4 @@ release:
 	$(eval GIT_TAG=$(shell git describe --exact-match --tags $(git log -n1 --pretty='%h')))
 	go build -o ./build/roadmapper -ldflags "-X main.version=${GIT_REV}" -ldflags "-X main.tag=${GIT_TAG}" .
 
-.PHONY: build docker install update release
+.PHONY: default test build docker install update release

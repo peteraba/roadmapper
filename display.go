@@ -27,6 +27,27 @@ const layoutTemplate = `<!doctype html>
 	<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
 	<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
 	<link rel="manifest" href="/static/site.webmanifest">
+
+{{ if .MatomoDomain }}
+
+<!-- Matomo -->
+<script type="text/javascript">
+  var _paq = window._paq || [];
+  /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  (function() {
+    var u="//{{ .MatomoDomain }}/";
+    _paq.push(['setTrackerUrl', u+'matomo.php']);
+    _paq.push(['setSiteId', '1']);
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+  })();
+</script>
+<!-- End Matomo Code -->
+
+{{ end }}
+
 </head>
 <body>
 	<nav class="navbar sticky-top navbar-expand-lg navbar-dark bg-dark">
@@ -182,7 +203,7 @@ var roadmap = {{ .Roadmap }};
 </html>
 `
 
-func bootstrapRoadmap(roadmap Project, lines []string) (string, error) {
+func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain string) (string, error) {
 	writer := bytes.NewBufferString("")
 
 	t, err := template.New("layout").Parse(layoutTemplate)
@@ -191,11 +212,13 @@ func bootstrapRoadmap(roadmap Project, lines []string) (string, error) {
 	}
 
 	data := struct {
-		Roadmap Project
-		Raw     string
+		Roadmap      Project
+		MatomoDomain string
+		Raw          string
 	}{
-		Roadmap: roadmap,
-		Raw:     strings.Join(lines, "\n"),
+		Roadmap:      roadmap,
+		MatomoDomain: matomoDomain,
+		Raw:          strings.Join(lines, "\n"),
 	}
 
 	err = t.Execute(writer, data)
