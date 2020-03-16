@@ -1,6 +1,10 @@
 export const privacyPolicy = () => {
     const pp = document.getElementById('privacy-policy');
 
+    if (!pp) {
+        return;
+    }
+
     if (window.localStorage.getItem('show-privacy-policy') !== 'false') {
         $(pp).modal('show');
     }
