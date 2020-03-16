@@ -28,24 +28,24 @@ const layoutTemplate = `<!doctype html>
 	<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
 	<link rel="manifest" href="/static/site.webmanifest">
 
-{{ if .MatomoDomain }}
-<!-- Matomo -->
-<script type="text/javascript">
-  var _paq = window._paq || [];
-  /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
-  _paq.push(['trackPageView']);
-  _paq.push(['enableLinkTracking']);
-  (function() {
-    var u="//{{ .MatomoDomain }}/";
-    _paq.push(['setTrackerUrl', u+'matomo.php']);
-    _paq.push(['setSiteId', '1']);
-    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-    g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
-  })();
-</script>
-<noscript><p><img src="//{{ .MatomoDomain }}/matomo.php?idsite=1&amp;rec=1" style="border:0;" alt="" /></p></noscript>
-<!-- End Matomo Code -->
-{{ end }}
+	{{ if .MatomoDomain }}
+	<!-- Matomo -->
+	<script type="text/javascript">
+	  var _paq = window._paq || [];
+	  /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+	  _paq.push(['trackPageView']);
+	  _paq.push(['enableLinkTracking']);
+	  (function() {
+		var u="//{{ .MatomoDomain }}/";
+		_paq.push(['setTrackerUrl', u+'matomo.php']);
+		_paq.push(['setSiteId', '1']);
+		var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+		g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+	  })();
+	</script>
+	<noscript><p><img src="//{{ .MatomoDomain }}/matomo.php?idsite=1&amp;rec=1" style="border:0;" alt="" /></p></noscript>
+	<!-- End Matomo Code -->
+	{{ end }}
 
 </head>
 <body>
@@ -56,18 +56,44 @@ const layoutTemplate = `<!doctype html>
 		</button>
 		<div class="collapse navbar-collapse" id="navbarNavAltMarkup">
 			<div class="navbar-nav mr-auto">
-				<a class="nav-item nav-link roadmap-dashboard-link" href="#roadmap-dashboard">Dashboard</a>
-				<a class="nav-item nav-link" href="#roadmap-edit">Edit</a>
-				<a class="nav-item nav-link" href="#roadmap-docs">Docs</a>
-				<a class="nav-item nav-link" href="#roadmap-about">About</a>
-				<a class="nav-item nav-link" href="#roadmap-privacy">Data Privacy</a>
-				<a class="nav-item nav-link" href="https://github.com/peteraba/roadmapper" target="_blank">Source Code <i class="fas fa-external-link-alt"></i></a>
+				<a class="nav-item nav-link roadmap-dashboard-link" href="#roadmap-dashboard">Dashboard <i class="fas fa-eye"></i></a>
+				<a class="nav-item nav-link" href="#roadmap-edit">Edit <i class="fas fa-edit"></i></a>
+				<a class="nav-item nav-link" href="https://docs.rdmp.app/about/rdmp.app/" target="_blank">About <i class="fas fa-question-circle"></i></a>
+				<a class="nav-item nav-link" href="https://docs.rdmp.app/" target="_blank">Docs <i class="fas fa-book"></i></a>
+				<a class="nav-item nav-link" href="https://docs.rdmp.app/privacy/privacy-policy/" target="_blank">Data Privacy <i class="fas fa-user-secret"></i></a>
+				<a class="nav-item nav-link" href="https://github.com/peteraba/roadmapper" target="_blank">Source Code <i class="fas fa-code-branch"></i></a>
 			</div>
 			<div class="navbar-nav">
-				<a class="nav-item nav-link" href="/">New</a>
+				<a class="btn btn-light" href="/">New <i class="fas fa-plus-circle"></i></a>
 			</div>
 		</div>
 	</nav>
+
+{{ if .SelfHosted }}
+	<div class="modal fade" id="privacy-policy" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="false">
+		<div class="modal-dialog modal-dialog-centered" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title" id="exampleModalLongTitle"><i class="fas fa-shield-alt"></i> Data Protection</h4>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body">
+					<p>Please do not store sensitive data on <a href="https://rdmp.app/">https://rdmp.app/</a>.<br>
+						At the moment it is mainly a <strong>tech demo</strong> <i class="fas fa-exclamation"></i><br><br>
+						Please use <a href="https://github.com/peteraba/roadmapper">Roadmapper</a> instead,
+						or read our <a href="https://docs.rdmp.app/privacy/privacy-policy/" target="_blank">Data Privacy <i class="fas fa-external-link-alt"></i>.</a>
+					</p>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-link" id="privacy-policy-save">I understand, I promise!</button>
+					<button type="button" class="btn btn-primary" id="privacy-policy-ok">OK.</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{{ end }}
 
 	<div class="container-fluid roadmap-dashboard section" id="roadmap-dashboard">
 		<h1 class="h1">Dashboard</h1>
@@ -94,99 +120,6 @@ const layoutTemplate = `<!doctype html>
 		<hr class="hr">
 	</div>
 
-	<div class="container roadmap-docs section" id="roadmap-docs">
-		<h1 class="h1">Documentation</h1>
-		<p>Roadmapper aims to provide various tools to help teams to keep track of their progress.</p>
-
-		<h2 class="h2" id="documentation-format">Format</h2>
-		<p>Roadmapper aims to be easy to understand and extend.</p>
-		<ol>
-			<li>You can start with a list of tasks to accomplish.</li>
-			<li>Indent sub-tasks by starting the line with two spaces.</li>
-			<li>Add extra information inside a pair of brackets at the end of the line. Separate each piece by a comma.</li>
-			<li>Add the (estimated) start and end dates in the following format: <strong>YYYY-MM-DD</strong>.</li>
-			<li>Optionally add the percentage of accomplishment as decimal value between 0 and 1 or percentage between 0% and 100%.</li>
-			<li>Optionally add a hexadecimal color code. (e.g. #e9f8a3)</li>
-		</ol>
-
-		<h3 class="h3">Example</h3>
-		<pre>
-beta.0 - tabs [2020-02-12, 2020-02-18]
-beta.1
-	12-factor-app [2020-02-12, 2020-02-18, 60%, #f00]
-	Validation improvements [2020-02-20, 2020-03-30, 0, beta.1]
-idea-pool [idea-pool]
-	Locking feature
-		Investigations [2020-03-10, 2020-03-15, 0.006]
-		Layout logic [2020-03-15, 2020-03-18, 70%]
-	Map wysiwg editor languages
-		Investigations [2020-03-10, 2020-03-15, 0.006]
-</pre>
-
-		<h2 class="h2">Usage</h2>
-
-		<h3 class="h3">Command Line</h3>
-		<p>The command line features of Roadmapper are meant to help teams with easily trackable roadmaps. They can be:</p>
-		<ol>
-			<li>Manually embedded into web-based documentations</li>
-			<li>Integrated into static site generator workflows.</li>
-		</ol>
-		
-		<h4>Usage</h4>
-		<p>Roadmapper does not update documents.</p>
-		<pre>
-> roadmapper c -i 34sgkhkA
-		</pre>
-
-		<h4>Embedding into web-based documentations (e.g. Google Docs)</h4>
-		<p>Roadmapper does not update documents.</p>
-
-		<h4>Integrating into static site generator workflows (Hugo)</h4>
-<pre>
-> roadmapper c -i 34sgkhkA
-> hugo --theme=hugo-bootstrap --verbose
-</pre>
-
-		<h3 class="h3">Online Service</h3>
-		<p>The online service exists mainly to provide a super simple way to test the features of Roadmapper. It can be used for teams freely, but it does not come with warranties and it is not possible to delete roadmaps!</p>
-
-		<h2 class="h2">Source code</h2>
-		<p>The source code is available on <a href="https://github.com/peteraba/roadmapper" target="_blank">Github <i class="fas fa-external-link-alt"></i></a>.</p>
-		<hr class="hr">
-	</div>
-
-	<div class="container roadmap-about section" id="roadmap-about">
-		<h1 class="h1">About Roadmapper</h1>
-		<p>Roadmapper aims to provide various tools to help teams to keep track of their progress. There are two main supported use cases at the moment:</p>
-		<ul>
-			<li>Online service (both self-hosted and on <a href="https://rdmp.app/">https://rdmp.app/</a>).</li>
-			<li>Command line tool.</li>
-		</ul>
-		<p><a type="button" class="btn btn-primary" href="https://github.com/peteraba/roadmapper" target="_blank">Github <i class="fab fa-github"></i></a></p>
-		<hr class="hr">
-	</div>
-
-	<div class="container roadmap-privacy section" id="roadmap-privacy">
-		<h1 class="h1">Data Privacy</h1>
-		<div class="alert alert-danger" role="alert">
-  			<h4 class="alert-heading">Important!</h4>
-		  	<p>
-				We do not recommend using <a href="https://rdmp.app/">rdmp.app</a> for business-critical use cases!<br>
-				We store your Roadmaps in plain text and we technically make them publicly available!<br>
-				We delete Roadmaps that have not been opened for over 1 year.
-			</p>
-			<hr>
-		  	<p class="mb-0">Please host <a href="https://github.com/peteraba/roadmapper" target="_blank">Roadmapper <i class="fas fa-external-link-alt"></i></a> yourself, or use its command line features instead!</p>
-		</div>
-		<h2 class="h2">Usage</h2>
-		<ul>
-			<li><a href="https://rdmp.app/">rdmp.app</a> is an open source software run a <a href="https://en.wikipedia.org/wiki/Software_as_a_service">SaaS service <i class="fas fa-external-link-alt"></i></a>.</li>
-			<li><a href="https://rdmp.app/">rdmp.app</a> itself does not track you and does not store personal information about you. This means that it will not and can not share your personal information with 3rd-party software.</li>
-			<li><a href="https://rdmp.app/">rdmp.app</a> uses various Google Products which may track you. If this is a problem for you, we recommend you to run Roadmapper on your own, it comes without 3rd-party integrations by default.</li>
-		</ul>
-		<hr class="hr">
-	</div>
-
 <script>
 var roadmap = {{ .Roadmap }};
 </script>
@@ -202,7 +135,7 @@ var roadmap = {{ .Roadmap }};
 </html>
 `
 
-func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain string) (string, error) {
+func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain string, selfHosted bool) (string, error) {
 	writer := bytes.NewBufferString("")
 
 	t, err := template.New("layout").Parse(layoutTemplate)
@@ -213,10 +146,12 @@ func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain string) (str
 	data := struct {
 		Roadmap      Project
 		MatomoDomain string
+		SelfHosted   bool
 		Raw          string
 	}{
 		Roadmap:      roadmap,
 		MatomoDomain: matomoDomain,
+		SelfHosted:   selfHosted,
 		Raw:          strings.Join(lines, "\n"),
 	}
 

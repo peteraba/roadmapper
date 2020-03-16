@@ -1,8 +1,10 @@
 import { roadmapForm } from './roadmap-form.mjs';
 import { refreshSvg } from './roadmap-svg.mjs';
+import { privacyPolicy } from './privacy-policy.mjs';
 
 const app = () => {
     roadmapForm();
+    privacyPolicy();
 
     if (!roadmap || !roadmap.Children) {
         document.querySelectorAll('.roadmap-dashboard-link').forEach(element => element.classList.add('disabled'));
@@ -16,11 +18,6 @@ const app = () => {
     });
 
     refreshSvg();
-
-    const tt = $('[data-toggle="tooltip"]');
-    if (tt && tt['tooltip'] && typeof tt['tooltip'] === 'function') {
-        tt['tooltip']();
-    }
 };
 
 document.addEventListener("DOMContentLoaded", app);

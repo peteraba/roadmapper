@@ -22,7 +22,7 @@ const (
 	defaultSvgLineHeight   = 40
 )
 
-func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, dateFormat, matomoDomain string) {
+func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, dateFormat, matomoDomain string, selfHosted bool) {
 	// Setup
 	e := echo.New()
 
@@ -33,10 +33,10 @@ func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder,
 	e.Static("/static", "static")
 	e.Static("/static", "static")
 
-	e.GET("/", createGetRoadmap(rw, cb, dateFormat, matomoDomain))
+	e.GET("/", createGetRoadmap(rw, cb, dateFormat, matomoDomain, selfHosted))
 	e.POST("/", createPostRoadmap(rw, cb))
 	e.GET("/:identifier/svg", createGetRoadRoadmapSVG(rw, cb, dateFormat))
-	e.GET("/:identifier", createGetRoadmap(rw, cb, dateFormat, matomoDomain))
+	e.GET("/:identifier", createGetRoadmap(rw, cb, dateFormat, matomoDomain, selfHosted))
 	e.POST("/:identifier", createPostRoadmap(rw, cb))
 
 	// Start server
@@ -97,7 +97,7 @@ func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder, dateFormat string)
 	}
 }
 
-func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, dateFormat, matomoDomain string) func(c echo.Context) error {
+func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, dateFormat, matomoDomain string, selfHosted bool) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		lines, code, err := load(rw, cb, c.Param("identifier"))
 		if err != nil {
@@ -110,7 +110,7 @@ func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, dateFormat, matomoDomain 
 			return c.HTML(http.StatusInternalServerError, fmt.Sprintf("%v", err))
 		}
 
-		output, err := bootstrapRoadmap(roadmap, lines, matomoDomain)
+		output, err := bootstrapRoadmap(roadmap, lines, matomoDomain, selfHosted)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))

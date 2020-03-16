@@ -47,3 +47,6 @@
   margin: 3em 0;
 }
 
+.modal {
+  display: block;
+}

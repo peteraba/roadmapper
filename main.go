@@ -36,6 +36,7 @@ func main() {
 					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
 					&cli.StringFlag{Name: "dateFormat", Usage: "date format to use", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
 					&cli.StringFlag{Name: "matomoDomain", Usage: "matomo domain", EnvVars: []string{"MATOMO_DOMAIN"}},
+					&cli.BoolFlag{Name: "selfHosted", Usage: "self hosted", EnvVars: []string{"SELF_HOSTED"}, Value: false},
 				},
 				Action: func(c *cli.Context) error {
 					rw := CreateDbReadWriter(
@@ -46,7 +47,16 @@ func main() {
 						c.String("dbUser"),
 						c.String("dbPass"),
 					)
-					Serve(c.Uint("port"), c.String("cert"), c.String("key"), rw, cb, c.String("dateFormat"), c.String("matomoDomain"))
+					Serve(
+						c.Uint("port"),
+						c.String("cert"),
+						c.String("key"),
+						rw,
+						cb,
+						c.String("dateFormat"),
+						c.String("matomoDomain"),
+						c.Bool("selfHosted"),
+					)
 
 					return nil
 				},
