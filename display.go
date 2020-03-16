@@ -29,7 +29,6 @@ const layoutTemplate = `<!doctype html>
 	<link rel="manifest" href="/static/site.webmanifest">
 
 {{ if .MatomoDomain }}
-
 <!-- Matomo -->
 <script type="text/javascript">
   var _paq = window._paq || [];
@@ -44,8 +43,8 @@ const layoutTemplate = `<!doctype html>
     g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
   })();
 </script>
+<noscript><p><img src="//{{ .MatomoDomain }}/matomo.php?idsite=1&amp;rec=1" style="border:0;" alt="" /></p></noscript>
 <!-- End Matomo Code -->
-
 {{ end }}
 
 </head>
