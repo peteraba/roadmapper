@@ -22,7 +22,7 @@ const (
 	defaultSvgLineHeight   = 40
 )
 
-func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, dateFormat, matomoDomain string, selfHosted bool) {
+func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, matomoDomain string, selfHosted bool) {
 	// Setup
 	e := echo.New()
 
@@ -33,10 +33,10 @@ func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder,
 	e.Static("/static", "static")
 	e.Static("/static", "static")
 
-	e.GET("/", createGetRoadmap(rw, cb, dateFormat, matomoDomain, selfHosted))
+	e.GET("/", createGetRoadmap(rw, cb, matomoDomain, selfHosted))
 	e.POST("/", createPostRoadmap(rw, cb))
-	e.GET("/:identifier/svg", createGetRoadRoadmapSVG(rw, cb, dateFormat))
-	e.GET("/:identifier", createGetRoadmap(rw, cb, dateFormat, matomoDomain, selfHosted))
+	e.GET("/:identifier/svg", createGetRoadRoadmapSVG(rw, cb))
+	e.GET("/:identifier", createGetRoadmap(rw, cb, matomoDomain, selfHosted))
 	e.POST("/:identifier", createPostRoadmap(rw, cb))
 
 	// Start server
@@ -58,7 +58,7 @@ func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder,
 	}
 }
 
-func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder, dateFormat string) func(c echo.Context) error {
+func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		fw, err := strconv.ParseUint(c.QueryParam("width"), 10, 64)
 		if err != nil {
@@ -77,13 +77,13 @@ func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder, dateFormat string)
 
 		fw, hh, lh = getSvgSizes(fw, hh, lh)
 
-		lines, code, err := load(rw, cb, c.Param("identifier"))
+		lines, dateFormat, baseUrl, code, err := load(rw, cb, c.Param("identifier"))
 		if err != nil {
 			log.Print(err)
 			return c.HTML(code, fmt.Sprintf("%v", err))
 		}
 
-		roadmap, err := linesToRoadmap(lines, dateFormat)
+		roadmap, err := linesToRoadmap(lines, dateFormat, baseUrl)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusInternalServerError, fmt.Sprintf("%v", err))
@@ -97,20 +97,20 @@ func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder, dateFormat string)
 	}
 }
 
-func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, dateFormat, matomoDomain string, selfHosted bool) func(c echo.Context) error {
+func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, matomoDomain string, selfHosted bool) func(c echo.Context) error {
 	return func(c echo.Context) error {
-		lines, code, err := load(rw, cb, c.Param("identifier"))
+		lines, dateFormat, baseUrl, code, err := load(rw, cb, c.Param("identifier"))
 		if err != nil {
 			return c.HTML(code, fmt.Sprintf("%v", err))
 		}
 
-		roadmap, err := linesToRoadmap(lines, dateFormat)
+		roadmap, err := linesToRoadmap(lines, dateFormat, baseUrl)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusInternalServerError, fmt.Sprintf("%v", err))
 		}
 
-		output, err := bootstrapRoadmap(roadmap, lines, matomoDomain, selfHosted)
+		output, err := bootstrapRoadmap(roadmap, lines, matomoDomain, dateFormat, baseUrl, selfHosted)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))
@@ -138,8 +138,10 @@ func createPostRoadmap(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) err
 		}
 
 		content := c.FormValue("txt")
+		dateFormat := c.FormValue("dateFormat")
+		baseUrl := c.FormValue("baseUrl")
 
-		newCode, err := rw.Write(cb, code, content)
+		newCode, err := rw.Write(cb, code, content, dateFormat, baseUrl)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))
@@ -183,13 +185,13 @@ func startWrapper(e *echo.Echo, certFile, keyFile string) func(port uint) error 
 	}
 }
 
-func Render(rw FileReadWriter, input, output, dateFormat string, fw, hh, lh uint64) error {
+func Render(rw FileReadWriter, input, output, dateFormat, baseUrl string, fw, hh, lh uint64) error {
 	lines, err := rw.Read(input)
 	if err != nil {
 		return err
 	}
 
-	roadmap, err := linesToRoadmap(lines, dateFormat)
+	roadmap, err := linesToRoadmap(lines, dateFormat, baseUrl)
 	if err != nil {
 		return err
 	}
@@ -222,26 +224,26 @@ func getSvgSizes(fw, hh, lh uint64) (uint64, uint64, uint64) {
 	return fw, hh, lh
 }
 
-func load(rw DbReadWriter, cb CodeBuilder, identifier string) ([]string, int, error) {
+func load(rw DbReadWriter, cb CodeBuilder, identifier string) ([]string, string, string, int, error) {
 	if identifier == "" {
-		return []string{}, 0, nil
+		return []string{}, "", "", 0, nil
 	}
 
 	code, err := cb.NewFromString(identifier)
 	if err != nil {
-		return nil, http.StatusBadRequest, err
+		return nil, "", "", http.StatusBadRequest, err
 	}
 
-	lines, err := rw.Read(code)
+	lines, dateFormat, baseUrl, err := rw.Read(code)
 	if err != nil {
-		return nil, http.StatusNotFound, err
+		return nil, "", "", http.StatusNotFound, err
 	}
 
-	return lines, 0, nil
+	return lines, dateFormat, baseUrl, 0, nil
 }
 
-func linesToRoadmap(lines []string, dateFormat string) (Project, error) {
-	roadmap, err := parseRoadmap(lines, dateFormat)
+func linesToRoadmap(lines []string, dateFormat, baseUrl string) (Project, error) {
+	roadmap, err := parseRoadmap(lines, dateFormat, baseUrl)
 	if err != nil {
 		return Project{}, err
 	}

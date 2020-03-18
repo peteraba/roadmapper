@@ -34,7 +34,6 @@ func main() {
 					&cli.StringFlag{Name: "dbName", Usage: "database name", Value: "rdmp", EnvVars: []string{"DB_NAME"}},
 					&cli.StringFlag{Name: "dbUser", Usage: "database user", Value: "rdmp", EnvVars: []string{"DB_USER"}},
 					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
-					&cli.StringFlag{Name: "dateFormat", Usage: "date format to use", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
 					&cli.StringFlag{Name: "matomoDomain", Usage: "matomo domain", EnvVars: []string{"MATOMO_DOMAIN"}},
 					&cli.BoolFlag{Name: "selfHosted", Usage: "self hosted", EnvVars: []string{"SELF_HOSTED"}, Value: false},
 				},
@@ -53,7 +52,6 @@ func main() {
 						c.String("key"),
 						rw,
 						cb,
-						c.String("dateFormat"),
 						c.String("matomoDomain"),
 						c.Bool("selfHosted"),
 					)
@@ -72,6 +70,7 @@ func main() {
 					&cli.Uint64Flag{Name: "headerHeight", Usage: "width of output file", Aliases: []string{"hh"}},
 					&cli.Uint64Flag{Name: "lineHeight", Usage: "width of output file", Aliases: []string{"lh"}},
 					&cli.StringFlag{Name: "dateFormat", Usage: "date format to use", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
+					&cli.StringFlag{Name: "baseUrl", Usage: "base url to use for non-color, non-date extra values", Value: "", EnvVars: []string{"BASE_URL"}},
 				},
 				Action: func(c *cli.Context) error {
 					rw := CreateFileReadWriter()
@@ -80,6 +79,7 @@ func main() {
 						c.String("input"),
 						c.String("output"),
 						c.String("dateFormat"),
+						c.String("baseUrl"),
 						c.Uint64("width"),
 						c.Uint64("headerHeight"),
 						c.Uint64("lineHeight"),

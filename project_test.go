@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-const dateFormat = "2006-01-02"
-
 func Test_charsToUint8(t *testing.T) {
 	type args struct {
 		part string
@@ -66,16 +64,22 @@ func Test_charsToUint8(t *testing.T) {
 }
 
 func Test_createProject(t *testing.T) {
+	var (
+		start = time.Date(2020, 3, 15, 0, 0, 0, 0, time.UTC)
+		end   = time.Date(2020, 3, 20, 0, 0, 0, 0, time.UTC)
+	)
 	type args struct {
 		line            string
 		previousProject *internalProject
 		pi              int
 		colorNum        *uint8
+		dateFormat      string
+		baseUrl         string
 	}
 
-	var a, b, c, d, e uint8
+	var a, b, c, d, e, f, g, h, i uint8
 
-	_, _, _, _, _ = a, b, c, d, e
+	_, _, _, _, _, _, _, _, _ = a, b, c, d, e, f, g, h, i
 
 	tests := []struct {
 		name    string
@@ -91,6 +95,8 @@ func Test_createProject(t *testing.T) {
 				previousProject: &internalProject{},
 				pi:              4,
 				colorNum:        &a,
+				dateFormat:      "2006-01-02",
+				baseUrl:         "",
 			},
 			want1:   nil,
 			want2:   0,
@@ -103,6 +109,8 @@ func Test_createProject(t *testing.T) {
 				previousProject: &internalProject{},
 				pi:              0,
 				colorNum:        &a,
+				dateFormat:      "2006-01-02",
+				baseUrl:         "",
 			},
 			want1:   nil,
 			want2:   0,
@@ -115,11 +123,112 @@ func Test_createProject(t *testing.T) {
 				previousProject: &internalProject{},
 				pi:              -1,
 				colorNum:        &b,
+				dateFormat:      "2006-01-02",
+				baseUrl:         "",
 			},
 			want1: &internalProject{
 				Title:      "asd",
 				color:      palette.WebSafe[71],
 				percentage: 100,
+			},
+			want2:   0,
+			wantErr: false,
+		},
+		{
+			name: "level1 with default dates",
+			args: args{
+				line:            "asd [2020-03-15, 2020-03-20]",
+				previousProject: &internalProject{},
+				pi:              -1,
+				colorNum:        &c,
+				dateFormat:      "2006-01-02",
+				baseUrl:         "",
+			},
+			want1: &internalProject{
+				Title:      "asd",
+				start:      &start,
+				end:        &end,
+				color:      palette.WebSafe[71],
+				percentage: 100,
+			},
+			want2:   0,
+			wantErr: false,
+		},
+		{
+			name: "level1 with German dates",
+			args: args{
+				line:            "asd [15.03.2020, 20.03.2020]",
+				previousProject: &internalProject{},
+				pi:              -1,
+				colorNum:        &d,
+				dateFormat:      "02.01.2006",
+				baseUrl:         "",
+			},
+			want1: &internalProject{
+				Title:      "asd",
+				start:      &start,
+				end:        &end,
+				color:      palette.WebSafe[71],
+				percentage: 100,
+			},
+			want2:   0,
+			wantErr: false,
+		},
+		{
+			name: "level1 with url",
+			args: args{
+				line:            "asd [https://gist.github.com/]",
+				previousProject: &internalProject{},
+				pi:              -1,
+				colorNum:        &e,
+				dateFormat:      "02.01.2006",
+				baseUrl:         "",
+			},
+			want1: &internalProject{
+				Title:      "asd",
+				color:      palette.WebSafe[71],
+				percentage: 100,
+				url:        "https://gist.github.com/",
+			},
+			want2:   0,
+			wantErr: false,
+		},
+		{
+			name: "level1 with url and base url",
+			args: args{
+				line:            "asd [dsa]",
+				previousProject: &internalProject{},
+				pi:              -1,
+				colorNum:        &f,
+				dateFormat:      "02.01.2006",
+				baseUrl:         "https://gist.github.com/",
+			},
+			want1: &internalProject{
+				Title:      "asd",
+				color:      palette.WebSafe[71],
+				percentage: 100,
+				url:        "https://gist.github.com/dsa",
+			},
+			want2:   0,
+			wantErr: false,
+		},
+		{
+			name: "level1 with dates, long color code and url with base url",
+			args: args{
+				line:            "asd [15.03.2020, 20.03.2020, #a3a3a3, dsa]",
+				previousProject: &internalProject{},
+				pi:              -1,
+				colorNum:        &f,
+				dateFormat:      "02.01.2006",
+				baseUrl:         "https://gist.github.com/",
+			},
+			want1: &internalProject{
+				Title:      "asd",
+				start:      &start,
+				end:        &end,
+				color:      color.RGBA{163, 163, 163, 255},
+				percentage: 100,
+				url:        "https://gist.github.com/dsa",
 			},
 			want2:   0,
 			wantErr: false,
@@ -134,8 +243,10 @@ func Test_createProject(t *testing.T) {
 						Title: "root",
 					},
 				},
-				pi:       0,
-				colorNum: &c,
+				pi:         0,
+				colorNum:   &g,
+				dateFormat: "2006-01-02",
+				baseUrl:    "",
 			},
 			want1: &internalProject{
 				Title:      "asd",
@@ -161,8 +272,10 @@ func Test_createProject(t *testing.T) {
 						},
 					},
 				},
-				pi:       2,
-				colorNum: &d,
+				pi:         2,
+				colorNum:   &h,
+				dateFormat: "2006-01-02",
+				baseUrl:    "",
 			},
 			want1: &internalProject{
 				Title:      "asd",
@@ -175,7 +288,7 @@ func Test_createProject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got1, got2, err := createProject(tt.args.line, tt.args.previousProject, tt.args.pi, tt.args.colorNum, dateFormat)
+			got1, got2, err := createProject(tt.args.line, tt.args.previousProject, tt.args.pi, tt.args.colorNum, tt.args.dateFormat, tt.args.baseUrl)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("createProject() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -477,8 +590,10 @@ func Test_parsePercentage(t *testing.T) {
 
 func Test_parseProject(t *testing.T) {
 	type args struct {
-		trimmed  string
-		colorNum *uint8
+		trimmed    string
+		colorNum   *uint8
+		dateFormat string
+		baseUrl    string
 	}
 
 	var (
@@ -499,8 +614,10 @@ func Test_parseProject(t *testing.T) {
 		{
 			name: "simple",
 			args: args{
-				trimmed:  "lorem ipsum",
-				colorNum: &a,
+				trimmed:    "lorem ipsum",
+				colorNum:   &a,
+				dateFormat: "2006-01-02",
+				baseUrl:    "",
 			},
 			want: &internalProject{
 				Title:      "lorem ipsum",
@@ -512,8 +629,10 @@ func Test_parseProject(t *testing.T) {
 		{
 			name: "dates only",
 			args: args{
-				trimmed:  "dates only [2020-12-04, 2020-12-31]",
-				colorNum: &b,
+				trimmed:    "dates only [2020-12-04, 2020-12-31]",
+				colorNum:   &b,
+				dateFormat: "2006-01-02",
+				baseUrl:    "",
 			},
 			want: &internalProject{
 				Title:      "dates only",
@@ -527,8 +646,10 @@ func Test_parseProject(t *testing.T) {
 		{
 			name: "all there 1",
 			args: args{
-				trimmed:  "all there [2020-12-04, 2020-12-31, #f949b9, https://example.com/ah?os=linux&browser=firefox, 53%]",
-				colorNum: &c,
+				trimmed:    "all there [2020-12-04, 2020-12-31, #f949b9, https://example.com/ah?os=linux&browser=firefox, 53%]",
+				colorNum:   &c,
+				dateFormat: "2006-01-02",
+				baseUrl:    "",
 			},
 			want: &internalProject{
 				Title:      "all there",
@@ -543,8 +664,10 @@ func Test_parseProject(t *testing.T) {
 		{
 			name: "all there 2",
 			args: args{
-				trimmed:  "all there 2 [#F4b, http://example.com/ah?os=linux&browser=firefox, 2020-12-04, 2020-12-31, 0.53]",
-				colorNum: &d,
+				trimmed:    "all there 2 [#F4b, http://example.com/ah?os=linux&browser=firefox, 2020-12-04, 2020-12-31, 0.53]",
+				colorNum:   &d,
+				dateFormat: "2006-01-02",
+				baseUrl:    "",
 			},
 			want: &internalProject{
 				Title:      "all there 2",
@@ -559,7 +682,7 @@ func Test_parseProject(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseProject(tt.args.trimmed, tt.args.colorNum, dateFormat)
+			got, err := parseProject(tt.args.trimmed, tt.args.colorNum, tt.args.dateFormat, tt.args.baseUrl)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseProject() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -573,7 +696,9 @@ func Test_parseProject(t *testing.T) {
 
 func Test_parseRoadmap(t *testing.T) {
 	type args struct {
-		lines []string
+		lines      []string
+		dateFormat string
+		baseUrl    string
 	}
 	var (
 		d0 = time.Date(2020, 10, 8, 0, 0, 0, 0, time.UTC)
@@ -586,16 +711,18 @@ func Test_parseRoadmap(t *testing.T) {
 		want    *internalProject
 		wantErr bool
 	}{
-		// {
-		// 	name:    "empty",
-		// 	args:    args{},
-		// 	want:    &internalProject{},
-		// 	wantErr: false,
-		// },
+		{
+			name:    "empty",
+			args:    args{},
+			want:    &internalProject{},
+			wantErr: false,
+		},
 		{
 			name: "project without subprojects",
 			args: args{
-				lines: []string{"Simple project, no brackets"},
+				lines:      []string{"Simple project, no brackets"},
+				dateFormat: "2006-01-02",
+				baseUrl:    "",
 			},
 			want: &internalProject{
 				children: []*internalProject{
@@ -608,64 +735,68 @@ func Test_parseRoadmap(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		// {
-		// 	name: "single, simple project",
-		// 	args: args{
-		// 		lines: []string{"Simple project, dates only [2020-10-08, 2020-11-28]"},
-		// 	},
-		// 	want: &internalProject{
-		// 		children: []*internalProject{
-		// 			{
-		// 				Title:      "Simple project, dates only",
-		// 				start:      &d0,
-		// 				end:        &d1,
-		// 				percentage: 100,
-		// 				color:      color.RGBA{R: 102, G: 51, B: 204, A: 255},
-		// 			},
-		// 		},
-		// 		childrenStart: &d0,
-		// 		childrenEnd:   &d1,
-		// 	},
-		// 	wantErr: false,
-		// },
-		// {
-		// 	name: "simple project with one sub-project and no dates",
-		// 	args: args{
-		// 		lines: []string{
-		// 			"Rather simple project",
-		// 			"\tSimple sub-project, dates only [2020-10-08, 2020-11-28]",
-		// 		},
-		// 	},
-		// 	want: &internalProject{
-		// 		children: []*internalProject{
-		// 			{
-		// 				Title:         "Rather simple project",
-		// 				childrenStart: &d0,
-		// 				childrenEnd:   &d1,
-		// 				start:         &d0,
-		// 				end:           &d1,
-		// 				percentage:    100,
-		// 				color:         color.RGBA{R: 102, G: 51, B: 204, A: 255},
-		// 				children: []*internalProject{
-		// 					{
-		// 						Title:      "Simple sub-project, dates only",
-		// 						start:      &d0,
-		// 						end:        &d1,
-		// 						percentage: 100,
-		// 						color:      color.RGBA{R: 204, G: 51, B: 153, A: 255},
-		// 					},
-		// 				},
-		// 			},
-		// 		},
-		// 		childrenStart: &d0,
-		// 		childrenEnd:   &d1,
-		// 	},
-		// 	wantErr: false,
-		// },
+		{
+			name: "single, simple project",
+			args: args{
+				lines:      []string{"Simple project, dates only [2020-10-08, 2020-11-28]"},
+				dateFormat: "2006-01-02",
+				baseUrl:    "",
+			},
+			want: &internalProject{
+				children: []*internalProject{
+					{
+						Title:      "Simple project, dates only",
+						start:      &d0,
+						end:        &d1,
+						percentage: 100,
+						color:      color.RGBA{R: 102, G: 51, B: 204, A: 255},
+					},
+				},
+				childrenStart: &d0,
+				childrenEnd:   &d1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "simple project with one sub-project and no dates",
+			args: args{
+				lines: []string{
+					"Rather simple project",
+					"\tSimple sub-project, dates only [2020-10-08, 2020-11-28]",
+				},
+				dateFormat: "2006-01-02",
+				baseUrl:    "",
+			},
+			want: &internalProject{
+				children: []*internalProject{
+					{
+						Title:         "Rather simple project",
+						childrenStart: &d0,
+						childrenEnd:   &d1,
+						start:         &d0,
+						end:           &d1,
+						percentage:    100,
+						color:         color.RGBA{R: 102, G: 51, B: 204, A: 255},
+						children: []*internalProject{
+							{
+								Title:      "Simple sub-project, dates only",
+								start:      &d0,
+								end:        &d1,
+								percentage: 100,
+								color:      color.RGBA{R: 204, G: 51, B: 153, A: 255},
+							},
+						},
+					},
+				},
+				childrenStart: &d0,
+				childrenEnd:   &d1,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseRoadmap(tt.args.lines, dateFormat)
+			got, err := parseRoadmap(tt.args.lines, tt.args.dateFormat, tt.args.baseUrl)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseRoadmap() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -682,12 +813,12 @@ func Test_setChildrenDates(t *testing.T) {
 		p *internalProject
 	}
 
-	d0, _ := time.Parse(dateFormat, "2030-08-01")
-	d1, _ := time.Parse(dateFormat, "2030-09-17")
-	d2, _ := time.Parse(dateFormat, "2030-10-22")
-	d3, _ := time.Parse(dateFormat, "2030-12-01")
-	dm1, _ := time.Parse(dateFormat, "2010-10-10")
-	d4, _ := time.Parse(dateFormat, "2088-08-08")
+	d0, _ := time.Parse("2006-01-02", "2030-08-01")
+	d1, _ := time.Parse("2006-01-02", "2030-09-17")
+	d2, _ := time.Parse("2006-01-02", "2030-10-22")
+	d3, _ := time.Parse("2006-01-02", "2030-12-01")
+	dm1, _ := time.Parse("2/1/2006", "10/10/2010")
+	d4, _ := time.Parse("2/1/2006", "8/8/2088")
 
 	tests := []struct {
 		name    string
@@ -815,13 +946,17 @@ func Test_setChildrenDates(t *testing.T) {
 }
 
 func Test_parseProjectExtra(t *testing.T) {
+	const dateFormat = "2006-01-02"
+
 	type args struct {
-		part string
-		f    *time.Time
-		t    *time.Time
-		u    string
-		p    uint8
-		c    color.Color
+		part       string
+		f          *time.Time
+		t          *time.Time
+		u          string
+		p          uint8
+		c          color.Color
+		dateFormat string
+		baseUrl    string
 	}
 
 	var (
@@ -843,7 +978,7 @@ func Test_parseProjectExtra(t *testing.T) {
 	}{
 		{
 			name:  "parse from",
-			args:  args{part: "2020-12-31"},
+			args:  args{part: "2020-12-31", dateFormat: "2006-01-02", baseUrl: ""},
 			want:  &nye,
 			want1: nil,
 			want2: "",
@@ -852,7 +987,7 @@ func Test_parseProjectExtra(t *testing.T) {
 		},
 		{
 			name:  "parse to",
-			args:  args{part: "2020-12-31", f: &nye},
+			args:  args{part: "2020-12-31", f: &nye, dateFormat: "2006-01-02", baseUrl: ""},
 			want:  &nye,
 			want1: &nye,
 			want2: "",
@@ -861,7 +996,7 @@ func Test_parseProjectExtra(t *testing.T) {
 		},
 		{
 			name:  "parsing to overwrites existing to",
-			args:  args{part: "2020-12-31", f: &nye, t: &now},
+			args:  args{part: "2020-12-31", f: &nye, t: &now, dateFormat: "2006-01-02", baseUrl: ""},
 			want:  &nye,
 			want1: &nye,
 			want2: "",
@@ -879,7 +1014,7 @@ func Test_parseProjectExtra(t *testing.T) {
 		},
 		{
 			name:  "parsing url overwrites existing url",
-			args:  args{part: url, u: "asd"},
+			args:  args{part: url, u: "asd", dateFormat: "2006-01-02", baseUrl: ""},
 			want:  nil,
 			want1: nil,
 			want2: url,
@@ -888,7 +1023,7 @@ func Test_parseProjectExtra(t *testing.T) {
 		},
 		{
 			name:  "parse percentage",
-			args:  args{part: "60"},
+			args:  args{part: "60", dateFormat: "2006-01-02", baseUrl: ""},
 			want:  nil,
 			want1: nil,
 			want2: "",
@@ -897,7 +1032,7 @@ func Test_parseProjectExtra(t *testing.T) {
 		},
 		{
 			name:  "parsing percentage overwrites existing percentage",
-			args:  args{part: "60", p: 30},
+			args:  args{part: "60", p: 30, dateFormat: "2006-01-02", baseUrl: ""},
 			want:  nil,
 			want1: nil,
 			want2: "",
@@ -906,7 +1041,7 @@ func Test_parseProjectExtra(t *testing.T) {
 		},
 		{
 			name:  "parse color",
-			args:  args{part: "#ffffff"},
+			args:  args{part: "#ffffff", dateFormat: "2006-01-02", baseUrl: ""},
 			want:  nil,
 			want1: nil,
 			want2: "",
@@ -915,7 +1050,7 @@ func Test_parseProjectExtra(t *testing.T) {
 		},
 		{
 			name:  "parsing color overwrites existing color",
-			args:  args{part: "#ffffff", c: color.RGBA{R: 30, G: 20, B: 40, A: 30}},
+			args:  args{part: "#ffffff", c: color.RGBA{R: 30, G: 20, B: 40, A: 30}, dateFormat: "2006-01-02", baseUrl: ""},
 			want:  nil,
 			want1: nil,
 			want2: "",
@@ -925,7 +1060,7 @@ func Test_parseProjectExtra(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, got3, got4 := parseProjectExtra(tt.args.part, tt.args.f, tt.args.t, tt.args.u, tt.args.p, tt.args.c, dateFormat)
+			got, got1, got2, got3, got4 := parseProjectExtra(tt.args.part, tt.args.f, tt.args.t, tt.args.u, tt.args.p, tt.args.c, tt.args.dateFormat, tt.args.baseUrl)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("parseProjectExtra() got = %v, want %v", got, tt.want)
 			}

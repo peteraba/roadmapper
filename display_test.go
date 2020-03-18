@@ -7,6 +7,8 @@ func Test_bootstrapRoadmap(t *testing.T) {
 		roadmap      Project
 		lines        []string
 		matomoDomain string
+		dateFormat   string
+		baseUrl      string
 		selfHosted   bool
 	}
 	tests := []struct {
@@ -19,7 +21,7 @@ func Test_bootstrapRoadmap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := bootstrapRoadmap(tt.args.roadmap, tt.args.lines, tt.args.matomoDomain, tt.args.selfHosted)
+			got, err := bootstrapRoadmap(tt.args.roadmap, tt.args.lines, tt.args.matomoDomain, tt.args.dateFormat, tt.args.baseUrl, tt.args.selfHosted)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("bootstrapRoadmap() error = %v, wantErr %v", err, tt.wantErr)
 				return

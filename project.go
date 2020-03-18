@@ -131,7 +131,7 @@ func (p internalProject) String() string {
 	return string(b)
 }
 
-func parseRoadmap(lines []string, dateFormat string) (*internalProject, error) {
+func parseRoadmap(lines []string, dateFormat, baseUrl string) (*internalProject, error) {
 	var (
 		err                error
 		roadmap                  = internalProject{}
@@ -145,7 +145,7 @@ func parseRoadmap(lines []string, dateFormat string) (*internalProject, error) {
 			continue
 		}
 
-		currentProject, currentIndentation, err = createProject(line, currentProject, currentIndentation, &colorNum, dateFormat)
+		currentProject, currentIndentation, err = createProject(line, currentProject, currentIndentation, &colorNum, dateFormat, baseUrl)
 		if err != nil {
 			return nil, err
 		}
@@ -163,11 +163,11 @@ func parseRoadmap(lines []string, dateFormat string) (*internalProject, error) {
 	return &roadmap, nil
 }
 
-func createProject(line string, previousProject *internalProject, parentIndentation int, colorNum *uint8, dateFormat string) (*internalProject, int, error) {
+func createProject(line string, previousProject *internalProject, parentIndentation int, colorNum *uint8, dateFormat, baseUrl string) (*internalProject, int, error) {
 	trimmed := strings.TrimLeft(line, "\t")
 	lineIndentation := len(line) - len(trimmed)
 
-	newProject, err := parseProject(trimmed, colorNum, dateFormat)
+	newProject, err := parseProject(trimmed, colorNum, dateFormat, baseUrl)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -192,7 +192,7 @@ func createProject(line string, previousProject *internalProject, parentIndentat
 	return newProject, lineIndentation, nil
 }
 
-func parseProject(trimmed string, colorNum *uint8, dateFormat string) (*internalProject, error) {
+func parseProject(trimmed string, colorNum *uint8, dateFormat, baseUrl string) (*internalProject, error) {
 	res := roadmapRegexp.FindAllSubmatch([]byte(trimmed), -1)
 
 	if res == nil {
@@ -218,7 +218,7 @@ func parseProject(trimmed string, colorNum *uint8, dateFormat string) (*internal
 			break
 		}
 
-		start, end, u, p, c = parseProjectExtra(parts[i], start, end, u, p, c, dateFormat)
+		start, end, u, p, c = parseProjectExtra(parts[i], start, end, u, p, c, dateFormat, baseUrl)
 	}
 
 	if (reflect.DeepEqual(c, color.RGBA{})) {
@@ -228,7 +228,7 @@ func parseProject(trimmed string, colorNum *uint8, dateFormat string) (*internal
 	return &internalProject{Title: title, start: start, end: end, color: c, percentage: p, url: u}, nil
 }
 
-func parseProjectExtra(part string, f, t *time.Time, u string, p uint8, c color.Color, dateFormat string) (*time.Time, *time.Time, string, uint8, color.Color) {
+func parseProjectExtra(part string, f, t *time.Time, u string, p uint8, c color.Color, dateFormat, baseUrl string) (*time.Time, *time.Time, string, uint8, color.Color) {
 	t2, err := time.Parse(dateFormat, part)
 	if err == nil {
 		if f == nil {
@@ -251,6 +251,14 @@ func parseProjectExtra(part string, f, t *time.Time, u string, p uint8, c color.
 	c2, err := parseColor(part)
 	if err == nil {
 		return f, t, u, p, c2
+	}
+
+	if baseUrl != "" {
+		prefixedUrl := fmt.Sprintf("%s/%s", strings.TrimRight(baseUrl, "/"), strings.TrimLeft(part, "/"))
+		_, err = url.ParseRequestURI(prefixedUrl)
+		if err == nil {
+			return f, t, prefixedUrl, p, c
+		}
 	}
 
 	return f, t, u, p, c

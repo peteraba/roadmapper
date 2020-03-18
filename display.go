@@ -50,7 +50,7 @@ const layoutTemplate = `<!doctype html>
 </head>
 <body>
 	<nav class="navbar sticky-top navbar-expand-lg navbar-dark bg-dark">
-		<a class="navbar-brand" href="#">rdmp.app <small>(alpha)</small></a>
+		<a class="navbar-brand" href="/">rdmp.app <small>(alpha)</small></a>
 		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
 			<span class="navbar-toggler-icon"></span>
 		</button>
@@ -113,7 +113,20 @@ const layoutTemplate = `<!doctype html>
 				<textarea class="form-control" id="txt" name="txt" aria-describedby="txtHelp" rows="20">{{ .Raw }}</textarea>
 				<div class="valid-feedback" id="txt-valid"></div>
 				<div class="invalid-feedback" id="txt-invalid"></div>
-				<small id="txtHelp" class="form-text text-muted"><a href="#documentation-format">Format documentation</a></small>
+				<small id="txtHelp" class="form-text text-muted"><a href="https://docs.rdmp.app/usage/format/">Format documentation</a></small>
+			</div>
+			<div class="form-group">
+				<label for="dateFormat">Date format</label>
+				<select id="dateFormat" name="dateFormat" class="form-control">
+				{{range $val := .DateFormats }}
+					 <option value="{{ $val }}"{{ if eq $val $.DateFormat }} selected{{ end }}>{{ index $.DateFormatMap $val }}</option>
+				{{end}}
+				</select>
+			</div>
+			<div class="form-group">
+				<label for="baseUrl">Base URL</label>
+				<input class="form-control" id="baseUrl" name="baseUrl" type="url" aria-describedby="baseUrlHelp" value="{{ .BaseUrl }}" />
+				<small id="baseUrlHelp" class="form-text text-muted">URL to prepend for URLs in your roadmap</small>
 			</div>
 			<button type="submit" class="btn btn-primary" id="form-submit">Submit</button>
 		</form>
@@ -135,7 +148,38 @@ var roadmap = {{ .Roadmap }};
 </html>
 `
 
-func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain string, selfHosted bool) (string, error) {
+var dateFormats = []string{
+	"2006-01-02",
+	"2006.01.02",
+	"2006/01/02",
+	"02.01.2006",
+	"02/01/2006",
+	"01/02/2020",
+	"01.02.2020",
+	"2006-1-2",
+	"2006/1/2",
+	"2.1.2006",
+	"2/1/2006",
+	"1/2/2020",
+	"1.2.2020",
+}
+var dateFormatMap = map[string]string{
+	"2006-01-02": "YYYY-MM-DD (2020-03-17)",
+	"2006.01.02": "YYYY.MM.DD (2020.03.17)",
+	"2006/01/02": "YYYY/MM/DD (2020/03/17)",
+	"02.01.2006": "DD.MM.YYYY (17.03.2020)",
+	"02/01/2006": "DD/MM/YYYY (17/03/2020)",
+	"01/02/2020": "MM/DD/YYYY (03/17/2020)",
+	"01.02.2020": "MM/DD/YYYY (03.17.2020)",
+	"2006-1-2":   "YYYY-M-D (2020-3-7)",
+	"2006/1/2":   "YYYY/M/D (2020/3/7)",
+	"2.1.2006":   "D.M.YYYY (7.3.2020)",
+	"2/1/2006":   "D/M/YYYY (7/3/2020)",
+	"1/2/2020":   "M/D/YYYY (3/7/2020)",
+	"1.2.2020":   "M/D/YYYY (3.7.2020)",
+}
+
+func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain, dateFormat, baseUrl string, selfHosted bool) (string, error) {
 	writer := bytes.NewBufferString("")
 
 	t, err := template.New("layout").Parse(layoutTemplate)
@@ -144,15 +188,23 @@ func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain string, self
 	}
 
 	data := struct {
-		Roadmap      Project
-		MatomoDomain string
-		SelfHosted   bool
-		Raw          string
+		Roadmap       Project
+		MatomoDomain  string
+		DateFormat    string
+		BaseUrl       string
+		SelfHosted    bool
+		Raw           string
+		DateFormats   []string
+		DateFormatMap map[string]string
 	}{
-		Roadmap:      roadmap,
-		MatomoDomain: matomoDomain,
-		SelfHosted:   selfHosted,
-		Raw:          strings.Join(lines, "\n"),
+		Roadmap:       roadmap,
+		MatomoDomain:  matomoDomain,
+		DateFormat:    dateFormat,
+		BaseUrl:       baseUrl,
+		SelfHosted:    selfHosted,
+		Raw:           strings.Join(lines, "\n"),
+		DateFormats:   dateFormats,
+		DateFormatMap: dateFormatMap,
 	}
 
 	err = t.Execute(writer, data)

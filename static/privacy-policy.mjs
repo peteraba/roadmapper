@@ -5,9 +5,13 @@ export const privacyPolicy = () => {
         return;
     }
 
-    if (window.localStorage.getItem('show-privacy-policy') !== 'false') {
-        $(pp).modal('show');
+    if (window.localStorage.getItem('show-privacy-policy') === 'false') {
+        pp.remove();
+
+        return;
     }
+
+    $(pp).modal('show');
 
     document.getElementById('privacy-policy-ok').addEventListener('click', event => {
         $(pp).modal('hide');

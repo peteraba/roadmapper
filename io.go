@@ -32,13 +32,15 @@ type DbReadWriter struct {
 }
 
 type roadmap struct {
-	Id        int64
-	PrevId    int64
-	Txt       string
-	UpdatedAt time.Time
+	Id         int64
+	PrevId     int64
+	Txt        string
+	DateFormat string
+	BaseUrl    string
+	UpdatedAt  time.Time
 }
 
-func (d DbReadWriter) Read(code Code) ([]string, error) {
+func (d DbReadWriter) Read(code Code) ([]string, string, string, error) {
 	db := pg.Connect(d.pgOptions)
 	defer db.Close()
 
@@ -46,19 +48,19 @@ func (d DbReadWriter) Read(code Code) ([]string, error) {
 
 	err := db.Select(r)
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 
 	r.UpdatedAt = time.Now()
 	err = db.Update(r)
 	if err != nil {
-		return nil, err
+		return nil, "", "", err
 	}
 
-	return strings.Split(r.Txt, "\n"), nil
+	return strings.Split(r.Txt, "\n"), r.DateFormat, r.BaseUrl, nil
 }
 
-func (d DbReadWriter) Write(cb CodeBuilder, code Code, content string) (Code, error) {
+func (d DbReadWriter) Write(cb CodeBuilder, code Code, content, dateFormat, baseUrl string) (Code, error) {
 	db := pg.Connect(d.pgOptions)
 	defer db.Close()
 
@@ -66,7 +68,7 @@ func (d DbReadWriter) Write(cb CodeBuilder, code Code, content string) (Code, er
 	newCode := cb.New()
 	found := false
 	for i := 0; i < 100; i++ {
-		_, err := d.Read(newCode)
+		_, _, _, err := d.Read(newCode)
 		if err != nil {
 			found = true
 			break
@@ -78,7 +80,7 @@ func (d DbReadWriter) Write(cb CodeBuilder, code Code, content string) (Code, er
 		return nil, errors.New("no new code found during insert")
 	}
 
-	r := &roadmap{Id: newCode.ID(), PrevId: code.ID(), Txt: content}
+	r := &roadmap{Id: newCode.ID(), PrevId: code.ID(), Txt: content, DateFormat: dateFormat, BaseUrl: baseUrl}
 
 	err := db.Insert(r)
 
