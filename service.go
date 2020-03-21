@@ -147,7 +147,7 @@ func createPostRoadmap(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) err
 			return c.HTML(http.StatusMethodNotAllowed, fmt.Sprintf("%v", err))
 		}
 
-		newURL := fmt.Sprintf("/%s", newCode.String())
+		newURL := fmt.Sprintf("/%s#", newCode.String())
 
 		return c.Redirect(http.StatusSeeOther, newURL)
 	}
