@@ -6,7 +6,7 @@ test:
 
 build: test
 	mkdir -p ./airtmp
-	go build -o ./build/roadmapper:development .
+	go build -o ./build/roadmapper .
 
 docker: test
 	GOOS=linux GOARCH=386 go build -o ./docker/roadmapper .
