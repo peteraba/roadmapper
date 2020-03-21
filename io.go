@@ -34,9 +34,9 @@ type DbReadWriter struct {
 type roadmap struct {
 	Id         int64
 	PrevId     int64
-	Txt        string
-	DateFormat string
-	BaseUrl    string
+	Txt        string `pg:",notnull,use_zero"`
+	DateFormat string `pg:",notnull"`
+	BaseUrl    string `pg:",notnull,use_zero"`
 	UpdatedAt  time.Time
 }
 
