@@ -49,10 +49,10 @@ func createStripesPattern() svg.Element {
 
 func createStyle() svg.Element {
 	rules := []string{
-		`tspan {font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";}`,
-		`.strong {font-weight: bold;}`,
-		`a {fill: #06D; text-decoration: underline; cursor: pointer;}`,
-		`a:hover, a:active {outline: dotted 1px blue; color: #06D;}`,
+		`svg tspan {font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";}`,
+		`svg .strong {font-weight: bold;}`,
+		`svg a {fill: #06D; text-decoration: underline; cursor: pointer;}`,
+		`svg a:hover, svg a:active {outline: dotted 1px blue; color: #06D;}`,
 	}
 	el := svg.E("style", "", strings.Join(rules, "\n"), nil)
 
