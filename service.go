@@ -83,7 +83,7 @@ func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder) func(c echo.Contex
 			return c.HTML(code, fmt.Sprintf("%v", err))
 		}
 
-		roadmap, err := linesToRoadmap(lines, dateFormat, baseUrl)
+		roadmap, err := linesToPublic(lines, dateFormat, baseUrl)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusInternalServerError, fmt.Sprintf("%v", err))
@@ -104,7 +104,7 @@ func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl 
 			return c.HTML(code, fmt.Sprintf("%v", err))
 		}
 
-		roadmap, err := linesToRoadmap(lines, dateFormat, baseUrl)
+		roadmap, err := linesToPublic(lines, dateFormat, baseUrl)
 		if err != nil {
 			log.Print(err)
 			return c.HTML(http.StatusInternalServerError, fmt.Sprintf("%v", err))
@@ -191,7 +191,7 @@ func Render(rw FileReadWriter, input, output, dateFormat, baseUrl string, fw, hh
 		return err
 	}
 
-	roadmap, err := linesToRoadmap(lines, dateFormat, baseUrl)
+	roadmap, err := linesToPublic(lines, dateFormat, baseUrl)
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func load(rw DbReadWriter, cb CodeBuilder, identifier string) ([]string, string,
 	return lines, dateFormat, baseUrl, 0, nil
 }
 
-func linesToRoadmap(lines []string, dateFormat, baseUrl string) (Project, error) {
+func linesToPublic(lines []string, dateFormat, baseUrl string) (Project, error) {
 	roadmap, err := parseRoadmap(lines, dateFormat, baseUrl)
 	if err != nil {
 		return Project{}, err
