@@ -131,7 +131,7 @@ func (p internalProject) String() string {
 	return string(b)
 }
 
-func parseRoadmap(lines []string, dateFormat, baseUrl string) (*internalProject, error) {
+func parseProjects(lines []string, dateFormat, baseUrl string) (*internalProject, error) {
 	var (
 		err                error
 		roadmap                  = internalProject{}
@@ -388,4 +388,48 @@ func getNextColor(colorNum *uint8) color.Color {
 	*colorNum = (*colorNum + 71) % uint8(len(palette.WebSafe))
 
 	return palette.WebSafe[*colorNum]
+}
+
+type Roadmap struct {
+	Dates    *Dates
+	Children []RoadmapProject
+}
+
+func (p Roadmap) IsPlanned() bool {
+	return p.Dates != nil
+}
+
+type RoadmapProject struct {
+	Title       string
+	Dates       *Dates
+	Color       color.Color
+	Percentage  uint8
+	URL         string
+	Indentation uint8
+}
+
+func ToChildren(children []*internalProject, indentation uint8) []RoadmapProject {
+	rps := []RoadmapProject{}
+
+	for _, c := range children {
+		rps = append(rps, c.ToRoadmapProject())
+		rps = append(rps, ToChildren(c.children, indentation+1)...)
+	}
+
+	return rps
+}
+
+func (p *internalProject) ToRoadmap(roadmapStart, roadmapEnd *time.Time) Roadmap {
+	project := Roadmap{Dates: p.GetDates()}
+
+	project.Children = ToChildren(p.children, 0)
+
+	return project
+}
+
+func (p *internalProject) ToRoadmapProject() RoadmapProject {
+	project := RoadmapProject{Title: p.Title, Color: p.GetColor(), Percentage: p.GetPercentage(), URL: p.GetURL()}
+	project.Dates = p.GetDates()
+
+	return project
 }

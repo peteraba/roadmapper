@@ -859,13 +859,13 @@ func Test_parseRoadmap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseRoadmap(tt.args.lines, tt.args.dateFormat, tt.args.baseUrl)
+			got, err := parseProjects(tt.args.lines, tt.args.dateFormat, tt.args.baseUrl)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("parseRoadmap() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parseProjects() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != nil && !reflect.DeepEqual(got.String(), tt.want.String()) {
-				t.Errorf("parseRoadmap() got = %v, want %v", got, tt.want)
+				t.Errorf("parseProjects() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

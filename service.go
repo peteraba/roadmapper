@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/xml"
 	"fmt"
@@ -9,6 +10,8 @@ import (
 	"os/signal"
 	"strconv"
 	"time"
+
+	"github.com/tdewolff/canvas"
 
 	"github.com/gosuri/uitable"
 	"github.com/labstack/echo"
@@ -36,6 +39,7 @@ func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder,
 	e.GET("/", createGetRoadmap(rw, cb, matomoDomain, docBaseUrl, selfHosted))
 	e.POST("/", createPostRoadmap(rw, cb))
 	e.GET("/:identifier/svg", createGetRoadRoadmapSVG(rw, cb))
+	e.GET("/:identifier/img", createGetRoadRoadmapImg(rw, cb))
 	e.GET("/:identifier", createGetRoadmap(rw, cb, matomoDomain, docBaseUrl, selfHosted))
 	e.POST("/:identifier", createPostRoadmap(rw, cb))
 
@@ -95,6 +99,66 @@ func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder) func(c echo.Contex
 
 		return c.XML(http.StatusOK, svg)
 	}
+}
+
+func createGetRoadRoadmapImg(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		fw, err := strconv.ParseUint(c.QueryParam("width"), 10, 64)
+		if err != nil {
+			fw = defaultSvgWidth
+		}
+
+		hh, err := strconv.ParseUint(c.QueryParam("height"), 10, 64)
+		if err != nil {
+			hh = defaultSvgHeaderHeight
+		}
+
+		lh, err := strconv.ParseUint(c.QueryParam("lineHeight"), 10, 64)
+		if err != nil {
+			lh = defaultSvgLineHeight
+		}
+
+		fw, hh, lh = getSvgSizes(fw, hh, lh)
+
+		lines, dateFormat, baseUrl, code, err := load(rw, cb, c.Param("identifier"))
+		if err != nil {
+			log.Print(err)
+			return c.HTML(code, fmt.Sprintf("%v", err))
+		}
+
+		roadmap, err := linesToRoadmap(lines, dateFormat, baseUrl)
+		if err != nil {
+			log.Print(err)
+			return c.HTML(http.StatusInternalServerError, fmt.Sprintf("%v", err))
+		}
+
+		img := createImg(roadmap, float64(fw), float64(hh), float64(lh), dateFormat)
+
+		body, err := canvasToSvg(img)
+		if err != nil {
+			log.Print(err)
+			return c.HTML(http.StatusInternalServerError, fmt.Sprintf("%v", err))
+		}
+
+		c.Response().Header().Set(echo.HeaderContentType, "image/svg+xml")
+
+		return c.String(http.StatusOK, body)
+	}
+}
+
+func canvasToSvg(c *canvas.Canvas) (string, error) {
+	var b bytes.Buffer
+
+	svg := canvas.NewSVG(&b, c.W, c.H)
+
+	c.Render(svg)
+
+	err := svg.Close()
+	if err != nil {
+		return "", err
+	}
+
+	return b.String(), nil
 }
 
 func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl string, selfHosted bool) func(c echo.Context) error {
@@ -243,12 +307,21 @@ func load(rw DbReadWriter, cb CodeBuilder, identifier string) ([]string, string,
 }
 
 func linesToPublic(lines []string, dateFormat, baseUrl string) (Project, error) {
-	roadmap, err := parseRoadmap(lines, dateFormat, baseUrl)
+	rootProject, err := parseProjects(lines, dateFormat, baseUrl)
 	if err != nil {
 		return Project{}, err
 	}
 
-	return roadmap.ToPublic(roadmap.GetStart(), roadmap.GetEnd()), nil
+	return rootProject.ToPublic(rootProject.GetStart(), rootProject.GetEnd()), nil
+}
+
+func linesToRoadmap(lines []string, dateFormat, baseUrl string) (Roadmap, error) {
+	rootProject, err := parseProjects(lines, dateFormat, baseUrl)
+	if err != nil {
+		return Roadmap{}, err
+	}
+
+	return rootProject.ToRoadmap(rootProject.GetStart(), rootProject.GetEnd()), nil
 }
 
 func Random(cb CodeBuilder, count int) error {
