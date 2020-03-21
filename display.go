@@ -58,9 +58,9 @@ const layoutTemplate = `<!doctype html>
 			<div class="navbar-nav mr-auto">
 				<a class="nav-item nav-link roadmap-dashboard-link" href="#roadmap-dashboard">Dashboard <i class="fas fa-eye"></i></a>
 				<a class="nav-item nav-link" href="#roadmap-edit">Edit <i class="fas fa-edit"></i></a>
-				<a class="nav-item nav-link" href="https://docs.rdmp.app/about/rdmp.app/" target="_blank">About <i class="fas fa-question-circle"></i></a>
-				<a class="nav-item nav-link" href="https://docs.rdmp.app/" target="_blank">Docs <i class="fas fa-book"></i></a>
-				<a class="nav-item nav-link" href="https://docs.rdmp.app/privacy/privacy-policy/" target="_blank">Data Privacy <i class="fas fa-user-secret"></i></a>
+				<a class="nav-item nav-link" href="{{ .DocBaseUrl }}/about/rdmp.app/" target="_blank">About <i class="fas fa-question-circle"></i></a>
+				<a class="nav-item nav-link" href="{{ .DocBaseUrl }}/" target="_blank">Docs <i class="fas fa-book"></i></a>
+				<a class="nav-item nav-link" href="{{ .DocBaseUrl }}/privacy/privacy-policy/" target="_blank">Data Privacy <i class="fas fa-user-secret"></i></a>
 				<a class="nav-item nav-link" href="https://github.com/peteraba/roadmapper" target="_blank">Source Code <i class="fas fa-code-branch"></i></a>
 			</div>
 			<div class="navbar-nav">
@@ -83,7 +83,7 @@ const layoutTemplate = `<!doctype html>
 					<p>Please do not store sensitive data on <a href="https://rdmp.app/">https://rdmp.app/</a>.<br>
 						At the moment it is mainly a <strong>tech demo</strong> <i class="fas fa-exclamation"></i><br><br>
 						Please use <a href="https://github.com/peteraba/roadmapper">Roadmapper</a> instead,
-						or read our <a href="https://docs.rdmp.app/privacy/privacy-policy/" target="_blank">Data Privacy <i class="fas fa-external-link-alt"></i>.</a>
+						or read our <a href="{{ .DocBaseUrl }}/privacy/privacy-policy/" target="_blank">Data Privacy <i class="fas fa-external-link-alt"></i>.</a>
 					</p>
 				</div>
 				<div class="modal-footer">
@@ -113,7 +113,7 @@ const layoutTemplate = `<!doctype html>
 				<textarea class="form-control" id="txt" name="txt" aria-describedby="txtHelp" rows="20">{{ .Raw }}</textarea>
 				<div class="valid-feedback" id="txt-valid"></div>
 				<div class="invalid-feedback" id="txt-invalid"></div>
-				<small id="txtHelp" class="form-text text-muted"><a href="https://docs.rdmp.app/usage/format/">Format documentation</a></small>
+				<small id="txtHelp" class="form-text text-muted"><a href="{{ .DocBaseUrl }}/usage/format/">Format documentation</a></small>
 			</div>
 			<div class="form-group">
 				<label for="dateFormat">Date format</label>
@@ -179,7 +179,7 @@ var dateFormatMap = map[string]string{
 	"1.2.2020":   "M/D/YYYY (3.7.2020)",
 }
 
-func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain, dateFormat, baseUrl string, selfHosted bool) (string, error) {
+func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain, docBaseUrl, dateFormat, baseUrl string, selfHosted bool) (string, error) {
 	writer := bytes.NewBufferString("")
 
 	t, err := template.New("layout").Parse(layoutTemplate)
@@ -190,6 +190,7 @@ func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain, dateFormat,
 	data := struct {
 		Roadmap       Project
 		MatomoDomain  string
+		DocBaseUrl    string
 		DateFormat    string
 		BaseUrl       string
 		SelfHosted    bool
@@ -199,6 +200,7 @@ func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain, dateFormat,
 	}{
 		Roadmap:       roadmap,
 		MatomoDomain:  matomoDomain,
+		DocBaseUrl:    docBaseUrl,
 		DateFormat:    dateFormat,
 		BaseUrl:       baseUrl,
 		SelfHosted:    selfHosted,
