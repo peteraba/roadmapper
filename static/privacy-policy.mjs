@@ -6,6 +6,7 @@ export const privacyPolicy = () => {
     }
 
     if (window.localStorage.getItem('show-privacy-policy') === 'false') {
+        $(pp).modal('dispose');
         pp.remove();
 
         return;
@@ -14,14 +15,14 @@ export const privacyPolicy = () => {
     $(pp).modal('show');
 
     document.getElementById('privacy-policy-ok').addEventListener('click', event => {
-        $(pp).modal('hide');
+        $(pp).modal('dispose');
 
         event.preventDefault();
     });
 
     document.getElementById('privacy-policy-save').addEventListener('click', event => {
         window.localStorage.setItem('show-privacy-policy', 'false');
-        $(pp).modal('hide');
+        $(pp).modal('dispose');
 
         event.preventDefault();
     });

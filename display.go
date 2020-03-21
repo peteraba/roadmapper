@@ -70,11 +70,11 @@ const layoutTemplate = `<!doctype html>
 	</nav>
 
 {{ if .SelfHosted }}
-	<div class="modal fade" id="privacy-policy" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="false">
+	<div class="modal fade" id="privacy-policy" tabindex="-1" role="dialog" aria-labelledby="moda-long-title" aria-hidden="false">
 		<div class="modal-dialog modal-dialog-centered" role="document">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h4 class="modal-title" id="exampleModalLongTitle"><i class="fas fa-shield-alt"></i> Data Protection</h4>
+					<h4 class="modal-title" id="modal-long-title"><i class="fas fa-shield-alt"></i> Data Protection</h4>
 					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true">&times;</span>
 					</button>
@@ -110,25 +110,27 @@ const layoutTemplate = `<!doctype html>
 		<form action="" method="POST" id="roadmap-form">
 			<div class="form-group">
 				<label for="txt">Raw roadmap</label>
-				<textarea class="form-control" id="txt" name="txt" aria-describedby="txtHelp" rows="20">{{ .Raw }}</textarea>
+				<textarea class="form-control" id="txt" name="txt" aria-describedby="txt-help" rows="20">{{ .Raw }}</textarea>
 				<div class="valid-feedback" id="txt-valid"></div>
 				<div class="invalid-feedback" id="txt-invalid"></div>
-				<small id="txtHelp" class="form-text text-muted"><a href="{{ .DocBaseUrl }}/usage/format/">Format documentation</a></small>
+				<small id="txt-help" class="form-text text-muted"><a href="{{ .DocBaseUrl }}/usage/format/">Format documentation</a></small>
 			</div>
 			<div class="form-group">
-				<label for="dateFormat">Date format</label>
-				<select id="dateFormat" name="dateFormat" class="form-control">
+				<label for="date-format">Date format</label>
+				<select id="date-format" name="dateFormat" class="form-control">
 				{{range $val := .DateFormats }}
 					 <option value="{{ $val }}"{{ if eq $val $.DateFormat }} selected{{ end }}>{{ index $.DateFormatMap $val }}</option>
 				{{end}}
 				</select>
 			</div>
 			<div class="form-group">
-				<label for="baseUrl">Base URL</label>
-				<input class="form-control" id="baseUrl" name="baseUrl" type="url" aria-describedby="baseUrlHelp" value="{{ .BaseUrl }}" />
-				<small id="baseUrlHelp" class="form-text text-muted">URL to prepend for URLs in your roadmap</small>
+				<label for="base-url">Base URL</label>
+				<input class="form-control" id="base-url" name="baseUrl" type="url" aria-describedby="base-url-help" value="{{ .BaseUrl }}" />
+				<small id="base-url-help" class="form-text text-muted">URL to prepend for URLs in your roadmap</small>
 			</div>
-			<button type="submit" class="btn btn-primary" id="form-submit">Submit</button>
+			<button type="submit" class="btn btn-primary" id="form-submit">Save <i class="fas fa-save"></i></button>
+			<button type="button" class="btn btn-danger" id="reset-btn">Reset <i class="fas fa-trash"></i></button>
+			<button type="button" class="btn btn-info" id="load-example-btn">Load example <i class="fas fa-question-circle"></i></button>
 		</form>
 		<hr class="hr">
 	</div>

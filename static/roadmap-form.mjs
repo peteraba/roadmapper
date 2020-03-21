@@ -1,36 +1,37 @@
 export const roadmapForm = () => {
     const form = document.getElementById('roadmap-form'),
-        txt = document.getElementById('txt'),
-        txtValid = document.getElementById('txt-valid'),
-        txtInvalid = document.getElementById('txt-invalid');
+        txtField = document.getElementById('txt'),
+        txtFieldValid = document.getElementById('txt-valid'),
+        txtFieldInvalid = document.getElementById('txt-invalid'),
+        dateFormatField = document.getElementById('date-format'),
+        baseUrlField = document.getElementById('base-url'),
+        saveBtn = document.getElementById('form-submit'),
+        resetBtn = document.getElementById('reset-btn'),
+        loadExampleBtn = document.getElementById('load-example-btn'),
+        resetData = {'txt': txtField.value, 'dateFormat': dateFormatField.value, 'baseUrl': baseUrlField.value};
 
-    const handleInvalidTextarea = (field, msg, lines) => {
-        field.classList.add('is-invalid');
+    let validationTimeout = false;
 
-        txtValid.innerText = '';
-        txtValid.style.display = 'none';
-        txtInvalid.innerText = msg + " on lines: " + lines.join(",");
-        txtInvalid.style.display = 'block';
+    const handleInvalidTextarea = (txtField, txtFieldValid, txtFieldInvalid, msg, lines) => {
+        txtField.classList.add('is-invalid');
+
+        txtFieldValid.innerText = '';
+        txtFieldValid.style.display = 'none';
+        txtFieldInvalid.innerText = msg + " on lines: " + lines.join(",");
+        txtFieldInvalid.style.display = 'block';
     };
 
-    const handleValidTextarea = (field, msg) => {
-        if (txtInvalid.innerText === '') {
+    const handleValidTextarea = (txtField, txtFieldValid, txtFieldInvalid, msg) => {
+        if (txtFieldInvalid.innerText === '') {
             return;
         }
 
-        form.classList.add('was-validated');
-        field.classList.remove('is-invalid');
+        txtField.classList.remove('is-invalid');
 
-        txtValid.innerText = msg;
-        txtValid.style.display = 'block';
-        txtInvalid.innerText = '';
-        txtInvalid.style.display = 'none';
-
-        window.setTimeout(() => {
-            form.classList.remove('was-validated');
-            txtValid.innerText = '';
-            txtValid.style.display = 'none';
-        }, 2000);
+        txtFieldValid.innerText = msg;
+        txtFieldValid.style.display = 'block';
+        txtFieldInvalid.innerText = '';
+        txtFieldInvalid.style.display = 'none';
     };
 
     const lineStart = (text, start) => {
@@ -49,9 +50,9 @@ export const roadmapForm = () => {
         return m && m.length > 0 ? m[0] : '';
     };
 
-    const handlePaste = (e, field) => {
-        const before = field.value.substr(0, field.selectionStart),
-            after = field.value.substr(field.selectionEnd);
+    const handlePaste = (e, txtField, txtFieldValid, txtFieldInvalid) => {
+        const before = txtField.value.substr(0, txtField.selectionStart),
+            after = txtField.value.substr(txtField.selectionEnd);
 
         let lines = (e.clipboardData || window.clipboardData).getData('text').split("\n");
 
@@ -61,7 +62,7 @@ export const roadmapForm = () => {
         }
 
         if (lines.length === 0) {
-            return handleInvalidTextarea(txt, 'empty lines', [0]);
+            return handleInvalidTextarea(txtField, txtFieldValid, txtFieldInvalid, 'empty lines', [0]);
         }
 
         // Find out if all lines are indented
@@ -74,7 +75,7 @@ export const roadmapForm = () => {
                 });
 
         if (!allIndented) {
-            return handleInvalidTextarea(txt, 'some lines are not indented', []);
+            return handleInvalidTextarea(txtField, txtFieldValid, txtFieldInvalid, 'some lines are not indented', []);
         }
 
         // Remove common indentation
@@ -100,16 +101,16 @@ export const roadmapForm = () => {
             val = val.replace(new RegExp(`${t}`, 'g'), "\t");
         }
 
-        txt.value = before + val + after;
+        txtField.value = before + val + after;
 
         e.preventDefault();
     };
 
-    txt.addEventListener('paste', e => {
-        handlePaste(e, txt);
+    txtField.addEventListener('paste', e => {
+        handlePaste(e, txtField, txtFieldValid, txtFieldInvalid);
     });
 
-    const handleTab = (e, field) => {
+    const handleTab = (e, txtField) => {
         const
             lineEnd = (text, end) => {
                 const nextNL = text.substr(end).indexOf("\n");
@@ -128,32 +129,32 @@ export const roadmapForm = () => {
                 return text.replace(/\n/g, "\n\t");
             };
 
-        const text = field.value,
-            s0 = field.selectionStart,
-            e0 = field.selectionEnd,
+        const text = txtField.value,
+            s0 = txtField.selectionStart,
+            e0 = txtField.selectionEnd,
             s1 = lineStart(text, s0) - 1,
             e1 = lineEnd(text, e0),
             v0 = text.substring(s1, e1),
             v1 = applyShift(v0, e.shiftKey);
 
-        field.value = text.substring(0, s1) + v1 + text.substring(e1);
+        txtField.value = text.substring(0, s1) + v1 + text.substring(e1);
 
-        field.selectionStart = s1 + 1;
-        field.selectionEnd = field.selectionStart + v1.length - 1;
+        txtField.selectionStart = s1 + 1;
+        txtField.selectionEnd = txtField.selectionStart + v1.length - 1;
 
         e.preventDefault();
     };
 
-    const handleSpace = (e, field) => {
-        if (field.selectionStart !== field.selectionEnd) {
+    const handleSpace = (e, txtField) => {
+        if (txtField.selectionStart !== txtField.selectionEnd) {
             return;
         }
 
         const
-            text = field.value,
-            s0 = field.selectionStart,
-            e0 = field.selectionEnd,
-            start = lineStart(field.value, s0),
+            text = txtField.value,
+            s0 = txtField.selectionStart,
+            e0 = txtField.selectionEnd,
+            start = lineStart(txtField.value, s0),
             lineToCur = text.substr(start, s0 - start),
             m = lineToCur.match(/^\s+$/);
 
@@ -162,45 +163,45 @@ export const roadmapForm = () => {
             return;
         }
 
-        field.value = text.substring(0, s0) + "\t" + text.substring(e0);
+        txtField.value = text.substring(0, s0) + "\t" + text.substring(e0);
 
-        field.selectionStart = s0 + 1;
-        field.selectionEnd = e0 + 1;
+        txtField.selectionStart = s0 + 1;
+        txtField.selectionEnd = e0 + 1;
 
         e.preventDefault();
     };
 
-    const handleEnter = (e, field) => {
+    const handleEnter = (e, txtField) => {
         const
-            text = field.value,
-            s0 = field.selectionStart,
-            e0 = field.selectionEnd,
+            text = txtField.value,
+            s0 = txtField.selectionStart,
+            e0 = txtField.selectionEnd,
             ls = lineStart(text, s0),
             tabs = getOpeningTabs(text.substr(ls, s0 - ls));
 
-        field.value = text.substring(0, s0) + "\n" + tabs + text.substring(e0);
+        txtField.value = text.substring(0, s0) + "\n" + tabs + text.substring(e0);
 
-        field.selectionStart = s0 + 1 + tabs.length;
-        field.selectionEnd = e0 + 1 + tabs.length;
+        txtField.selectionStart = s0 + 1 + tabs.length;
+        txtField.selectionEnd = e0 + 1 + tabs.length;
 
         e.preventDefault();
     };
 
-    txt.addEventListener('keydown', e => {
+    txtField.addEventListener('keydown', e => {
         switch (e.key) {
             case 'Tab':
-                return handleTab(e, txt);
+                return handleTab(e, txtField);
             case 'Enter':
-                return handleEnter(e, txt);
+                return handleEnter(e, txtField);
             case ' ':
-                return handleSpace(e, txt);
+                return handleSpace(e, txtField);
         }
     });
 
-    const validateRoadmap = (e, field) => {
+    const findRoadmapErrors = txtField => {
         let prevIndCount = 0, errors = [];
 
-        field.value.split("\n").forEach((val, idx) => {
+        txtField.value.split("\n").forEach((val, idx) => {
             const m = val.match(/^\t*/),
                 curIndCount = m && m[0] ? m[0].length : 0;
 
@@ -213,14 +214,99 @@ export const roadmapForm = () => {
             prevIndCount = curIndCount;
         });
 
-        if (errors.length > 0) {
-            return handleInvalidTextarea(field, 'invalid indentation', errors);
-        }
-
-        return handleValidTextarea(field, 'valid roadmap');
+        return errors;
     };
 
-    txt.addEventListener('keydown', e => {
-        validateRoadmap(e, txt);
+    const showWasValidated = (form, txtFieldValid) => {
+        form.classList.add('was-validated');
+
+        if (validationTimeout) {
+            clearTimeout(validationTimeout);
+        }
+
+        window.setTimeout(() => {
+            form.classList.remove('was-validated');
+            txtFieldValid.innerText = '';
+            txtFieldValid.style.display = 'none';
+            validationTimeout = false;
+        }, 5000);
+    };
+
+    const validateForm = (form, txtField, txtFieldValid, txtFieldInvalid, saveBtn) => {
+        const roadmapErrors = findRoadmapErrors(txtField), hasError = roadmapErrors.length > 0;
+
+        showWasValidated(form, txtFieldValid);
+
+        if (hasError) {
+            handleInvalidTextarea(txtField, txtFieldValid, txtFieldInvalid, 'invalid indentation', errors);
+            saveBtn.prop("disabled", true);
+        } else {
+            handleValidTextarea(txtField, txtFieldValid, txtFieldInvalid, 'valid roadmap');
+        }
+
+        saveBtn.disabled = hasError;
+
+        return hasError;
+    };
+
+    form.addEventListener('submit', e => {
+        const hasError = validateForm(form, txtField, txtFieldValid, txtFieldInvalid, saveBtn);
+
+        if (hasError) {
+            e.preventDefault();
+        }
+    });
+
+    txtField.addEventListener('keydown', e => {
+        validateForm(form, txtField, txtFieldValid, txtFieldInvalid, saveBtn);
+    });
+
+    txtField.addEventListener('keydown', e => {
+        validateForm(form, txtField, txtFieldValid, txtFieldInvalid, saveBtn);
+    });
+
+    txtField.addEventListener('keydown', e => {
+        validateForm(form, txtField, txtFieldValid, txtFieldInvalid, saveBtn);
+    });
+
+    saveBtn.disabled = true;
+
+    const setSelectedIndex = (selectField, value) => {
+        const opts = selectField.options;
+
+        for (let j = 0; j < opts.length; j++) {
+            if (opts[j].value === value) {
+                selectField.selectedIndex = j;
+                break;
+            }
+        }
+    };
+
+    resetBtn.addEventListener('click', _ => {
+        txtField.value = resetData.txt;
+        setSelectedIndex(dateFormatField, resetData.dateFormat);
+        baseUrlField.value = resetData.baseUrl;
+
+        validateForm(form, txtField, txtFieldValid, txtFieldInvalid, saveBtn);
+    });
+
+    loadExampleBtn.addEventListener('click', _ => {
+        txtField.value = `Initial development [2020-02-12, 2020-02-20]
+Bring website online
+	Select and purchase domain [2020-02-04, 2020-02-25, 100%, 1]
+	Create server infrastructure [2020-02-25, 2020-02-25, 100%]
+Command line tool
+	Create backend SVG generation [2020-03-03, 2020-03-10, 100%]
+	Replace frontend SVG generation with backend [2020-03-08, 2020-03-12, 100%]
+	Create documentation page [2020-03-13, 2020-03-31, 20%]
+Marketing
+	Create Facebook page [2020-03-17, 2020-03-25, 0%]
+	Write blog posts [2020-03-17, 2020-03-31, 0%]
+	Share blog post on social media [2020-03-17, 2020-03-31, 0%]
+	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0]`;
+        setSelectedIndex(dateFormatField, '2006-01-02');
+        baseUrlField.value = 'https://github.com/peteraba/roadmapper/issues/';
+
+        validateForm(form, txtField, txtFieldValid, txtFieldInvalid, saveBtn);
     });
 };
