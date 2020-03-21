@@ -238,11 +238,6 @@ func parseProjectExtra(part string, f, t *time.Time, u string, p uint8, c color.
 		return f, &t2, u, p, c
 	}
 
-	_, err = url.ParseRequestURI(part)
-	if err == nil {
-		return f, t, part, p, c
-	}
-
 	n, err := parsePercentage(part)
 	if err == nil {
 		return f, t, u, n, c
@@ -251,6 +246,11 @@ func parseProjectExtra(part string, f, t *time.Time, u string, p uint8, c color.
 	c2, err := parseColor(part)
 	if err == nil {
 		return f, t, u, p, c2
+	}
+
+	parsedUrl, err := url.ParseRequestURI(part)
+	if err == nil && parsedUrl.Scheme != "" && parsedUrl.Host != "" {
+		return f, t, part, p, c
 	}
 
 	if baseUrl != "" {

@@ -294,7 +294,7 @@ export const roadmapForm = () => {
         txtField.value = `Initial development [2020-02-12, 2020-02-20]
 Bring website online
 	Select and purchase domain [2020-02-04, 2020-02-25, 100%, 1]
-	Create server infrastructure [2020-02-25, 2020-02-25, 100%]
+	Create server infrastructure [2020-02-25, 2020-02-28, 100%]
 Command line tool
 	Create backend SVG generation [2020-03-03, 2020-03-10, 100%]
 	Replace frontend SVG generation with backend [2020-03-08, 2020-03-12, 100%]

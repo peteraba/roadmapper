@@ -700,9 +700,16 @@ func Test_parseRoadmap(t *testing.T) {
 		dateFormat string
 		baseUrl    string
 	}
+
 	var (
-		d0 = time.Date(2020, 10, 8, 0, 0, 0, 0, time.UTC)
-		d1 = time.Date(2020, 11, 28, 0, 0, 0, 0, time.UTC)
+		d0                     = time.Date(2020, 10, 8, 0, 0, 0, 0, time.UTC)
+		d1                     = time.Date(2020, 11, 28, 0, 0, 0, 0, time.UTC)
+		initialStart           = time.Date(2020, 2, 12, 0, 0, 0, 0, time.UTC)
+		initialEnd             = time.Date(2020, 2, 20, 0, 0, 0, 0, time.UTC)
+		selectAndPurchaseStart = time.Date(2020, 2, 4, 0, 0, 0, 0, time.UTC)
+		selectAndPurchaseEnd   = time.Date(2020, 2, 25, 0, 0, 0, 0, time.UTC)
+		createServerStart      = time.Date(2020, 2, 25, 0, 0, 0, 0, time.UTC)
+		createServerEnd        = time.Date(2020, 2, 28, 0, 0, 0, 0, time.UTC)
 	)
 	_, _ = d0, d1
 	tests := []struct {
@@ -790,6 +797,62 @@ func Test_parseRoadmap(t *testing.T) {
 				},
 				childrenStart: &d0,
 				childrenEnd:   &d1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "complex example",
+			args: args{
+				lines: []string{
+					"Initial development [2020-02-12, 2020-02-20]",
+					"Bring website online",
+					"\tSelect and purchase domain [2020-02-04, 2020-02-25, 100%, /issues/1, #434]",
+					"\tCreate server infrastructure [#434, 2020-02-25, 2020-02-28, 100%, https://github.com/peteraba/roadmapper/issues/2]",
+					// "Command line tool",
+					// "\tCreate backend SVG generation [2020-03-03, 2020-03-10, 100%]",
+					// "\tReplace frontend SVG generation with backend [2020-03-08, 2020-03-12, 100%]",
+					// "\tCreate documentation page [2020-03-13, 2020-03-31, 20%]",
+				},
+				dateFormat: "2006-01-02",
+				baseUrl:    "https://github.com/peteraba/roadmapper",
+			},
+			want: &internalProject{
+				children: []*internalProject{
+					{
+						Title:      "Initial development",
+						start:      &initialStart,
+						end:        &initialEnd,
+						percentage: 100,
+						color:      color.RGBA{R: 102, G: 51, B: 204, A: 255},
+					},
+					{
+						Title:         "Bring website online",
+						childrenStart: &selectAndPurchaseStart,
+						childrenEnd:   &createServerEnd,
+						percentage:    100,
+						color:         color.RGBA{R: 204, G: 51, B: 153, A: 255},
+						children: []*internalProject{
+							{
+								Title:      "Select and purchase domain",
+								start:      &selectAndPurchaseStart,
+								end:        &selectAndPurchaseEnd,
+								percentage: 100,
+								color:      color.RGBA{R: 68, G: 51, B: 68, A: 255},
+								url:        "https://github.com/peteraba/roadmapper/issues/1",
+							},
+							{
+								Title:      "Create server infrastructure",
+								start:      &createServerStart,
+								end:        &createServerEnd,
+								percentage: 100,
+								color:      color.RGBA{R: 68, G: 51, B: 68, A: 255},
+								url:        "https://github.com/peteraba/roadmapper/issues/2",
+							},
+						},
+					},
+				},
+				childrenStart: &selectAndPurchaseStart,
+				childrenEnd:   &createServerEnd,
 			},
 			wantErr: false,
 		},
