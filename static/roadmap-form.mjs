@@ -293,7 +293,7 @@ export const roadmapForm = () => {
     loadExampleBtn.addEventListener('click', _ => {
         txtField.value = `Initial development [2020-02-12, 2020-02-20]
 Bring website online
-	Select and purchase domain [2020-02-04, 2020-02-25, 100%, 1]
+	Select and purchase domain [2020-02-04, 2020-02-25, 100%, /issues/1]
 	Create server infrastructure [2020-02-25, 2020-02-28, 100%]
 Command line tool
 	Create backend SVG generation [2020-03-03, 2020-03-10, 100%]
@@ -305,7 +305,7 @@ Marketing
 	Share blog post on social media [2020-03-17, 2020-03-31, 0%]
 	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0]`;
         setSelectedIndex(dateFormatField, '2006-01-02');
-        baseUrlField.value = 'https://github.com/peteraba/roadmapper/issues/';
+        baseUrlField.value = 'https://github.com/peteraba/roadmapper';
 
         validateForm(form, txtField, txtFieldValid, txtFieldInvalid, saveBtn);
     });
