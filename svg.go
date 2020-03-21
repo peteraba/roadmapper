@@ -152,7 +152,7 @@ func createProjectTitle(roadmap, project Project, dy, dx, lineHeight, indentWidt
 func createProjectTitleText(project Project, dx, dy, lineHeight float64) svg.Text {
 	title := svg.TS(project.Title).AddAttr("class", "strong")
 	if project.URL != "" {
-		a := svg.NewA(project.URL, svg.TS(" "), title)
+		a := svg.NewA(project.URL, svg.TS(" "), title).AddAttr("target", "_blank")
 		return svg.T(dx, dy+lineHeight/2+5, a)
 	}
 
