@@ -3,6 +3,7 @@ module github.com/peteraba/roadmapper
 go 1.14
 
 require (
+	github.com/chromedp/chromedp v0.5.3
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/fatih/color v1.9.0 // indirect
@@ -14,10 +15,12 @@ require (
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/peteraba/go-svg v0.0.0-20200310222005-7871670c1f1d
+	github.com/stretchr/objx v0.2.0 // indirect
+	github.com/stretchr/testify v1.5.1
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/valyala/fasttemplate v1.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
-	gopkg.in/yaml.v2 v2.2.4 // indirect
+	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
