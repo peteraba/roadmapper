@@ -1,3 +1,5 @@
+-- +migrate Up
+
 CREATE TABLE "roadmaps" (
     "id" bigint NOT NULL,
     "prev_id" bigint NULL,
@@ -21,3 +23,5 @@ END;
 $$ language 'plpgsql';
 
 CREATE TRIGGER update_roadmap_updated_at BEFORE UPDATE ON roadmaps FOR EACH ROW EXECUTE PROCEDURE update_updated_at();
+
+-- +migrate Down

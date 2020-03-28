@@ -22,7 +22,7 @@ const (
 	defaultSvgLineHeight   = 40
 )
 
-func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl string, selfHosted bool) {
+func Serve(quit chan os.Signal, port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl string, selfHosted bool) {
 	// Setup
 	e := echo.New()
 
@@ -48,7 +48,6 @@ func Serve(port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder,
 
 	// Wait for interrupt signal to gracefully shutdown the server with
 	// a timeout of 10 seconds.
-	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

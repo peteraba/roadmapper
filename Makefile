@@ -4,6 +4,12 @@ test:
 	go test .
 	golangci-lint run
 
+generate:
+	go generate
+
+integration: test
+	go test -tags=integration -v .
+
 build: test
 	mkdir -p ./airtmp
 	go build -o ./build/roadmapper .
@@ -20,7 +26,7 @@ install:
 update:
 	go get -u ./...
 
-release:
+release: generate integration
 	$(eval GIT_REV=$(shell git rev-parse HEAD | cut -c1-8))
 	$(eval GIT_TAG=$(shell git describe --exact-match --tags $(git log -n1 --pretty='%h')))
 	go build -o ./build/roadmapper -ldflags "-X main.version=${GIT_REV}" -ldflags "-X main.tag=${GIT_TAG}" .
@@ -29,4 +35,4 @@ release:
 	docker push peteraba/roadmapper:latest
 	docker push "peteraba/roadmapper:${GIT_TAG}"
 
-.PHONY: default test build docker install update release
+.PHONY: default test generate integration build docker install update release

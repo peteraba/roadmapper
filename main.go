@@ -1,3 +1,5 @@
+//go:generate go-bindata -o bindata.go migrations/
+
 package main
 
 import (
@@ -7,6 +9,7 @@ import (
 	"time"
 
 	"github.com/labstack/gommon/log"
+	_ "github.com/lib/pq"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -39,6 +42,7 @@ func main() {
 					&cli.BoolFlag{Name: "selfHosted", Usage: "self hosted", EnvVars: []string{"SELF_HOSTED"}, Value: false},
 				},
 				Action: func(c *cli.Context) error {
+					quit := make(chan os.Signal, 1)
 					rw := CreateDbReadWriter(
 						applicationName,
 						c.String("dbHost"),
@@ -48,6 +52,7 @@ func main() {
 						c.String("dbPass"),
 					)
 					Serve(
+						quit,
 						c.Uint("port"),
 						c.String("cert"),
 						c.String("key"),
@@ -127,6 +132,68 @@ func main() {
 				Usage:   "display version",
 				Action: func(c *cli.Context) error {
 					fmt.Println(applicationName, version, tag)
+					return nil
+				},
+			},
+			{
+				Name:    "migrate:up",
+				Aliases: []string{"mu"},
+				Usage:   "run migrations",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "dbHost", Usage: "database host", Value: "localhost", EnvVars: []string{"DB_HOST"}},
+					&cli.StringFlag{Name: "dbPort", Usage: "database port", Value: "5432", EnvVars: []string{"DB_PORT"}},
+					&cli.StringFlag{Name: "dbName", Usage: "database name", Value: "rdmp", EnvVars: []string{"DB_NAME"}},
+					&cli.StringFlag{Name: "dbUser", Usage: "database user", Value: "rdmp", EnvVars: []string{"DB_USER"}},
+					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
+					&cli.UintFlag{Name: "steps", Aliases: []string{"s"}, Usage: "number of steps to migrate up"},
+				},
+				Action: func(c *cli.Context) error {
+					n, err := migrateUp(
+						c.String("dbUser"),
+						c.String("dbPass"),
+						c.String("dbHost"),
+						c.String("dbPort"),
+						c.String("dbName"),
+						c.Int("steps"),
+					)
+
+					if err != nil {
+						return fmt.Errorf("migration failed: %w", err)
+					}
+
+					log.Printf("up migrations run: %d\n", n)
+
+					return nil
+				},
+			},
+			{
+				Name:    "migrate:down",
+				Aliases: []string{"md"},
+				Usage:   "revert migrations",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "dbHost", Usage: "database host", Value: "localhost", EnvVars: []string{"DB_HOST"}},
+					&cli.StringFlag{Name: "dbPort", Usage: "database port", Value: "5432", EnvVars: []string{"DB_PORT"}},
+					&cli.StringFlag{Name: "dbName", Usage: "database name", Value: "rdmp", EnvVars: []string{"DB_NAME"}},
+					&cli.StringFlag{Name: "dbUser", Usage: "database user", Value: "rdmp", EnvVars: []string{"DB_USER"}},
+					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
+					&cli.UintFlag{Name: "steps", Aliases: []string{"s"}, Usage: "number of steps to migrate down"},
+				},
+				Action: func(c *cli.Context) error {
+					n, err := migrateDown(
+						c.String("dbUser"),
+						c.String("dbPass"),
+						c.String("dbHost"),
+						c.String("dbPort"),
+						c.String("dbName"),
+						c.Int("steps"),
+					)
+
+					if err != nil {
+						return fmt.Errorf("migration failed: %w", err)
+					}
+
+					log.Printf("down migrations run: %d\n", n)
+
 					return nil
 				},
 			},
