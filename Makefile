@@ -7,8 +7,8 @@ test:
 generate:
 	go generate
 
-integration: test
-	go test -tags=integration -v .
+integration:
+	go test -tags=integration .
 
 build: test
 	mkdir -p ./airtmp
