@@ -1,0 +1,16 @@
+language: go
+
+addons:
+  chrome: stable
+
+go:
+  - tip
+
+services:
+  - docker
+
+before_install:
+  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &
+
+script:
+  - make integration
