@@ -12,7 +12,7 @@ import (
 	"github.com/go-pg/pg"
 )
 
-func CreateDbReadWriter(applicationName, dbHost, dbPort, dbName, dbUser, dbPass string) DbReadWriter {
+func CreateDbReadWriter(applicationName, dbHost, dbPort, dbName, dbUser, dbPass string, logQueries bool) DbReadWriter {
 	pgOptions := &pg.Options{
 		Addr:                  fmt.Sprintf("%s:%s", dbHost, dbPort),
 		User:                  dbUser,
@@ -24,24 +24,46 @@ func CreateDbReadWriter(applicationName, dbHost, dbPort, dbName, dbUser, dbPass 
 		RetryStatementTimeout: false,
 	}
 
-	return DbReadWriter{pgOptions: pgOptions}
+	return DbReadWriter{pgOptions: pgOptions, logQueries: logQueries}
 }
 
 type DbReadWriter struct {
-	pgOptions *pg.Options
+	pgOptions  *pg.Options
+	logQueries bool
+}
+
+type dbLogger struct{}
+
+func (dl dbLogger) BeforeQuery(q *pg.QueryEvent) {
+}
+
+func (dl dbLogger) AfterQuery(q *pg.QueryEvent) {
+	formattedQuery, _ := q.FormattedQuery()
+	fmt.Println(formattedQuery)
+}
+
+func (dl DbReadWriter) connect() *pg.DB {
+	db := pg.Connect(dl.pgOptions)
+
+	if dl.logQueries {
+		db.AddQueryHook(dbLogger{})
+	}
+
+	return db
 }
 
 type roadmap struct {
 	Id         int64
 	PrevId     int64
-	Txt        string `pg:",notnull,use_zero"`
-	DateFormat string `pg:",notnull"`
-	BaseUrl    string `pg:",notnull,use_zero"`
+	Txt        string
+	DateFormat string
+	BaseUrl    string
 	UpdatedAt  time.Time
+	AccessedAt time.Time
 }
 
 func (d DbReadWriter) Read(code Code) ([]string, string, string, error) {
-	db := pg.Connect(d.pgOptions)
+	db := d.connect()
 	defer db.Close()
 
 	r := &roadmap{Id: code.ID()}
@@ -52,7 +74,7 @@ func (d DbReadWriter) Read(code Code) ([]string, string, string, error) {
 	}
 
 	r.UpdatedAt = time.Now()
-	err = db.Update(r)
+	_, err = db.Exec("UPDATE roadmaps SET accessed_at = NOW() WHERE id = ?", r.Id)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -61,7 +83,7 @@ func (d DbReadWriter) Read(code Code) ([]string, string, string, error) {
 }
 
 func (d DbReadWriter) Write(cb CodeBuilder, code Code, content, dateFormat, baseUrl string) (Code, error) {
-	db := pg.Connect(d.pgOptions)
+	db := d.connect()
 	defer db.Close()
 
 	// we must find a code that does not yet exist
@@ -80,7 +102,7 @@ func (d DbReadWriter) Write(cb CodeBuilder, code Code, content, dateFormat, base
 		return nil, errors.New("no new code found during insert")
 	}
 
-	r := &roadmap{Id: newCode.ID(), PrevId: code.ID(), Txt: content, DateFormat: dateFormat, BaseUrl: baseUrl}
+	r := &roadmap{Id: newCode.ID(), PrevId: code.ID(), Txt: content, DateFormat: dateFormat, BaseUrl: baseUrl, UpdatedAt: time.Now()}
 
 	err := db.Insert(r)
 

@@ -40,6 +40,7 @@ func main() {
 					&cli.StringFlag{Name: "matomoDomain", Usage: "matomo domain", EnvVars: []string{"MATOMO_DOMAIN"}},
 					&cli.StringFlag{Name: "docBaseUrl", Usage: "documentation base URL", EnvVars: []string{"DOC_BASE_URL"}, Value: "https://docs.rdmp.app"},
 					&cli.BoolFlag{Name: "selfHosted", Usage: "self hosted", EnvVars: []string{"SELF_HOSTED"}, Value: false},
+					&cli.BoolFlag{Name: "logDbQueries", Usage: "log DB queries", EnvVars: []string{"LOG_DB_QUERIES"}, Value: false},
 				},
 				Action: func(c *cli.Context) error {
 					quit := make(chan os.Signal, 1)
@@ -50,6 +51,7 @@ func main() {
 						c.String("dbName"),
 						c.String("dbUser"),
 						c.String("dbPass"),
+						c.Bool("logDbQueries"),
 					)
 					Serve(
 						quit,

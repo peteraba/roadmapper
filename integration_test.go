@@ -74,7 +74,7 @@ func setupApp(t *testing.T, dbResource *dockertest.Resource) chan os.Signal {
 
 	cb := NewCodeBuilder()
 
-	rw := CreateDbReadWriter(applicationName, dbHost, dbPort, dbName, dbUser, dbPass)
+	rw := CreateDbReadWriter(applicationName, dbHost, dbPort, dbName, dbUser, dbPass, true)
 	go Serve(quit, appPort, "", "", rw, cb, matomoDomain, docBaseUrl, false)
 
 	migrateUp(dbUser, dbPass, dbHost, dbPort, dbName, 0)
@@ -97,7 +97,7 @@ Marketing
 	Share blog post on social media [2020-03-17, 2020-03-31, 0%]
 	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0]`
 
-	txtBaseUrl := "https://github.com/peteraba/roadmapper"
+	txtBaseUrl := ""
 
 	// create chrome instance
 	ctx, cancel := chromedp.NewContext(
@@ -110,41 +110,66 @@ Marketing
 	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
-	t.Run("chromedp test", func(t *testing.T) {
-		var txtFound, txtBaseUrlFound, svgFound string
+	// create a new database
+	dbPool, dbResource := setupDb(t)
+	defer teardownDb(t, dbPool, dbResource)
 
-		_, _, _ = txtFound, txtBaseUrl, svgFound
+	// start up a new app
+	quit := setupApp(t, dbResource)
+	defer teardownApp(t, quit)
 
-		dbPool, dbResource := setupDb(t)
-		defer teardownDb(t, dbPool, dbResource)
+	tests := []struct {
+		name       string
+		txt        string
+		txtBaseUrl string
+		svgMatch   string
+		want       string
+	}{
+		{
+			name:       "empty baseUrl",
+			txt:        txt,
+			txtBaseUrl: "",
+			svgMatch:   "",
+		},
+		{
+			name:       "all filled",
+			txt:        txt,
+			txtBaseUrl: txtBaseUrl,
+			svgMatch:   "Initial development",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var txtFound, txtBaseUrlFound, svgFound string
+			_, _, _ = txtFound, txtBaseUrl, svgFound
 
-		quit := setupApp(t, dbResource)
-		defer teardownApp(t, quit)
+			err := chromedp.Run(ctx,
+				chromedp.Navigate(baseUrl),
+				// wait for form element to become visible (ie, page is loaded)
+				chromedp.WaitVisible(`#roadmap-form`),
+				// set the value of the textarea
+				chromedp.SetValue(`#txt`, tt.txt),
+				// set the value of the base url
+				chromedp.SetValue(`#base-url`, tt.txtBaseUrl),
+				// set the value of the base url
+				chromedp.Submit(`#form-submit`),
+				// wait for redirect
+				chromedp.WaitVisible(`#roadmap-svg`),
+				// retrieve relevant values
+				chromedp.Value(`#txt`, &txtFound),
+				chromedp.Value(`#base-url`, &txtBaseUrlFound),
+				chromedp.OuterHTML(`#roadmap-svg`, &svgFound),
+			)
 
-		err := chromedp.Run(ctx,
-			chromedp.Navigate(baseUrl),
-			// wait for form element to become visible (ie, page is loaded)
-			chromedp.WaitVisible(`#roadmap-form`),
-			// set the value of the textarea
-			chromedp.SetValue(`#txt`, txt),
-			// set the value of the base url
-			chromedp.SetValue(`#base-url`, txtBaseUrl),
-			// set the value of the base url
-			chromedp.Submit(`#form-submit`),
-			// wait for redirect
-			chromedp.WaitVisible(`#roadmap-svg`),
-			// retrieve relevant values
-			chromedp.Value(`#txt`, &txtFound),
-			chromedp.Value(`#base-url`, &txtBaseUrlFound),
-			chromedp.OuterHTML(`#roadmap-svg`, &svgFound),
-		)
+			if err != nil {
+				t.Fatalf("chromedp run: error = %v", err)
+			}
 
-		if err != nil {
-			t.Fatalf("chromedp run: error = %v", err)
-		}
-
-		assert.Equal(t, txt, txtFound)
-		assert.Equal(t, txtBaseUrl, txtBaseUrlFound)
-		assert.Contains(t, svgFound, "Initial development")
-	})
+			assert.Equal(t, tt.txt, txtFound)
+			assert.Equal(t, tt.txtBaseUrl, txtBaseUrlFound)
+			if tt.svgMatch != "" {
+				assert.Contains(t, svgFound, tt.svgMatch)
+			}
+		})
+	}
 }
