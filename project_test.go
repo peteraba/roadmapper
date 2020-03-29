@@ -127,7 +127,7 @@ func Test_createProject(t *testing.T) {
 				baseUrl:         "",
 			},
 			want1: &internalProject{
-				Title:      "asd",
+				title:      "asd",
 				color:      palette.WebSafe[71],
 				percentage: 100,
 			},
@@ -145,7 +145,7 @@ func Test_createProject(t *testing.T) {
 				baseUrl:         "",
 			},
 			want1: &internalProject{
-				Title:      "asd",
+				title:      "asd",
 				start:      &start,
 				end:        &end,
 				color:      palette.WebSafe[71],
@@ -165,7 +165,7 @@ func Test_createProject(t *testing.T) {
 				baseUrl:         "",
 			},
 			want1: &internalProject{
-				Title:      "asd",
+				title:      "asd",
 				start:      &start,
 				end:        &end,
 				color:      palette.WebSafe[71],
@@ -185,7 +185,7 @@ func Test_createProject(t *testing.T) {
 				baseUrl:         "",
 			},
 			want1: &internalProject{
-				Title:      "asd",
+				title:      "asd",
 				color:      palette.WebSafe[71],
 				percentage: 100,
 				url:        "https://gist.github.com/",
@@ -204,7 +204,7 @@ func Test_createProject(t *testing.T) {
 				baseUrl:         "https://gist.github.com/",
 			},
 			want1: &internalProject{
-				Title:      "asd",
+				title:      "asd",
 				color:      palette.WebSafe[71],
 				percentage: 100,
 				url:        "https://gist.github.com/dsa",
@@ -223,7 +223,7 @@ func Test_createProject(t *testing.T) {
 				baseUrl:         "https://gist.github.com/",
 			},
 			want1: &internalProject{
-				Title:      "asd",
+				title:      "asd",
 				start:      &start,
 				end:        &end,
 				color:      color.RGBA{163, 163, 163, 255},
@@ -238,9 +238,9 @@ func Test_createProject(t *testing.T) {
 			args: args{
 				line: "asd",
 				previousProject: &internalProject{
-					Title: "prev-Level1",
+					title: "prev-Level1",
 					parent: &internalProject{
-						Title: "root",
+						title: "root",
 					},
 				},
 				pi:         0,
@@ -249,7 +249,7 @@ func Test_createProject(t *testing.T) {
 				baseUrl:    "",
 			},
 			want1: &internalProject{
-				Title:      "asd",
+				title:      "asd",
 				color:      palette.WebSafe[71],
 				percentage: 100,
 			},
@@ -261,13 +261,13 @@ func Test_createProject(t *testing.T) {
 			args: args{
 				line: "asd",
 				previousProject: &internalProject{
-					Title: "prev-Level3",
+					title: "prev-Level3",
 					parent: &internalProject{
-						Title: "prevParent-Level2",
+						title: "prevParent-Level2",
 						parent: &internalProject{
-							Title: "prevParentParent-Level1",
+							title: "prevParentParent-Level1",
 							parent: &internalProject{
-								Title: "root",
+								title: "root",
 							},
 						},
 					},
@@ -278,7 +278,7 @@ func Test_createProject(t *testing.T) {
 				baseUrl:    "",
 			},
 			want1: &internalProject{
-				Title:      "asd",
+				title:      "asd",
 				color:      palette.WebSafe[71],
 				percentage: 100,
 			},
@@ -620,7 +620,7 @@ func Test_parseProject(t *testing.T) {
 				baseUrl:    "",
 			},
 			want: &internalProject{
-				Title:      "lorem ipsum",
+				title:      "lorem ipsum",
 				color:      palette.WebSafe[71],
 				percentage: 100,
 			},
@@ -635,7 +635,7 @@ func Test_parseProject(t *testing.T) {
 				baseUrl:    "",
 			},
 			want: &internalProject{
-				Title:      "dates only",
+				title:      "dates only",
 				start:      &dec4,
 				end:        &dec31,
 				color:      palette.WebSafe[71],
@@ -652,7 +652,7 @@ func Test_parseProject(t *testing.T) {
 				baseUrl:    "",
 			},
 			want: &internalProject{
-				Title:      "all there",
+				title:      "all there",
 				start:      &dec4,
 				end:        &dec31,
 				color:      color.RGBA{R: 15*16 + 9, G: 4*16 + 9, B: 11*16 + 9, A: 255},
@@ -670,7 +670,7 @@ func Test_parseProject(t *testing.T) {
 				baseUrl:    "",
 			},
 			want: &internalProject{
-				Title:      "all there 2",
+				title:      "all there 2",
 				start:      &dec4,
 				end:        &dec31,
 				color:      color.RGBA{R: 15*16 + 15, G: 4*16 + 4, B: 11*16 + 11, A: 255},
@@ -734,7 +734,7 @@ func Test_parseRoadmap(t *testing.T) {
 			want: &internalProject{
 				children: []*internalProject{
 					{
-						Title:      "Simple project, no brackets",
+						title:      "Simple project, no brackets",
 						color:      color.RGBA{R: 102, G: 51, B: 204, A: 255},
 						percentage: 100,
 					},
@@ -752,7 +752,7 @@ func Test_parseRoadmap(t *testing.T) {
 			want: &internalProject{
 				children: []*internalProject{
 					{
-						Title:      "Simple project, dates only",
+						title:      "Simple project, dates only",
 						start:      &d0,
 						end:        &d1,
 						percentage: 100,
@@ -777,7 +777,7 @@ func Test_parseRoadmap(t *testing.T) {
 			want: &internalProject{
 				children: []*internalProject{
 					{
-						Title:         "Rather simple project",
+						title:         "Rather simple project",
 						childrenStart: &d0,
 						childrenEnd:   &d1,
 						start:         &d0,
@@ -786,7 +786,7 @@ func Test_parseRoadmap(t *testing.T) {
 						color:         color.RGBA{R: 102, G: 51, B: 204, A: 255},
 						children: []*internalProject{
 							{
-								Title:      "Simple sub-project, dates only",
+								title:      "Simple sub-project, dates only",
 								start:      &d0,
 								end:        &d1,
 								percentage: 100,
@@ -819,21 +819,21 @@ func Test_parseRoadmap(t *testing.T) {
 			want: &internalProject{
 				children: []*internalProject{
 					{
-						Title:      "Initial development",
+						title:      "Initial development",
 						start:      &initialStart,
 						end:        &initialEnd,
 						percentage: 100,
 						color:      color.RGBA{R: 102, G: 51, B: 204, A: 255},
 					},
 					{
-						Title:         "Bring website online",
+						title:         "Bring website online",
 						childrenStart: &selectAndPurchaseStart,
 						childrenEnd:   &createServerEnd,
 						percentage:    100,
 						color:         color.RGBA{R: 204, G: 51, B: 153, A: 255},
 						children: []*internalProject{
 							{
-								Title:      "Select and purchase domain",
+								title:      "Select and purchase domain",
 								start:      &selectAndPurchaseStart,
 								end:        &selectAndPurchaseEnd,
 								percentage: 100,
@@ -841,7 +841,7 @@ func Test_parseRoadmap(t *testing.T) {
 								url:        "https://github.com/peteraba/roadmapper/issues/1",
 							},
 							{
-								Title:      "Create server infrastructure",
+								title:      "Create server infrastructure",
 								start:      &createServerStart,
 								end:        &createServerEnd,
 								percentage: 100,
@@ -1183,13 +1183,13 @@ func Test_internalProject_ToPublic(t *testing.T) {
 				childrenEnd:   &d3,
 				children: []*internalProject{
 					{
-						Title:      "Nullam vulputate",
+						title:      "Nullam vulputate",
 						start:      &d0,
 						end:        &d2,
 						percentage: 34,
 					},
 					{
-						Title:      "Curabitur ullamcorper condimentum",
+						title:      "Curabitur ullamcorper condimentum",
 						start:      &d1,
 						end:        &d3,
 						percentage: 18,
@@ -1222,7 +1222,7 @@ func Test_internalProject_ToPublic(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := &internalProject{
-				Title:         tt.fields.Title,
+				title:         tt.fields.Title,
 				start:         tt.fields.start,
 				end:           tt.fields.end,
 				parent:        tt.fields.parent,

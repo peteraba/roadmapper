@@ -40,7 +40,7 @@ func (p Project) IsPlanned() bool {
 }
 
 type internalProject struct {
-	Title         string
+	title         string
 	start         *time.Time
 	end           *time.Time
 	parent        *internalProject
@@ -93,7 +93,7 @@ func (p internalProject) GetURL() string {
 }
 
 func (p *internalProject) ToPublic(roadmapStart, roadmapEnd *time.Time) Project {
-	project := Project{Title: p.Title, Color: p.GetColor(), Percentage: p.GetPercentage(), URL: p.GetURL()}
+	project := Project{Title: p.title, Color: p.GetColor(), Percentage: p.GetPercentage(), URL: p.GetURL()}
 	project.Dates = p.GetDates()
 
 	for _, c := range p.GetChildren() {
@@ -200,7 +200,7 @@ func parseProject(trimmed string, colorNum *uint8, dateFormat, baseUrl string) (
 	}
 
 	if res[0][3] == nil {
-		return &internalProject{Title: string(res[0][1]), color: getNextColor(colorNum), percentage: 100}, nil
+		return &internalProject{title: string(res[0][1]), color: getNextColor(colorNum), percentage: 100}, nil
 	}
 
 	parts := strings.Split(string(res[0][3]), ", ")
@@ -225,7 +225,7 @@ func parseProject(trimmed string, colorNum *uint8, dateFormat, baseUrl string) (
 		c = getNextColor(colorNum)
 	}
 
-	return &internalProject{Title: title, start: start, end: end, color: c, percentage: p, url: u}, nil
+	return &internalProject{title: title, start: start, end: end, color: c, percentage: p, url: u}, nil
 }
 
 func parseProjectExtra(part string, f, t *time.Time, u string, p uint8, c color.Color, dateFormat, baseUrl string) (*time.Time, *time.Time, string, uint8, color.Color) {
@@ -346,7 +346,7 @@ func charsToUint8(part string) ([3]uint8, error) {
 func setChildrenDates(p *internalProject) (*time.Time, *time.Time, error) {
 	if len(p.children) == 0 {
 		if p.end != nil && p.start != nil && p.end.Sub(*p.start) < 0 {
-			return nil, nil, fmt.Errorf("starting must not be before ending date: %s", p.Title)
+			return nil, nil, fmt.Errorf("starting must not be before ending date: %s", p.title)
 		}
 
 		return p.start, p.end, nil
@@ -374,11 +374,11 @@ func setChildrenDates(p *internalProject) (*time.Time, *time.Time, error) {
 	p.childrenEnd = maxEnd
 
 	if p.start != nil && p.start != p.childrenStart {
-		return nil, nil, fmt.Errorf("project from date does not match calculated value: %s", p.Title)
+		return nil, nil, fmt.Errorf("project from date does not match calculated value: %s", p.title)
 	}
 
 	if p.end != nil && p.end != p.childrenEnd {
-		return nil, nil, fmt.Errorf("project from date does not match calculated value: %s", p.Title)
+		return nil, nil, fmt.Errorf("project from date does not match calculated value: %s", p.title)
 	}
 
 	return minStart, maxEnd, nil

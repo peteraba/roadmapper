@@ -24,7 +24,7 @@ const (
 	dbUser            = "rdmp"
 	dbPass            = "secret"
 	baseUrl           = "http://localhost:9876/"
-	matomoDomain      = "http://localhost:9898/"
+	matomoDomain      = "https://example.com/matomo"
 	docBaseUrl        = "https://docs.rdmp.app/"
 )
 
