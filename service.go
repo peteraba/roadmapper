@@ -122,7 +122,7 @@ func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl 
 func createPostRoadmap(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		var (
-			code = cb.New()
+			code Code
 			err  error
 		)
 

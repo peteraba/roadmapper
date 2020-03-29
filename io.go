@@ -102,7 +102,12 @@ func (d DbReadWriter) Write(cb CodeBuilder, code Code, content, dateFormat, base
 		return nil, errors.New("no new code found during insert")
 	}
 
-	r := &roadmap{Id: newCode.ID(), PrevId: code.ID(), Txt: content, DateFormat: dateFormat, BaseUrl: baseUrl, UpdatedAt: time.Now()}
+	var prevID int64
+	if code != nil {
+		prevID = code.ID()
+	}
+
+	r := &roadmap{Id: newCode.ID(), PrevId: prevID, Txt: content, DateFormat: dateFormat, BaseUrl: baseUrl, UpdatedAt: time.Now()}
 
 	err := db.Insert(r)
 
