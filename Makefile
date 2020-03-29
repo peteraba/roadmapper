@@ -35,4 +35,11 @@ release: generate integration
 	docker push peteraba/roadmapper:latest
 	docker push "peteraba/roadmapper:${GIT_TAG}"
 
-.PHONY: default test generate integration build docker install update release
+deploy:
+	git pull
+	docker pull peteraba/roadmapper
+	docker-compose stop roadmapper
+	docker-compose start roadmapper
+	docker-compose exec roadmapper /roadmapper mu
+
+.PHONY: default test generate integration build docker install update release deploy
