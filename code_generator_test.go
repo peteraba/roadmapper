@@ -69,16 +69,6 @@ func TestCode64_String(t *testing.T) {
 		})
 	}
 
-	t.Run("panic on out of bound (lower)", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("The code did not panic")
-			}
-		}()
-
-		_ = Code64(-1).String()
-	})
-
 	t.Run("panic on out of bound (upper)", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r == nil {
@@ -92,7 +82,7 @@ func TestCode64_String(t *testing.T) {
 
 func Test_toCode64(t *testing.T) {
 	type args struct {
-		n int64
+		n uint64
 	}
 	tests := []struct {
 		name string
@@ -171,7 +161,7 @@ func TestNewCode64FromString(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want int64
+		want uint64
 	}{
 		{
 			name: "zero",
@@ -211,8 +201,8 @@ func TestNewCode64FromString(t *testing.T) {
 				t.Errorf("NewCode64FromString() error = %v, wantErr %v", err, false)
 				return
 			}
-			if int64(got) != tt.want {
-				t.Errorf("NewCode64FromString() got = %v, want %v", int64(got), tt.want)
+			if uint64(got) != tt.want {
+				t.Errorf("NewCode64FromString() got = %v, want %v", uint64(got), tt.want)
 			}
 		})
 	}
@@ -224,7 +214,7 @@ func TestNewCode64FromString(t *testing.T) {
 			return
 		}
 		if got > 0 {
-			t.Errorf("NewCode64FromString() got = %v, want %v", int64(got), 0)
+			t.Errorf("NewCode64FromString() got = %v, want %v", uint64(got), 0)
 		}
 	})
 
@@ -235,7 +225,7 @@ func TestNewCode64FromString(t *testing.T) {
 			return
 		}
 		if got > 0 {
-			t.Errorf("NewCode64FromString() got = %v, want %v", int64(got), 0)
+			t.Errorf("NewCode64FromString() got = %v, want %v", uint64(got), 0)
 		}
 	})
 }

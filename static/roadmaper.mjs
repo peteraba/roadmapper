@@ -6,7 +6,7 @@ const app = () => {
     roadmapForm();
     privacyPolicy();
 
-    if (!roadmap || !roadmap.Children) {
+    if (!hasRoadmap) {
         document.querySelectorAll('.roadmap-dashboard-link').forEach(element => element.classList.add('disabled'));
         document.getElementById('roadmap-dashboard').remove();
 

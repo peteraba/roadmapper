@@ -14,6 +14,4 @@ export const refreshSvg = () => {
     };
     xhttp.open("GET", url, true);
     xhttp.send();
-
-
 };

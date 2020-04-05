@@ -120,11 +120,11 @@ func main() {
 				Aliases: []string{"co"},
 				Usage:   "convert between id and code",
 				Flags: []cli.Flag{
-					&cli.Int64Flag{Name: "id", Aliases: []string{"i"}, Usage: "id to convert to code"},
+					&cli.Uint64Flag{Name: "id", Aliases: []string{"i"}, Usage: "id to convert to code"},
 					&cli.StringFlag{Name: "code", Aliases: []string{"c"}, Usage: "code to convert to id"},
 				},
 				Action: func(c *cli.Context) error {
-					err := Convert(cb, c.Int64("id"), c.String("code"))
+					err := Convert(cb, c.Uint64("id"), c.String("code"))
 					return err
 				},
 			},

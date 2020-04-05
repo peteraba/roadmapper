@@ -146,7 +146,7 @@ Marketing
 			err := chromedp.Run(ctx,
 				chromedp.Navigate(baseUrl),
 				// wait for form element to become visible (ie, page is loaded)
-				chromedp.WaitVisible(`#roadmap-form`),
+				chromedp.WaitVisible(`#dbRoadmap-form`),
 				// set the value of the textarea
 				chromedp.SetValue(`#txt`, tt.txt),
 				// set the value of the base url
@@ -154,11 +154,11 @@ Marketing
 				// set the value of the base url
 				chromedp.Submit(`#form-submit`),
 				// wait for redirect
-				chromedp.WaitVisible(`#roadmap-svg`),
+				chromedp.WaitVisible(`#dbRoadmap-svg`),
 				// retrieve relevant values
 				chromedp.Value(`#txt`, &txtFound),
 				chromedp.Value(`#base-url`, &txtBaseUrlFound),
-				chromedp.OuterHTML(`#roadmap-svg`, &svgFound),
+				chromedp.OuterHTML(`#dbRoadmap-svg`, &svgFound),
 			)
 
 			if err != nil {

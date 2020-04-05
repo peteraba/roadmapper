@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"html/template"
-	"strings"
 )
 
 const layoutTemplate = `<!doctype html>
@@ -20,7 +19,7 @@ const layoutTemplate = `<!doctype html>
 	<!-- Custom -->
 	<link rel="stylesheet" href="/static/roadmaper.css">
 
-	<title>{{.Roadmap.Title}}</title>
+	<title>{{.Title}}</title>
 
 	<!-- Favicon from https://favicon.io/favicon-generator/ [r, rounded, archivo black, 150, #343a40, #fff] -->
 	<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
@@ -132,7 +131,7 @@ const layoutTemplate = `<!doctype html>
 	</div>
 
 <script>
-var roadmap = {{ .Roadmap }};
+const hasRoadmap = {{ .HasRoadmap }};
 </script>
 	
 <!-- Optional JavaScript -->
@@ -177,7 +176,7 @@ var dateFormatMap = map[string]string{
 	"1.2.2020":   "M/D/YYYY (3.7.2020)",
 }
 
-func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain, docBaseUrl, dateFormat, baseUrl string, selfHosted bool) (string, error) {
+func bootstrapRoadmap(roadmap *Roadmap, matomoDomain, docBaseUrl string, selfHosted bool) (string, error) {
 	writer := bytes.NewBufferString("")
 
 	t, err := template.New("layout").Parse(layoutTemplate)
@@ -185,13 +184,26 @@ func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain, docBaseUrl,
 		return "", err
 	}
 
+	var dateFormat, baseUrl, title, raw string
+	hasRoadmap := false
+
+	if roadmap != nil {
+		dateFormat = roadmap.DateFormat
+		baseUrl = roadmap.BaseURL
+		title = ""
+		raw = string(roadmap.ToContent())
+		hasRoadmap = true
+	}
+
 	data := struct {
-		Roadmap       Project
+		Roadmap       *Roadmap
 		MatomoDomain  string
 		DocBaseUrl    string
 		DateFormat    string
 		BaseUrl       string
+		Title         string
 		SelfHosted    bool
+		HasRoadmap    bool
 		Raw           string
 		DateFormats   []string
 		DateFormatMap map[string]string
@@ -201,8 +213,10 @@ func bootstrapRoadmap(roadmap Project, lines []string, matomoDomain, docBaseUrl,
 		DocBaseUrl:    docBaseUrl,
 		DateFormat:    dateFormat,
 		BaseUrl:       baseUrl,
+		Title:         title,
 		SelfHosted:    selfHosted,
-		Raw:           strings.Join(lines, "\n"),
+		HasRoadmap:    hasRoadmap,
+		Raw:           raw,
 		DateFormats:   dateFormats,
 		DateFormatMap: dateFormatMap,
 	}
