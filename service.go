@@ -97,7 +97,7 @@ func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder) func(c echo.Contex
 
 		ctx.Response().Header().Set(echo.HeaderContentType, "image/svg+xml")
 
-		return ctx.XML(http.StatusOK, string(img))
+		return ctx.String(http.StatusOK, string(img))
 	}
 }
 
@@ -221,7 +221,7 @@ func renderImg(cvs *canvas.Canvas, renderType renderType) []byte {
 		svg.Close()
 	}
 
-	return nil
+	return buf.Bytes()
 }
 
 func getCanvasSizes(fw, hh, lh uint64) (uint64, uint64, uint64) {
