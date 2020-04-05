@@ -18,7 +18,7 @@ func (r Roadmap) ToVisual() VisualRoadmap {
 
 	visual.Dates = r.ToDates()
 
-	foundMilestones := map[int]Milestone{}
+	foundMilestones := map[int]*Milestone{}
 	for i, p := range r.Projects {
 		dates := findVisualDates(r.Projects, i)
 		visual.Projects = append(
@@ -42,7 +42,7 @@ func (r Roadmap) ToVisual() VisualRoadmap {
 
 			milestone, ok := foundMilestones[mk]
 			if !ok {
-				foundMilestones[mk] = Milestone{
+				foundMilestones[mk] = &Milestone{
 					DeadlineAt: endAt,
 					Color:      p.Color,
 				}

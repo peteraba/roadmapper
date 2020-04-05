@@ -15,12 +15,14 @@ func TestRoadmap_ToVisual(t *testing.T) {
 	dates0408 := time.Date(2020, 4, 8, 0, 0, 0, 0, time.UTC)
 	dates0415 := time.Date(2020, 4, 15, 0, 0, 0, 0, time.UTC)
 	dates0418 := time.Date(2020, 4, 18, 0, 0, 0, 0, time.UTC)
+	dates0419 := time.Date(2020, 4, 19, 0, 0, 0, 0, time.UTC)
 	dates0420 := time.Date(2020, 4, 20, 0, 0, 0, 0, time.UTC)
 	now := time.Now()
 	var percentage1 uint8 = 40
 	urls1 := []string{"/foo", "https://example.com/foo"}
 	urls2 := []string{"bar"}
 	color1 := color.RGBA{255, 0, 0, 255}
+	color2 := color.RGBA{0, 255, 0, 255}
 
 	type fields struct {
 		ID         uint64
@@ -55,7 +57,8 @@ func TestRoadmap_ToVisual(t *testing.T) {
 					{Title: "Bring website online", Milestone: 1, Color: color1},
 					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1},
 					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
-					{Title: "Command line tool", Percentage: percentage1},
+					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Milestone: 1, Color: color2},
+					{Title: "Marketing"},
 				},
 				[]Milestone{
 					{Title: "Milestone 0.1", URLs: urls2},
@@ -71,10 +74,11 @@ func TestRoadmap_ToVisual(t *testing.T) {
 					{Title: "Bring website online", Dates: &Dates{StartAt: dates0402, EndAt: dates0418}, Color: color1},
 					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1},
 					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
-					{Title: "Command line tool", Percentage: percentage1},
+					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Color: color2},
+					{Title: "Marketing"},
 				},
 				Milestones: []Milestone{
-					{Title: "Milestone 0.1", DeadlineAt: &dates0418, URLs: urls2, Color: color1},
+					{Title: "Milestone 0.1", DeadlineAt: &dates0419, URLs: urls2, Color: color1},
 					{Title: "Milestone 0.2", DeadlineAt: &dates0420},
 				},
 				Dates: &Dates{StartAt: dates0402, EndAt: dates0420},
