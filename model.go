@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image/color"
 	"image/color/palette"
-	"math"
 	"net/url"
 	"strconv"
 	"strings"
@@ -32,17 +31,18 @@ type Roadmap struct {
 type Project struct {
 	Indentation uint8       `json:"indentation"`
 	Title       string      `json:"title"`
-	Dates       *Dates      `json:"dates"`
-	Color       color.Color `json:"color"`
+	Dates       *Dates      `json:"dates,omitempty"`
+	Color       color.Color `json:"color,omitempty"`
 	Percentage  uint8       `json:"percentage"`
-	URLs        []string    `json:"urls"` // nolint
+	URLs        []string    `json:"urls,omitempty"` // nolint
+	Milestone   uint8       `json:"milestone,omitempty"`
 }
 
 type Milestone struct {
 	Title      string      `json:"title"`
-	DeadlineAt *time.Time  `json:"deadline_at"`
-	Color      color.Color `json:"color"`
-	URLs       []string    `json:"urls"` // nolint
+	DeadlineAt *time.Time  `json:"deadline_at,omitempty"`
+	Color      color.Color `json:"color,omitempty"`
+	URLs       []string    `json:"urls,omitempty"` // nolint
 }
 
 type Content string
@@ -107,7 +107,7 @@ func (c Content) toProjects(indentation, dateFormat, baseUrl string) []Project {
 
 		indentation, title, extra := splitLine(line, indentation)
 
-		startAt, endAt, c, urls, percent, err := parseExtra(extra, dateFormat, baseUrl)
+		startAt, endAt, c, urls, percent, milestone, err := parseExtra(extra, dateFormat, baseUrl)
 		if err != nil {
 			continue
 		}
@@ -125,6 +125,7 @@ func (c Content) toProjects(indentation, dateFormat, baseUrl string) []Project {
 				Color:       c,
 				Percentage:  percent,
 				URLs:        urls,
+				Milestone:   milestone,
 			},
 		)
 	}
@@ -173,6 +174,10 @@ func (p Project) ToString(dateFormat string) string {
 	}
 
 	extra = append(extra, p.URLs...)
+
+	if p.Milestone > 0 {
+		extra = append(extra, fmt.Sprintf("|%d", p.Milestone))
+	}
 
 	if len(extra) == 0 {
 		return fmt.Sprintf("%s%s", indentation, p.Title)
@@ -253,7 +258,7 @@ func (c Content) toMilestones(dateFormat, baseUrl string) []Milestone {
 
 		_, title, extra := splitLine(line, "")
 
-		deadlineAt, endAt, c, urls, _, err := parseExtra(extra, dateFormat, baseUrl)
+		deadlineAt, endAt, c, urls, _, _, err := parseExtra(extra, dateFormat, baseUrl)
 		if err != nil {
 			continue
 		}
@@ -340,14 +345,15 @@ func isLineMilestone(line string) bool {
 	return true
 }
 
-func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, color.Color, []string, uint8, error) {
+func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, color.Color, []string, uint8, uint8, error) {
 	parts := strings.Split(extra, ", ")
 
 	var (
 		startAt, endAt *time.Time
 		urls           []string
-		percent        uint8 = 100
 		c              color.Color
+		percent        uint8 = 100
+		milestone      uint8
 	)
 
 	for i := 0; i < len(parts); i++ {
@@ -355,85 +361,96 @@ func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, colo
 			break
 		}
 
-		startAt, endAt, urls, percent, c = parseExtraPart(parts[i], startAt, endAt, urls, percent, c, dateFormat, baseUrl)
+		startAt, endAt, urls, c, percent, milestone = parseExtraPart(parts[i], startAt, endAt, urls, c, percent, milestone, dateFormat, baseUrl)
 	}
 
-	return startAt, endAt, c, urls, percent, nil
+	return startAt, endAt, c, urls, percent, milestone, nil
 }
 
-func parseExtraPart(part string, f, t *time.Time, u []string, p uint8, c color.Color, dateFormat, baseUrl string) (*time.Time, *time.Time, []string, uint8, color.Color) {
+func parseExtraPart(part string, f, t *time.Time, u []string, c color.Color, p, m uint8, dateFormat, baseUrl string) (*time.Time, *time.Time, []string, color.Color, uint8, uint8) {
 	t2, err := time.Parse(dateFormat, part)
 	if err == nil {
 		if f == nil {
-			return &t2, t, u, p, c
+			return &t2, t, u, c, p, m
 		}
 
-		return f, &t2, u, p, c
+		return f, &t2, u, c, p, m
 	}
 
-	n, err := parsePercentage(part)
+	p2, err := parsePercentage(part)
 	if err == nil {
-		return f, t, u, n, c
+		return f, t, u, c, p2, m
+	}
+
+	m2, err := parseMilestone(part)
+	if err == nil {
+		return f, t, u, c, p, m2
 	}
 
 	c2, err := parseColor(part)
 	if err == nil {
-		return f, t, u, p, c2
+		return f, t, u, c2, p, m
 	}
 
 	parsedUrl, err := url.ParseRequestURI(part)
 	if err == nil && parsedUrl.Scheme != "" && parsedUrl.Host != "" {
-		return f, t, append(u, part), p, c
+		return f, t, append(u, part), c, p, m
 	}
 
 	if baseUrl != "" {
 		prefixedUrl := fmt.Sprintf("%s/%s", strings.TrimRight(baseUrl, "/"), strings.TrimLeft(part, "/"))
 		_, err = url.ParseRequestURI(prefixedUrl)
 		if err == nil {
-			return f, t, append(u, prefixedUrl), p, c
+			return f, t, append(u, prefixedUrl), c, p, m
 		}
 	}
 
-	return f, t, u, p, c
+	return f, t, u, c, p, m
 }
 
 var errCannotParsePercentage = errors.New("can not parse string as percentage")
 
 func parsePercentage(part string) (uint8, error) {
-	if len(part) < 1 {
+	if len(part) < 2 {
 		return 0, errCannotParsePercentage
 	}
 
-	percentage := false
-	if part[len(part)-1] == '%' {
-		part = part[:len(part)-1]
-		percentage = true
+	if part[len(part)-1] != '%' {
+		return 0, errCannotParsePercentage
 	}
+
+	part = part[:len(part)-1]
 
 	n, err := strconv.ParseUint(part, 10, 8)
-	if err == nil {
-		if n > 100 {
-			return 0, errCannotParsePercentage
-		}
-		return uint8(n), nil
-	}
-
-	n2, err := strconv.ParseFloat(part, 64)
 	if err != nil {
 		return 0, errCannotParsePercentage
 	}
-	if n2 < 0 {
+	if n > 100 {
 		return 0, errCannotParsePercentage
 	}
-	if n2 < 1 && !percentage {
-		n2 = n2 * 100
+
+	return uint8(n), nil
+}
+
+var errCannotParseMilestone = errors.New("can not parse string as milestone")
+
+func parseMilestone(part string) (uint8, error) {
+	if len(part) < 2 {
+		return 0, errCannotParseMilestone
 	}
 
-	if n2 > 0 && n2 < 100 {
-		return uint8(math.Round(n2)), nil
+	if part[0] != '|' {
+		return 0, errCannotParseMilestone
 	}
 
-	return 0, errCannotParsePercentage
+	part = part[1:]
+
+	n, err := strconv.ParseUint(part, 10, 8)
+	if err == nil {
+		return uint8(n), nil
+	}
+
+	return 0, errCannotParseMilestone
 }
 
 func parseColor(part string) (color.RGBA, error) {

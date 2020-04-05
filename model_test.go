@@ -191,15 +191,15 @@ func TestContent_toProjects(t *testing.T) {
 			"Initial development",
 			args{"  ", "2006-01-02", "http://example.com/"},
 			[]Project{
-				{0, "Initial development", nil, nil, 100, nil},
+				{0, "Initial development", nil, nil, 100, nil, 0},
 			},
 		},
 		{
-			"1 project line",
+			"1 project line w dates",
 			"Initial development [2020-02-12, 2020-02-20]",
 			args{"  ", "2006-01-02", "http://example.com/"},
 			[]Project{
-				{0, "Initial development", &Dates{startAt, endAt}, nil, 100, nil},
+				{0, "Initial development", &Dates{startAt, endAt}, nil, 100, nil, 0},
 			},
 		},
 	}
@@ -376,12 +376,14 @@ func TestRoadmap_ToContent(t *testing.T) {
 						Color:       color.RGBA{R: 255, G: 0, B: 0, A: 255},
 						URLs:        []string{"https://example.com/abc", "bcdef"},
 						Indentation: 1,
+						Milestone:   1,
 					},
 					{
 						Title:       "Create server infrastructure",
 						Dates:       &dates3,
 						Percentage:  47,
 						Indentation: 1,
+						Milestone:   1,
 					},
 				},
 				Milestones: []Milestone{
@@ -397,8 +399,8 @@ func TestRoadmap_ToContent(t *testing.T) {
 				},
 			},
 			`Bring website online
-	Select and purchase domain [2020-02-04, 2020-02-25, 85%, #ff0000, https://example.com/abc, bcdef]
-	Create server infrastructure [2020-02-25, 2020-02-28, 47%]
+	Select and purchase domain [2020-02-04, 2020-02-25, 85%, #ff0000, https://example.com/abc, bcdef, |1]
+	Create server infrastructure [2020-02-25, 2020-02-28, 47%, |1]
 
 |Milestone 0.1
 |Milestone 0.2 [2020-02-12, #00ff00, https://example.com/abc, bcdef]`,
@@ -603,10 +605,10 @@ func Test_splitLine(t *testing.T) {
 		},
 		{
 			"Weird line",
-			args{"\t\tSelect and purchase domain [2020-02-12, 2020-02-20] [2020-02-04, 2020-02-25, 100%, /issues/1]", "\t"},
+			args{"\t\tSelect and purchase domain [2020-02-12, 2020-02-20] [2020-02-04, 2020-02-25, 100%, #f00, /issues/1, |2]", "\t"},
 			2,
 			"Select and purchase domain [2020-02-12, 2020-02-20]",
-			"2020-02-04, 2020-02-25, 100%, /issues/1",
+			"2020-02-04, 2020-02-25, 100%, #f00, /issues/1, |2",
 		},
 	}
 	for _, tt := range tests {
@@ -647,6 +649,11 @@ func Test_isLineProject(t *testing.T) {
 		{
 			"simple project indented",
 			args{line: "  a|"},
+			true,
+		},
+		{
+			"complex project",
+			args{line: "  Select and purchase domain [2020-02-04, 2020-02-25, 100%, #f00, /issues/1, |2]"},
 			true,
 		},
 		{
@@ -721,8 +728,9 @@ func Test_parseExtraPart(t *testing.T) {
 		f          *time.Time
 		t          *time.Time
 		u          []string
-		p          uint8
 		c          color.Color
+		p          uint8
+		m          uint8
 		dateFormat string
 		baseUrl    string
 	}
@@ -744,6 +752,7 @@ func Test_parseExtraPart(t *testing.T) {
 		endAt     *time.Time
 		urls      []string
 		percent   uint8
+		milestone uint8
 		wantColor color.Color
 	}{
 		{
@@ -753,6 +762,7 @@ func Test_parseExtraPart(t *testing.T) {
 			endAt:     nil,
 			urls:      nil,
 			percent:   0,
+			milestone: 0,
 			wantColor: nil,
 		},
 		{
@@ -762,6 +772,7 @@ func Test_parseExtraPart(t *testing.T) {
 			endAt:     &nye,
 			urls:      nil,
 			percent:   0,
+			milestone: 0,
 			wantColor: nil,
 		},
 		{
@@ -771,6 +782,7 @@ func Test_parseExtraPart(t *testing.T) {
 			endAt:     &nye,
 			urls:      nil,
 			percent:   0,
+			milestone: 0,
 			wantColor: nil,
 		},
 		{
@@ -780,6 +792,7 @@ func Test_parseExtraPart(t *testing.T) {
 			endAt:     nil,
 			urls:      []string{url},
 			percent:   0,
+			milestone: 0,
 			wantColor: nil,
 		},
 		{
@@ -789,24 +802,7 @@ func Test_parseExtraPart(t *testing.T) {
 			endAt:     nil,
 			urls:      []string{url, "http://example.com/asd"},
 			percent:   0,
-			wantColor: nil,
-		},
-		{
-			name:      "parse percentage",
-			args:      args{part: "60", dateFormat: "2006-01-02", baseUrl: ""},
-			startAt:   nil,
-			endAt:     nil,
-			urls:      nil,
-			percent:   60,
-			wantColor: nil,
-		},
-		{
-			name:      "parsing percentage overwrites existing percentage",
-			args:      args{part: "60", p: 30, dateFormat: "2006-01-02", baseUrl: ""},
-			startAt:   nil,
-			endAt:     nil,
-			urls:      nil,
-			percent:   60,
+			milestone: 0,
 			wantColor: nil,
 		},
 		{
@@ -816,6 +812,7 @@ func Test_parseExtraPart(t *testing.T) {
 			endAt:     nil,
 			urls:      nil,
 			percent:   0,
+			milestone: 0,
 			wantColor: color.RGBA{R: 255, G: 255, B: 255, A: 255},
 		},
 		{
@@ -825,12 +822,53 @@ func Test_parseExtraPart(t *testing.T) {
 			endAt:     nil,
 			urls:      nil,
 			percent:   0,
+			milestone: 0,
 			wantColor: color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		},
+		{
+			name:      "parse percentage",
+			args:      args{part: "60%", dateFormat: "2006-01-02", baseUrl: ""},
+			startAt:   nil,
+			endAt:     nil,
+			urls:      nil,
+			percent:   60,
+			milestone: 0,
+			wantColor: nil,
+		},
+		{
+			name:      "parsing percentage overwrites existing percentage",
+			args:      args{part: "60%", p: 30, dateFormat: "2006-01-02", baseUrl: ""},
+			startAt:   nil,
+			endAt:     nil,
+			urls:      nil,
+			percent:   60,
+			milestone: 0,
+			wantColor: nil,
+		},
+		{
+			name:      "parse milestone",
+			args:      args{part: "|3", dateFormat: "2006-01-02", baseUrl: ""},
+			startAt:   nil,
+			endAt:     nil,
+			urls:      nil,
+			percent:   0,
+			milestone: 3,
+			wantColor: nil,
+		},
+		{
+			name:      "parsing milestone overwrites existing milestone",
+			args:      args{part: "|3", m: 2, dateFormat: "2006-01-02", baseUrl: ""},
+			startAt:   nil,
+			endAt:     nil,
+			urls:      nil,
+			percent:   0,
+			milestone: 3,
+			wantColor: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			startAt, endAt, urls, percent, gotColor := parseExtraPart(tt.args.part, tt.args.f, tt.args.t, tt.args.u, tt.args.p, tt.args.c, tt.args.dateFormat, tt.args.baseUrl)
+			startAt, endAt, urls, gotColor, percent, milestone := parseExtraPart(tt.args.part, tt.args.f, tt.args.t, tt.args.u, tt.args.c, tt.args.p, tt.args.m, tt.args.dateFormat, tt.args.baseUrl)
 			if !reflect.DeepEqual(startAt, tt.startAt) {
 				t.Errorf("parseProjectExtra() startAt = %v, want %v", startAt, tt.startAt)
 			}
@@ -840,11 +878,14 @@ func Test_parseExtraPart(t *testing.T) {
 			if !reflect.DeepEqual(urls, tt.urls) {
 				t.Errorf("parseProjectExtra() urls = %v, want %v", urls, tt.urls)
 			}
-			if percent != tt.percent {
-				t.Errorf("parseProjectExtra() percent = %v, want %v", percent, tt.percent)
-			}
 			if !reflect.DeepEqual(gotColor, tt.wantColor) {
 				t.Errorf("parseProjectExtra() gotColor = %v, want %v", gotColor, tt.wantColor)
+			}
+			if milestone != tt.milestone {
+				t.Errorf("parseProjectExtra() milestone = %v, want %v", milestone, tt.milestone)
+			}
+			if percent != tt.percent {
+				t.Errorf("parseProjectExtra() percent = %v, want %v", percent, tt.percent)
 			}
 		})
 	}
@@ -861,50 +902,32 @@ func Test_parsePercentage(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "10",
-			args:    args{part: "10"},
+			name:    "10%",
+			args:    args{part: "10%"},
 			want:    10,
 			wantErr: false,
 		},
 		{
-			name:    "0.20",
-			args:    args{part: "0.20"},
-			want:    20,
-			wantErr: false,
-		},
-		{
-			name:    "0.300005",
-			args:    args{part: "0.300005"},
-			want:    30,
-			wantErr: false,
-		},
-		{
-			name:    "40.0005",
-			args:    args{part: "0.400005"},
-			want:    40,
-			wantErr: false,
-		},
-		{
-			name:    "50%",
-			args:    args{part: "50%"},
-			want:    50,
-			wantErr: false,
-		},
-		{
-			name:    "as",
-			args:    args{part: "as"},
+			name:    "foo",
+			args:    args{part: "foo"},
 			want:    0,
 			wantErr: true,
 		},
 		{
-			name:    "200",
-			args:    args{part: "200"},
+			name:    "bar%",
+			args:    args{part: "bar%"},
 			want:    0,
 			wantErr: true,
 		},
 		{
-			name:    "-20",
-			args:    args{part: "-20"},
+			name:    "200%",
+			args:    args{part: "200%"},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "-20%",
+			args:    args{part: "-20%"},
 			want:    0,
 			wantErr: true,
 		},
@@ -918,6 +941,61 @@ func Test_parsePercentage(t *testing.T) {
 			}
 			if got != tt.want {
 				t.Errorf("parsePercentage() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_parseMilestone(t *testing.T) {
+	type args struct {
+		part string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    uint8
+		wantErr bool
+	}{
+		{
+			name:    "|123",
+			args:    args{part: "|123"},
+			want:    123,
+			wantErr: false,
+		},
+		{
+			name:    "foo",
+			args:    args{part: "foo"},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "|bar",
+			args:    args{part: "|bar"},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "|",
+			args:    args{part: "|"},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "|234|",
+			args:    args{part: "|234|"},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseMilestone(tt.args.part)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseMilestone() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("parseMilestone() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

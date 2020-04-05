@@ -95,7 +95,7 @@ Marketing
 	Create Facebook page [2020-03-17, 2020-03-25, 0%]
 	Write blog posts [2020-03-17, 2020-03-31, 0%]
 	Share blog post on social media [2020-03-17, 2020-03-31, 0%]
-	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0]`
+	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0%]`
 
 	txtBaseUrl := ""
 

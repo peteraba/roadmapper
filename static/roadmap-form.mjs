@@ -294,16 +294,19 @@ export const roadmapForm = () => {
         txtField.value = `Initial development [2020-02-12, 2020-02-20]
 Bring website online
 	Select and purchase domain [2020-02-04, 2020-02-25, 100%, /issues/1]
-	Create server infrastructure [2020-02-25, 2020-02-28, 100%]
+	Create server infrastructure [2020-02-25, 2020-02-28, 100%, |1]
 Command line tool
 	Create backend SVG generation [2020-03-03, 2020-03-10, 100%]
-	Replace frontend SVG generation with backend [2020-03-08, 2020-03-12, 100%]
+	Replace frontend SVG generation with backend [2020-03-08, 2020-03-12, 100%, |1]
 	Create documentation page [2020-03-13, 2020-03-31, 20%]
 Marketing
 	Create Facebook page [2020-03-17, 2020-03-25, 0%]
 	Write blog posts [2020-03-17, 2020-03-31, 0%]
 	Share blog post on social media [2020-03-17, 2020-03-31, 0%]
-	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0]`;
+	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0]
+
+|Milestone 0.1
+|Milestone 0.2 [2020-02-12, #00ff00, https://example.com/abc, bcdef]`;
         setSelectedIndex(dateFormatField, '2006-01-02');
         baseUrlField.value = 'https://github.com/peteraba/roadmapper';
 
