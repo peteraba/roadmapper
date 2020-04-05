@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	svg "github.com/peteraba/go-svg"
+	"github.com/tdewolff/canvas"
 )
 
 type VisualRoadmap struct {
@@ -135,12 +135,18 @@ func findVisualDates(projects []Project, start int) *Dates {
 	return dates
 }
 
-func createSvg(roadmap *Roadmap, fullWidth, headerHeight, lineHeight float64) svg.SVG {
+func (vr VisualRoadmap) Draw(fullWidth, headerHeight, lineHeight float64) *canvas.Canvas {
 	var (
 		fullHeight float64
-		elements   []interface{}
+		// elements   []interface{}
+		margin float64
 		// d          = roadmap.ToDates()
 	)
+
+	c := canvas.New(fullWidth, fullHeight)
+
+	ctx := canvas.NewContext(c)
+	ctx.Push()
 
 	// if d == nil {
 	// 	headerHeight = 0
@@ -159,7 +165,9 @@ func createSvg(roadmap *Roadmap, fullWidth, headerHeight, lineHeight float64) sv
 	//
 	// elements = append(elements, createSvgTableLines(fullWidth, fullHeight, fullWidth/3, headerHeight, lineHeight))
 
-	return svg.NewSVG(fullWidth, fullHeight, elements...)
+	c.Fit(margin)
+
+	return c
 }
 
 // func createStripesPattern() svg.Element {

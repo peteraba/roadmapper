@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bytes"
 	"context"
-	"encoding/xml"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -10,6 +10,8 @@ import (
 	"os/signal"
 	"strconv"
 	"time"
+
+	"github.com/tdewolff/canvas"
 
 	"github.com/gosuri/uitable"
 	"github.com/labstack/echo"
@@ -21,6 +23,12 @@ const (
 	defaultSvgWidth        = 800
 	defaultSvgHeaderHeight = 80
 	defaultSvgLineHeight   = 40
+)
+
+type renderType string
+
+const (
+	svgType renderType = "svg"
 )
 
 func Serve(quit chan os.Signal, port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl string, selfHosted bool) {
@@ -59,66 +67,68 @@ func Serve(quit chan os.Signal, port uint, certFile, keyFile string, rw DbReadWr
 }
 
 func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) error {
-	return func(c echo.Context) error {
-		fw, err := strconv.ParseUint(c.QueryParam("width"), 10, 64)
+	return func(ctx echo.Context) error {
+		fw, err := strconv.ParseUint(ctx.QueryParam("width"), 10, 64)
 		if err != nil {
 			fw = defaultSvgWidth
 		}
 
-		hh, err := strconv.ParseUint(c.QueryParam("height"), 10, 64)
+		hh, err := strconv.ParseUint(ctx.QueryParam("height"), 10, 64)
 		if err != nil {
 			hh = defaultSvgHeaderHeight
 		}
 
-		lh, err := strconv.ParseUint(c.QueryParam("lineHeight"), 10, 64)
+		lh, err := strconv.ParseUint(ctx.QueryParam("lineHeight"), 10, 64)
 		if err != nil {
 			lh = defaultSvgLineHeight
 		}
 
-		fw, hh, lh = getSvgSizes(fw, hh, lh)
+		fw, hh, lh = getCanvasSizes(fw, hh, lh)
 
-		roadmap, code, err := load(rw, cb, c.Param("identifier"))
+		roadmap, code, err := load(rw, cb, ctx.Param("identifier"))
 		if err != nil {
 			log.Print(err)
-			return c.HTML(code, fmt.Sprintf("%v", err))
+			return ctx.HTML(code, fmt.Sprintf("%v", err))
 		}
 
-		svg := createSvg(roadmap, float64(fw), float64(hh), float64(lh))
+		cvs := roadmap.ToVisual().Draw(float64(fw), float64(hh), float64(lh))
 
-		c.Response().Header().Set(echo.HeaderContentType, "image/svg+xml")
+		img := renderImg(cvs, svgType)
 
-		return c.XML(http.StatusOK, svg)
+		ctx.Response().Header().Set(echo.HeaderContentType, "image/svg+xml")
+
+		return ctx.XML(http.StatusOK, string(img))
 	}
 }
 
 func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl string, selfHosted bool) func(c echo.Context) error {
-	return func(c echo.Context) error {
-		roadmap, code, err := load(rw, cb, c.Param("identifier"))
+	return func(ctx echo.Context) error {
+		roadmap, code, err := load(rw, cb, ctx.Param("identifier"))
 		if err != nil {
-			return c.HTML(code, err.Error())
+			return ctx.HTML(code, err.Error())
 		}
 
 		output, err := bootstrapRoadmap(roadmap, matomoDomain, docBaseUrl, selfHosted)
 		if err != nil {
 			log.Print(err)
-			return c.HTML(ErrorToHttpCode(err, http.StatusInternalServerError), err.Error())
+			return ctx.HTML(ErrorToHttpCode(err, http.StatusInternalServerError), err.Error())
 		}
 
-		return c.HTML(http.StatusOK, output)
+		return ctx.HTML(http.StatusOK, output)
 	}
 }
 
 func createPostRoadmap(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) error {
-	return func(c echo.Context) error {
-		prevID, err := getPrevID(cb, c.Param("identifier"))
+	return func(ctx echo.Context) error {
+		prevID, err := getPrevID(cb, ctx.Param("identifier"))
 		if err != nil {
 			log.Print(err)
-			return c.Redirect(http.StatusSeeOther, "/?error="+url.QueryEscape(err.Error()))
+			return ctx.Redirect(http.StatusSeeOther, "/?error="+url.QueryEscape(err.Error()))
 		}
 
-		content := c.FormValue("txt")
-		dateFormat := c.FormValue("dateFormat")
-		baseUrl := c.FormValue("baseUrl")
+		content := ctx.FormValue("txt")
+		dateFormat := ctx.FormValue("dateFormat")
+		baseUrl := ctx.FormValue("baseUrl")
 		now := time.Now()
 
 		roadmap := Content(content).ToRoadmap(newCode64().ID(), prevID, dateFormat, baseUrl, now)
@@ -126,18 +136,18 @@ func createPostRoadmap(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) err
 		err = rw.Write(cb, roadmap)
 		if err != nil {
 			log.Print(err)
-			return c.HTML(http.StatusMethodNotAllowed, err.Error())
+			return ctx.HTML(http.StatusMethodNotAllowed, err.Error())
 		}
 
 		code, err := cb.NewFromID(roadmap.ID)
 		if err != nil {
 			log.Print(err)
-			return c.HTML(http.StatusMethodNotAllowed, err.Error())
+			return ctx.HTML(http.StatusMethodNotAllowed, err.Error())
 		}
 
 		newURL := fmt.Sprintf("/%s#", code.String())
 
-		return c.Redirect(http.StatusSeeOther, newURL)
+		return ctx.Redirect(http.StatusSeeOther, newURL)
 	}
 }
 
@@ -189,23 +199,32 @@ func startWrapper(e *echo.Echo, certFile, keyFile string) func(port uint) error 
 }
 
 func Render(rw FileReadWriter, content, output, dateFormat, baseUrl string, fw, hh, lh uint64) error {
+	fw, hh, lh = getCanvasSizes(fw, hh, lh)
+
 	roadmap := Content(content).ToRoadmap(0, nil, dateFormat, baseUrl, time.Now())
+	cvs := roadmap.ToVisual().Draw(float64(fw), float64(hh), float64(lh))
+	img := renderImg(cvs, svgType)
 
-	fw, hh, lh = getSvgSizes(fw, hh, lh)
-
-	svg := createSvg(&roadmap, float64(fw), float64(hh), float64(lh))
-
-	b, err := xml.Marshal(svg)
-	if err != nil {
-		return err
-	}
-
-	err = rw.Write(output, string(b))
+	err := rw.Write(output, string(img))
 
 	return err
 }
 
-func getSvgSizes(fw, hh, lh uint64) (uint64, uint64, uint64) {
+func renderImg(cvs *canvas.Canvas, renderType renderType) []byte {
+	var buf bytes.Buffer
+
+	switch renderType {
+	case svgType:
+		svg := canvas.NewSVG(&buf, cvs.W, cvs.H)
+
+		cvs.Render(svg)
+		svg.Close()
+	}
+
+	return nil
+}
+
+func getCanvasSizes(fw, hh, lh uint64) (uint64, uint64, uint64) {
 	if fw < defaultSvgWidth {
 		fw = defaultSvgWidth
 	}

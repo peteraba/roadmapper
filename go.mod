@@ -24,10 +24,10 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/ory/dockertest v3.3.5+incompatible
-	github.com/peteraba/go-svg v0.0.0-20200310222005-7871670c1f1d
 	github.com/rubenv/sql-migrate v0.0.0-20200212082348-64f95ea68aa3
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1
+	github.com/tdewolff/canvas v0.0.0-20200405143149-4ba3ed64cbd5
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/valyala/fasttemplate v1.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect

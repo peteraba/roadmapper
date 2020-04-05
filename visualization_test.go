@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/peteraba/go-svg"
 )
 
 func TestRoadmap_ToVisual(t *testing.T) {
@@ -191,27 +189,4 @@ func Test_findVisualDates(t *testing.T) {
 
 		_ = findVisualDates(nil, 1)
 	})
-}
-
-func Test_createSvg(t *testing.T) {
-	type args struct {
-		roadmap      *Roadmap
-		fullWidth    float64
-		headerHeight float64
-		lineHeight   float64
-	}
-	tests := []struct {
-		name string
-		args args
-		want svg.SVG
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := createSvg(tt.args.roadmap, tt.args.fullWidth, tt.args.headerHeight, tt.args.lineHeight); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("createSvg() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }
