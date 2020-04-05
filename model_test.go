@@ -279,7 +279,7 @@ func TestRoadmap_ToContent(t *testing.T) {
 				Projects: []Project{
 					{
 						Title:      "Select and purchase domain",
-						Color:      color.RGBA{R: 255, G: 0, B: 0, A: 255},
+						Color:      &color.RGBA{R: 255, G: 0, B: 0, A: 255},
 						Percentage: 100,
 					},
 				},
@@ -341,7 +341,7 @@ func TestRoadmap_ToContent(t *testing.T) {
 				Milestones: []Milestone{
 					{
 						Title: "Milestone 0.2",
-						Color: color.RGBA{R: 255, G: 0, B: 0, A: 255},
+						Color: &color.RGBA{R: 255, G: 0, B: 0, A: 255},
 					},
 				},
 			},
@@ -373,7 +373,7 @@ func TestRoadmap_ToContent(t *testing.T) {
 						Title:       "Select and purchase domain",
 						Dates:       &dates2,
 						Percentage:  85,
-						Color:       color.RGBA{R: 255, G: 0, B: 0, A: 255},
+						Color:       &color.RGBA{R: 255, G: 0, B: 0, A: 255},
 						URLs:        []string{"https://example.com/abc", "bcdef"},
 						Indentation: 1,
 						Milestone:   1,
@@ -393,7 +393,7 @@ func TestRoadmap_ToContent(t *testing.T) {
 					{
 						Title:      "Milestone 0.2",
 						DeadlineAt: &startAt1,
-						Color:      color.RGBA{R: 0, G: 255, B: 0, A: 255},
+						Color:      &color.RGBA{R: 0, G: 255, B: 0, A: 255},
 						URLs:       []string{"https://example.com/abc", "bcdef"},
 					},
 				},
@@ -728,7 +728,7 @@ func Test_parseExtraPart(t *testing.T) {
 		f          *time.Time
 		t          *time.Time
 		u          []string
-		c          color.Color
+		c          *color.RGBA
 		p          uint8
 		m          uint8
 		dateFormat string
@@ -753,7 +753,7 @@ func Test_parseExtraPart(t *testing.T) {
 		urls      []string
 		percent   uint8
 		milestone uint8
-		wantColor color.Color
+		wantColor *color.RGBA
 	}{
 		{
 			name:      "parse from",
@@ -813,17 +813,17 @@ func Test_parseExtraPart(t *testing.T) {
 			urls:      nil,
 			percent:   0,
 			milestone: 0,
-			wantColor: color.RGBA{R: 255, G: 255, B: 255, A: 255},
+			wantColor: &color.RGBA{R: 255, G: 255, B: 255, A: 255},
 		},
 		{
 			name:      "parsing color overwrites existing color",
-			args:      args{part: "#ffffff", c: color.RGBA{R: 30, G: 20, B: 40, A: 30}, dateFormat: "2006-01-02", baseUrl: ""},
+			args:      args{part: "#ffffff", c: &color.RGBA{R: 30, G: 20, B: 40, A: 30}, dateFormat: "2006-01-02", baseUrl: ""},
 			startAt:   nil,
 			endAt:     nil,
 			urls:      nil,
 			percent:   0,
 			milestone: 0,
-			wantColor: color.RGBA{R: 255, G: 255, B: 255, A: 255},
+			wantColor: &color.RGBA{R: 255, G: 255, B: 255, A: 255},
 		},
 		{
 			name:      "parse percentage",
@@ -1015,43 +1015,43 @@ func Test_parseColor(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    color.Color
+		want    *color.RGBA
 		wantErr bool
 	}{
 		{
 			name:    "#333",
 			args:    args{part: "#333"},
-			want:    color.RGBA{hex33, hex33, hex33, 255},
+			want:    &color.RGBA{hex33, hex33, hex33, 255},
 			wantErr: false,
 		},
 		{
 			name:    "#332133",
 			args:    args{part: "#332133"},
-			want:    color.RGBA{hex33, hex21, hex33, 255},
+			want:    &color.RGBA{hex33, hex21, hex33, 255},
 			wantErr: false,
 		},
 		{
 			name:    "#fa2133",
 			args:    args{part: "#fa2133"},
-			want:    color.RGBA{hexfa, hex21, hex33, 255},
+			want:    &color.RGBA{hexfa, hex21, hex33, 255},
 			wantErr: false,
 		},
 		{
 			name:    "332133",
 			args:    args{part: "332133"},
-			want:    color.RGBA{},
+			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "#33",
 			args:    args{part: "#33"},
-			want:    color.RGBA{},
+			want:    nil,
 			wantErr: true,
 		},
 		{
 			name:    "#33213",
 			args:    args{part: "#33213"},
-			want:    color.RGBA{},
+			want:    nil,
 			wantErr: true,
 		},
 	}

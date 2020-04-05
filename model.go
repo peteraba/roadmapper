@@ -32,7 +32,7 @@ type Project struct {
 	Indentation uint8       `json:"indentation"`
 	Title       string      `json:"title"`
 	Dates       *Dates      `json:"dates,omitempty"`
-	Color       color.Color `json:"color,omitempty"`
+	Color       *color.RGBA `json:"color,omitempty"`
 	Percentage  uint8       `json:"percentage"`
 	URLs        []string    `json:"urls,omitempty"` // nolint
 	Milestone   uint8       `json:"milestone,omitempty"`
@@ -41,7 +41,7 @@ type Project struct {
 type Milestone struct {
 	Title      string      `json:"title"`
 	DeadlineAt *time.Time  `json:"deadline_at,omitempty"`
-	Color      color.Color `json:"color,omitempty"`
+	Color      *color.RGBA `json:"color,omitempty"`
 	URLs       []string    `json:"urls,omitempty"` // nolint
 }
 
@@ -345,13 +345,13 @@ func isLineMilestone(line string) bool {
 	return true
 }
 
-func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, color.Color, []string, uint8, uint8, error) {
+func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, *color.RGBA, []string, uint8, uint8, error) {
 	parts := strings.Split(extra, ", ")
 
 	var (
 		startAt, endAt *time.Time
 		urls           []string
-		c              color.Color
+		c              *color.RGBA
 		percent        uint8 = 100
 		milestone      uint8
 	)
@@ -367,7 +367,7 @@ func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, colo
 	return startAt, endAt, c, urls, percent, milestone, nil
 }
 
-func parseExtraPart(part string, f, t *time.Time, u []string, c color.Color, p, m uint8, dateFormat, baseUrl string) (*time.Time, *time.Time, []string, color.Color, uint8, uint8) {
+func parseExtraPart(part string, f, t *time.Time, u []string, c *color.RGBA, p, m uint8, dateFormat, baseUrl string) (*time.Time, *time.Time, []string, *color.RGBA, uint8, uint8) {
 	t2, err := time.Parse(dateFormat, part)
 	if err == nil {
 		if f == nil {
@@ -453,21 +453,21 @@ func parseMilestone(part string) (uint8, error) {
 	return 0, errCannotParseMilestone
 }
 
-func parseColor(part string) (color.RGBA, error) {
+func parseColor(part string) (*color.RGBA, error) {
 	if len(part) != 4 && len(part) != 7 {
-		return color.RGBA{}, errors.New("invalid hexa color length")
+		return nil, errors.New("invalid hexa color length")
 	}
 
 	if part[0] != '#' {
-		return color.RGBA{}, errors.New("invalid first character for hexa color")
+		return nil, errors.New("invalid first character for hexa color")
 	}
 
 	s, err := charsToUint8(part[1:])
 	if err != nil {
-		return color.RGBA{}, err
+		return nil, fmt.Errorf("failed to parse to uint8s: %w", err)
 	}
 
-	return color.RGBA{R: s[0], G: s[1], B: s[2], A: 255}, nil
+	return &color.RGBA{R: s[0], G: s[1], B: s[2], A: 255}, nil
 }
 
 func charsToUint8(part string) ([3]uint8, error) {

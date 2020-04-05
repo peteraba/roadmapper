@@ -52,10 +52,10 @@ func TestRoadmap_ToVisual(t *testing.T) {
 				"https://example.com/",
 				[]Project{
 					{Title: "Initial development", Dates: &Dates{StartAt: dates0402, EndAt: dates0405}, URLs: urls1},
-					{Title: "Bring website online", Milestone: 1, Color: color1},
+					{Title: "Bring website online", Milestone: 1, Color: &color1},
 					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1},
 					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
-					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Milestone: 1, Color: color2},
+					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Milestone: 1, Color: &color2},
 					{Title: "Marketing"},
 				},
 				[]Milestone{
@@ -69,14 +69,14 @@ func TestRoadmap_ToVisual(t *testing.T) {
 			VisualRoadmap{
 				Projects: []Project{
 					{Title: "Initial development", Dates: &Dates{StartAt: dates0402, EndAt: dates0405}, URLs: urls1},
-					{Title: "Bring website online", Dates: &Dates{StartAt: dates0402, EndAt: dates0418}, Color: color1},
+					{Title: "Bring website online", Dates: &Dates{StartAt: dates0402, EndAt: dates0418}, Color: &color1},
 					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1},
 					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
-					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Color: color2},
+					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Color: &color2},
 					{Title: "Marketing"},
 				},
 				Milestones: []Milestone{
-					{Title: "Milestone 0.1", DeadlineAt: &dates0419, URLs: urls2, Color: color1},
+					{Title: "Milestone 0.1", DeadlineAt: &dates0419, URLs: urls2, Color: &color1},
 					{Title: "Milestone 0.2", DeadlineAt: &dates0420},
 				},
 				Dates: &Dates{StartAt: dates0402, EndAt: dates0420},
