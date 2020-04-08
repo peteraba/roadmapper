@@ -1,10 +1,16 @@
-beta.0 [2020-02-12, 2020-02-18]
-beta.1
-	12-factor-app [2020-02-12, 2020-02-18, 60%, #f00]
-	Validation improvements [2020-02-20, 2020-03-30, 0, https://github.com/abtercms/abterphp/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+milestone%3Abeta.1+label%3Avalidation+]
-idea-pool [https://github.com/abtercms/abterphp/issues?q=is%3Aopen+is%3Aissue+milestone%3Aidea-pool]
-	Locking feature
-		Investigations [2020-03-10, 2020-03-15, 0.006]
-	Layout logic [2020-03-15, 2020-03-18, 70%]
-	Map wysiwg editor languages
-		Investigations [2020-03-10, 2020-03-15, 0.006]
+Initial development [2020-02-12, 2020-02-20]
+Bring website online
+	Select and purchase domain [2020-02-04, 2020-02-25, https://github.com/peteraba/roadmapper/issues/1]
+	Create server infrastructure [2020-02-25, 2020-02-28, |1]
+Command line tool
+	Create backend SVG generation [2020-03-03, 2020-03-10]
+	Replace frontend SVG generation with backend [2020-03-08, 2020-03-12, |1]
+	Create documentation page [2020-03-13, 2020-03-31, 20%]
+Marketing
+	Create Facebook page [2020-03-17, 2020-03-25, 0%]
+	Write blog posts [2020-03-17, 2020-03-31, 0%]
+	Share blog post on social media [2020-03-17, 2020-03-31, 0%]
+	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, https://github.com/peteraba/roadmapper/0]
+
+|Milestone 0.1
+|Milestone 0.2 [2020-02-12, #00ff00, https://example.com/abc, https://github.com/peteraba/roadmapper/bcdef]
