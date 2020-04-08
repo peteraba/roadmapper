@@ -280,9 +280,11 @@ func (vr VisualRoadmap) drawProjects(ctx *canvas.Context, fullW, fullH, headerH,
 		ctx.SetFillColor(lightGrey)
 		ctx.DrawPath(x0+fullW/3, y, canvas.RoundedRectangle(w, h, r))
 
-		w *= float64(p.Percentage) / 100
-		ctx.SetFillColor(p.Color)
-		ctx.DrawPath(x0+fullW/3, y, canvas.RoundedRectangle(w, h, r))
+		if p.Percentage > 0 {
+			w *= float64(p.Percentage) / 100
+			ctx.SetFillColor(p.Color)
+			ctx.DrawPath(x0+fullW/3, y, canvas.RoundedRectangle(w, h, r))
+		}
 	}
 
 	ctx.SetStrokeWidth(strokeW)

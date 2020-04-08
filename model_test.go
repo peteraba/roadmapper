@@ -87,19 +87,19 @@ Marketing
 				BaseURL:    "https://example.com",
 				DateFormat: "2006-01-02",
 				Projects: []Project{
-					{Title: "Initial development", Percentage: 100},
-					{Title: "Bring website online", Percentage: 100},
-					{Title: "Select and purchase domain", Percentage: 100, Indentation: 1},
-					{Title: "Create server infrastructure", Percentage: 100, Indentation: 1},
-					{Title: "Command line tool", Percentage: 100},
-					{Title: "Create backend SVG generation", Percentage: 100, Indentation: 1},
-					{Title: "Replace frontend SVG generation with backend", Percentage: 100, Indentation: 1},
-					{Title: "Create documentation page", Percentage: 100, Indentation: 1},
-					{Title: "Marketing", Percentage: 100},
-					{Title: "Create Facebook page", Percentage: 100, Indentation: 1},
-					{Title: "Write blog posts", Percentage: 100, Indentation: 1},
-					{Title: "Share blog post on social media", Percentage: 100, Indentation: 1},
-					{Title: "Talk about the tool in relevant meetups", Percentage: 100, Indentation: 1},
+					{Title: "Initial development", Percentage: 0},
+					{Title: "Bring website online", Percentage: 0},
+					{Title: "Select and purchase domain", Percentage: 0, Indentation: 1},
+					{Title: "Create server infrastructure", Percentage: 0, Indentation: 1},
+					{Title: "Command line tool", Percentage: 0},
+					{Title: "Create backend SVG generation", Percentage: 0, Indentation: 1},
+					{Title: "Replace frontend SVG generation with backend", Percentage: 0, Indentation: 1},
+					{Title: "Create documentation page", Percentage: 0, Indentation: 1},
+					{Title: "Marketing", Percentage: 0},
+					{Title: "Create Facebook page", Percentage: 0, Indentation: 1},
+					{Title: "Write blog posts", Percentage: 0, Indentation: 1},
+					{Title: "Share blog post on social media", Percentage: 0, Indentation: 1},
+					{Title: "Talk about the tool in relevant meetups", Percentage: 0, Indentation: 1},
 				},
 				Milestones: []Milestone{
 					{Title: "Milestone 0.2"},
@@ -191,7 +191,7 @@ func TestContent_toProjects(t *testing.T) {
 			"Initial development",
 			args{"  ", "2006-01-02", "http://example.com/"},
 			[]Project{
-				{0, "Initial development", nil, nil, 100, nil, 0},
+				{0, "Initial development", nil, nil, 0, nil, 0},
 			},
 		},
 		{
@@ -199,7 +199,7 @@ func TestContent_toProjects(t *testing.T) {
 			"Initial development [2020-02-12, 2020-02-20]",
 			args{"  ", "2006-01-02", "http://example.com/"},
 			[]Project{
-				{0, "Initial development", &Dates{startAt, endAt}, nil, 100, nil, 0},
+				{0, "Initial development", &Dates{startAt, endAt}, nil, 0, nil, 0},
 			},
 		},
 	}
@@ -253,7 +253,7 @@ func TestRoadmap_ToContent(t *testing.T) {
 				Projects: []Project{
 					{
 						Title:      "Select and purchase domain",
-						Percentage: 100,
+						Percentage: 0,
 					},
 				},
 			},
@@ -267,7 +267,7 @@ func TestRoadmap_ToContent(t *testing.T) {
 					{
 						Title:      "Select and purchase domain",
 						Dates:      &dates1,
-						Percentage: 100,
+						Percentage: 0,
 					},
 				},
 			},
@@ -280,7 +280,7 @@ func TestRoadmap_ToContent(t *testing.T) {
 					{
 						Title:      "Select and purchase domain",
 						Color:      &color.RGBA{R: 255, G: 0, B: 0, A: 255},
-						Percentage: 100,
+						Percentage: 0,
 					},
 				},
 			},
@@ -305,7 +305,7 @@ func TestRoadmap_ToContent(t *testing.T) {
 					{
 						Title:      "Select and purchase domain",
 						URLs:       []string{"https://example.com/abc"},
-						Percentage: 100,
+						Percentage: 0,
 					},
 				},
 			},
@@ -367,7 +367,7 @@ func TestRoadmap_ToContent(t *testing.T) {
 				Projects: []Project{
 					{
 						Title:      "Bring website online",
-						Percentage: 100,
+						Percentage: 0,
 					},
 					{
 						Title:       "Select and purchase domain",

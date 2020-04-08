@@ -165,7 +165,7 @@ func (p Project) ToString(dateFormat string) string {
 		extra = append(extra, p.Dates.EndAt.Format(dateFormat))
 	}
 
-	if p.Percentage < 100 {
+	if p.Percentage > 0 {
 		extra = append(extra, fmt.Sprintf("%d%%", p.Percentage))
 	}
 
@@ -352,7 +352,7 @@ func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, *col
 		startAt, endAt *time.Time
 		urls           []string
 		c              *color.RGBA
-		percent        uint8 = 100
+		percent        uint8 = 0
 		milestone      uint8
 	)
 
