@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"image/color"
+	"image/color/palette"
 	"time"
 
 	"github.com/tdewolff/canvas"
@@ -21,13 +23,17 @@ func (r Roadmap) ToVisual() VisualRoadmap {
 	foundMilestones := map[int]*Milestone{}
 	for i, p := range r.Projects {
 		dates := findVisualDates(r.Projects, i)
+		c := p.Color
+		if c == nil {
+			c = findNthColor(i)
+		}
 		visual.Projects = append(
 			visual.Projects,
 			Project{
 				Indentation: p.Indentation,
 				Title:       p.Title,
 				Dates:       dates,
-				Color:       p.Color,
+				Color:       c,
 				Percentage:  p.Percentage,
 				URLs:        p.URLs,
 			},
@@ -93,6 +99,12 @@ func (r Roadmap) ToVisual() VisualRoadmap {
 		}
 	}
 
+	for i := range r.Milestones {
+		if r.Milestones[i].Color == nil {
+			r.Milestones[i].Color = &canvas.Darkgray
+		}
+	}
+
 	return visual
 }
 
@@ -135,7 +147,16 @@ func findVisualDates(projects []Project, start int) *Dates {
 	return dates
 }
 
+func findNthColor(i int) *color.RGBA {
+	n := (13 + i*71) % len(palette.WebSafe)
+
+	c := palette.WebSafe[n].(color.RGBA)
+
+	return &c
+}
+
 var fontFamily *canvas.FontFamily
+var lightGrey = color.RGBA{R: 220, G: 220, B: 220, A: 255}
 
 func (vr VisualRoadmap) Draw(fullW, headerH, lineH float64, dateFormat string) *canvas.Canvas {
 	if vr.Dates == nil {
@@ -161,6 +182,7 @@ func (vr VisualRoadmap) Draw(fullW, headerH, lineH float64, dateFormat string) *
 	vr.drawHeader(ctx, fullW, fullH, headerH, lineH, strokeW, dateFormat)
 
 	vr.writeProjects(ctx, fullW, fullH, headerH, lineH)
+	vr.drawProjects(ctx, fullW, fullH, headerH, lineH, strokeW)
 
 	vr.drawMilestones(ctx, fullW, fullH, headerH, lineH, dateFormat)
 
@@ -228,10 +250,42 @@ func (vr VisualRoadmap) writeProjects(ctx *canvas.Context, fullW, fullH, headerH
 	ctx.SetFillColor(canvas.Black)
 
 	for i, p := range vr.Projects {
-		y := fullH - float64(i)*lineH - headerH - lineH/4
+		y := fullH - float64(i)*lineH - headerH
 		indent := float64(p.Indentation) * indentationW
-		ctx.DrawText(0, y, canvas.NewTextBox(face, p.Title, textW, lineH, canvas.Left, canvas.Top, indent, 0.0))
+		ctx.DrawText(0, y, canvas.NewTextBox(face, p.Title, textW, lineH, canvas.Left, canvas.Center, indent, 0.0))
 	}
+}
+
+func (vr VisualRoadmap) drawProjects(ctx *canvas.Context, fullW, fullH, headerH, lineH, strokeW float64) {
+	h := lineH / 2
+	maxW := fullW * 2 / 3
+	roadmapInterval := vr.Dates.EndAt.Sub(vr.Dates.StartAt).Hours()
+	r := lineH / 5
+
+	ctx.SetStrokeWidth(1.0)
+	ctx.SetStrokeColor(canvas.Darkgray)
+
+	for i, p := range vr.Projects {
+		if p.Dates == nil {
+			continue
+		}
+
+		startAtLeft := p.Dates.StartAt.Sub(vr.Dates.StartAt).Hours()
+		endAtLeft := p.Dates.EndAt.Sub(vr.Dates.StartAt).Hours()
+		x0 := startAtLeft / roadmapInterval * maxW
+		x1 := endAtLeft / roadmapInterval * maxW
+		w := x1 - x0
+		y := fullH - float64(i)*lineH - headerH - lineH/4*3
+
+		ctx.SetFillColor(lightGrey)
+		ctx.DrawPath(x0+fullW/3, y, canvas.RoundedRectangle(w, h, r))
+
+		w *= float64(p.Percentage) / 100
+		ctx.SetFillColor(p.Color)
+		ctx.DrawPath(x0+fullW/3, y, canvas.RoundedRectangle(w, h, r))
+	}
+
+	ctx.SetStrokeWidth(strokeW)
 }
 
 func (vr VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, headerH, lineH float64, dateFormat string) {
@@ -239,6 +293,7 @@ func (vr VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, header
 		return
 	}
 
+	maxW := fullW * 2 / 3
 	y := fullH - headerH/2
 	roadmapInterval := vr.Dates.EndAt.Sub(vr.Dates.StartAt).Hours()
 
@@ -247,13 +302,12 @@ func (vr VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, header
 			continue
 		}
 
-		c := canvas.Red
+		c := canvas.Darkgray
 		if m.Color != nil {
 			c = *m.Color
 		}
 
-		maxW := fullW * 2 / 3
-		deadlineFromStart := vr.Dates.EndAt.Sub(*m.DeadlineAt).Hours()
+		deadlineFromStart := m.DeadlineAt.Sub(vr.Dates.StartAt).Hours()
 		w := deadlineFromStart / roadmapInterval * maxW
 
 		p := &canvas.Path{}

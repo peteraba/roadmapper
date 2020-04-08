@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/tdewolff/canvas"
 )
 
 func TestRoadmap_ToVisual(t *testing.T) {
@@ -21,6 +23,10 @@ func TestRoadmap_ToVisual(t *testing.T) {
 	urls2 := []string{"bar"}
 	color1 := color.RGBA{255, 0, 0, 255}
 	color2 := color.RGBA{0, 255, 0, 255}
+	websafeColor1 := findNthColor(0)
+	websafeColor3 := findNthColor(2)
+	websafeColor4 := findNthColor(3)
+	websafeColor6 := findNthColor(5)
 
 	type fields struct {
 		ID         uint64
@@ -68,16 +74,16 @@ func TestRoadmap_ToVisual(t *testing.T) {
 			},
 			VisualRoadmap{
 				Projects: []Project{
-					{Title: "Initial development", Dates: &Dates{StartAt: dates0402, EndAt: dates0405}, URLs: urls1},
+					{Title: "Initial development", Dates: &Dates{StartAt: dates0402, EndAt: dates0405}, URLs: urls1, Color: websafeColor1},
 					{Title: "Bring website online", Dates: &Dates{StartAt: dates0402, EndAt: dates0418}, Color: &color1},
-					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1},
-					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
+					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1, Color: websafeColor3},
+					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1, Color: websafeColor4},
 					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Color: &color2},
-					{Title: "Marketing"},
+					{Title: "Marketing", Color: websafeColor6},
 				},
 				Milestones: []Milestone{
 					{Title: "Milestone 0.1", DeadlineAt: &dates0419, URLs: urls2, Color: &color1},
-					{Title: "Milestone 0.2", DeadlineAt: &dates0420},
+					{Title: "Milestone 0.2", DeadlineAt: &dates0420, Color: &canvas.Darkgray},
 				},
 				Dates: &Dates{StartAt: dates0402, EndAt: dates0420},
 			},
