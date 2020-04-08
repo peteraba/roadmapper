@@ -91,7 +91,7 @@ func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder) func(c echo.Contex
 			return ctx.HTML(code, fmt.Sprintf("%v", err))
 		}
 
-		cvs := roadmap.ToVisual().Draw(float64(fw), float64(hh), float64(lh))
+		cvs := roadmap.ToVisual().Draw(float64(fw), float64(hh), float64(lh), roadmap.DateFormat)
 
 		img := renderImg(cvs, svgType)
 
@@ -202,7 +202,7 @@ func Render(rw FileReadWriter, content, output, dateFormat, baseUrl string, fw, 
 	fw, hh, lh = getCanvasSizes(fw, hh, lh)
 
 	roadmap := Content(content).ToRoadmap(0, nil, dateFormat, baseUrl, time.Now())
-	cvs := roadmap.ToVisual().Draw(float64(fw), float64(hh), float64(lh))
+	cvs := roadmap.ToVisual().Draw(float64(fw), float64(hh), float64(lh), roadmap.DateFormat)
 	img := renderImg(cvs, svgType)
 
 	err := rw.Write(output, string(img))
