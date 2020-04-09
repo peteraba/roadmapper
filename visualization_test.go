@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"math/rand"
 	"reflect"
 	"testing"
 	"time"
@@ -10,6 +11,8 @@ import (
 )
 
 func TestRoadmap_ToVisual(t *testing.T) {
+	rand.Seed(0)
+
 	dates0402 := time.Date(2020, 4, 2, 0, 0, 0, 0, time.UTC)
 	dates0405 := time.Date(2020, 4, 5, 0, 0, 0, 0, time.UTC)
 	dates0408 := time.Date(2020, 4, 8, 0, 0, 0, 0, time.UTC)
@@ -18,15 +21,18 @@ func TestRoadmap_ToVisual(t *testing.T) {
 	dates0419 := time.Date(2020, 4, 19, 0, 0, 0, 0, time.UTC)
 	dates0420 := time.Date(2020, 4, 20, 0, 0, 0, 0, time.UTC)
 	now := time.Now()
+
 	var percentage1 uint8 = 40
+
 	urls1 := []string{"/foo", "https://example.com/foo"}
 	urls2 := []string{"bar"}
-	color1 := color.RGBA{255, 0, 0, 255}
-	color2 := color.RGBA{0, 255, 0, 255}
-	websafeColor1 := findNthColor(0)
-	websafeColor3 := findNthColor(2)
-	websafeColor4 := findNthColor(3)
-	websafeColor6 := findNthColor(5)
+
+	color1 := &color.RGBA{255, 0, 0, 255}
+	color2 := &color.RGBA{0, 255, 0, 255}
+	color3 := &color.RGBA{34, 9, 1, 255}
+	color4 := &color.RGBA{148, 27, 12, 255}
+	color5 := &color.RGBA{148, 27, 12, 255}
+	color6 := &color.RGBA{224, 155, 26, 255}
 
 	type fields struct {
 		ID         uint64
@@ -42,12 +48,12 @@ func TestRoadmap_ToVisual(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		want   VisualRoadmap
+		want   *VisualRoadmap
 	}{
 		{
 			"empty",
 			fields{0, nil, "", "", nil, nil, dates0402, dates0402, dates0402},
-			VisualRoadmap{nil, nil, nil},
+			&VisualRoadmap{nil, nil, nil},
 		},
 		{
 			"complex",
@@ -58,10 +64,10 @@ func TestRoadmap_ToVisual(t *testing.T) {
 				"https://example.com/",
 				[]Project{
 					{Title: "Initial development", Dates: &Dates{StartAt: dates0402, EndAt: dates0405}, URLs: urls1},
-					{Title: "Bring website online", Milestone: 1, Color: &color1},
+					{Title: "Bring website online", Milestone: 1, Color: color1},
 					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1},
 					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
-					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Milestone: 1, Color: &color2},
+					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Milestone: 1, Color: color2},
 					{Title: "Marketing"},
 				},
 				[]Milestone{
@@ -72,17 +78,17 @@ func TestRoadmap_ToVisual(t *testing.T) {
 				now,
 				now,
 			},
-			VisualRoadmap{
+			&VisualRoadmap{
 				Projects: []Project{
-					{Title: "Initial development", Dates: &Dates{StartAt: dates0402, EndAt: dates0405}, URLs: urls1, Color: websafeColor1},
-					{Title: "Bring website online", Dates: &Dates{StartAt: dates0402, EndAt: dates0418}, Color: &color1},
-					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1, Color: websafeColor3},
-					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1, Color: websafeColor4},
-					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Color: &color2},
-					{Title: "Marketing", Color: websafeColor6},
+					{Title: "Initial development", Dates: &Dates{StartAt: dates0402, EndAt: dates0405}, URLs: urls1, Color: color3},
+					{Title: "Bring website online", Dates: &Dates{StartAt: dates0402, EndAt: dates0418}, Color: color1, Milestone: 1},
+					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1, Color: color4},
+					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1, Color: color5},
+					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Color: color2, Milestone: 1},
+					{Title: "Marketing", Color: color6},
 				},
 				Milestones: []Milestone{
-					{Title: "Milestone 0.1", DeadlineAt: &dates0419, URLs: urls2, Color: &color1},
+					{Title: "Milestone 0.1", DeadlineAt: &dates0419, URLs: urls2, Color: color1},
 					{Title: "Milestone 0.2", DeadlineAt: &dates0420, Color: &canvas.Darkgray},
 				},
 				Dates: &Dates{StartAt: dates0402, EndAt: dates0420},
@@ -103,13 +109,23 @@ func TestRoadmap_ToVisual(t *testing.T) {
 				AccessedAt: tt.fields.AccessedAt,
 			}
 			if got := r.ToVisual(); !reflect.DeepEqual(got, tt.want) {
+				for i := range got.Projects {
+					if !reflect.DeepEqual(got.Projects[i], tt.want.Projects[i]) {
+						t.Errorf("ToVisual().Projects[%d] = %v, want %v", i, got.Projects[i], tt.want.Projects[i])
+					}
+				}
+				for i := range got.Milestones {
+					if !reflect.DeepEqual(got.Milestones[i], tt.want.Milestones[i]) {
+						t.Errorf("ToVisual().Milestones[%d] = %v, want %v", i, got.Milestones[i], tt.want.Milestones[i])
+					}
+				}
 				t.Errorf("ToVisual() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_findVisualDates(t *testing.T) {
+func TestVisualRoadmap_findDatesBottomUp(t *testing.T) {
 	dates0402 := time.Date(2020, 4, 2, 0, 0, 0, 0, time.UTC)
 	dates0405 := time.Date(2020, 4, 5, 0, 0, 0, 0, time.UTC)
 	dates0408 := time.Date(2020, 4, 8, 0, 0, 0, 0, time.UTC)
@@ -117,55 +133,66 @@ func Test_findVisualDates(t *testing.T) {
 	dates0418 := time.Date(2020, 4, 18, 0, 0, 0, 0, time.UTC)
 	dates0420 := time.Date(2020, 4, 20, 0, 0, 0, 0, time.UTC)
 
+	type fields struct {
+		Projects   []Project
+		Milestones []Milestone
+		Dates      *Dates
+	}
 	type args struct {
-		projects []Project
-		start    int
+		start int
 	}
 	tests := []struct {
-		name string
-		args args
-		want *Dates
+		name   string
+		fields fields
+		args   args
+		want   *Dates
 	}{
 		{
 			"start 0 has dates",
-			args{
-				[]Project{
+			fields{
+				Projects: []Project{
 					{Dates: &Dates{StartAt: dates0405, EndAt: dates0415}},
 				},
+			},
+			args{
 				0,
 			},
 			&Dates{StartAt: dates0405, EndAt: dates0415},
 		},
 		{
 			"start 0 does not have dates",
-			args{
-				[]Project{
+			fields{
+				Projects: []Project{
 					{Indentation: 1},
 					{Dates: &Dates{StartAt: dates0405, EndAt: dates0415}, Indentation: 2},
 					{Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 2},
 					{Dates: &Dates{StartAt: dates0402, EndAt: dates0420}, Indentation: 1},
 				},
+			},
+			args{
 				0,
 			},
 			&Dates{StartAt: dates0405, EndAt: dates0418},
 		},
 		{
 			"start 0 does dates, sub-projects are not checked",
-			args{
-				[]Project{
+			fields{
+				Projects: []Project{
 					{Dates: &Dates{StartAt: dates0408, EndAt: dates0408}, Indentation: 1},
 					{Dates: &Dates{StartAt: dates0405, EndAt: dates0415}, Indentation: 2},
 					{Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 2},
 					{Dates: &Dates{StartAt: dates0402, EndAt: dates0420}, Indentation: 1},
 				},
+			},
+			args{
 				0,
 			},
 			&Dates{StartAt: dates0408, EndAt: dates0408},
 		},
 		{
 			"start 2 does not have dates",
-			args{
-				[]Project{
+			fields{
+				Projects: []Project{
 					{},
 					{Dates: &Dates{StartAt: dates0402, EndAt: dates0420}, Indentation: 1},
 					{},
@@ -173,6 +200,8 @@ func Test_findVisualDates(t *testing.T) {
 					{Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
 					{Dates: &Dates{StartAt: dates0402, EndAt: dates0420}},
 				},
+			},
+			args{
 				2,
 			},
 			&Dates{StartAt: dates0405, EndAt: dates0418},
@@ -180,19 +209,14 @@ func Test_findVisualDates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := findVisualDates(tt.args.projects, tt.args.start); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("findVisualDates() = %v, want %v", got, tt.want)
+			vr := &VisualRoadmap{
+				Projects:   tt.fields.Projects,
+				Milestones: tt.fields.Milestones,
+				Dates:      tt.fields.Dates,
+			}
+			if got := vr.findDatesBottomUp(tt.args.start); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("findDatesBottomUp() = %v, want %v", got, tt.want)
 			}
 		})
 	}
-
-	t.Run("panic on empty project list", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("The code did not panic")
-			}
-		}()
-
-		_ = findVisualDates(nil, 1)
-	})
 }

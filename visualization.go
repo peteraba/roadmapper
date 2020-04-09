@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"image/color"
-	"image/color/palette"
 	"time"
 
 	"github.com/tdewolff/canvas"
@@ -15,113 +14,49 @@ type VisualRoadmap struct {
 	Dates      *Dates
 }
 
-func (r Roadmap) ToVisual() VisualRoadmap {
-	visual := VisualRoadmap{}
+func (r Roadmap) ToVisual() *VisualRoadmap {
+	visual := &VisualRoadmap{}
 
 	visual.Dates = r.ToDates()
-
-	foundMilestones := map[int]*Milestone{}
-	for i, p := range r.Projects {
-		dates := findVisualDates(r.Projects, i)
-		c := p.Color
-		if c == nil {
-			c = findNthColor(i)
-		}
-		visual.Projects = append(
-			visual.Projects,
-			Project{
-				Indentation: p.Indentation,
-				Title:       p.Title,
-				Dates:       dates,
-				Color:       c,
-				Percentage:  p.Percentage,
-				URLs:        p.URLs,
-			},
-		)
-		if p.Milestone > 0 {
-			mk := int(p.Milestone) - 1
-
-			var endAt *time.Time
-			if dates != nil {
-				endAt = &dates.EndAt
-			}
-
-			milestone, ok := foundMilestones[mk]
-			if !ok {
-				foundMilestones[mk] = &Milestone{
-					DeadlineAt: endAt,
-					Color:      p.Color,
-				}
-				continue
-			}
-
-			if milestone.Color == nil && p.Color != nil {
-				milestone.Color = p.Color
-			}
-
-			if endAt == nil {
-				continue
-			}
-
-			if milestone.DeadlineAt == nil {
-				milestone.DeadlineAt = endAt
-			}
-
-			if milestone.DeadlineAt.Before(*endAt) {
-				milestone.DeadlineAt = endAt
-			}
-		}
-	}
-
+	visual.Projects = r.Projects
 	visual.Milestones = r.Milestones
 
-	for i, m := range foundMilestones {
-		if len(visual.Milestones) < i {
-			panic("original milestone not found")
-		}
+	visual.calculateDates().calculateColors()
 
-		om := &visual.Milestones[i]
-
-		if om.Color == nil {
-			om.Color = m.Color
-		}
-
-		if m.DeadlineAt == nil {
-			continue
-		}
-
-		if om.DeadlineAt == nil {
-			om.DeadlineAt = m.DeadlineAt
-		}
-
-		if om.DeadlineAt.Before(*m.DeadlineAt) {
-			om.DeadlineAt = m.DeadlineAt
-		}
-	}
-
-	for i := range r.Milestones {
-		if r.Milestones[i].Color == nil {
-			r.Milestones[i].Color = &canvas.Darkgray
-		}
-	}
+	projectMilestones := visual.collectProjectMilestones()
+	visual.applyProjectMilestone(projectMilestones)
 
 	return visual
 }
 
-func findVisualDates(projects []Project, start int) *Dates {
-	if projects == nil || len(projects) < start {
+func (vr *VisualRoadmap) calculateDates() *VisualRoadmap {
+	for i := range vr.Projects {
+		p := &vr.Projects[i]
+
+		if p.Dates != nil {
+			continue
+		}
+
+		p.Dates = vr.findDatesBottomUp(i)
+	}
+
+	return vr
+}
+
+func (vr *VisualRoadmap) findDatesBottomUp(start int) *Dates {
+	if vr.Projects == nil || len(vr.Projects) < start {
 		panic(fmt.Errorf("illegal start %d for finding visual dates", start))
 	}
 
-	if projects[start].Dates != nil {
-		return &Dates{StartAt: projects[start].Dates.StartAt, EndAt: projects[start].Dates.EndAt}
+	if vr.Projects[start].Dates != nil {
+		return vr.Projects[start].Dates
 	}
 
-	minIndentation := projects[start].Indentation + 1
+	minIndentation := vr.Projects[start].Indentation + 1
 
 	var dates *Dates
-	for i := start + 1; i < len(projects); i++ {
-		p := projects[i]
+	for i := start + 1; i < len(vr.Projects); i++ {
+		p := vr.Projects[i]
 		if p.Indentation < minIndentation {
 			break
 		}
@@ -147,18 +82,112 @@ func findVisualDates(projects []Project, start int) *Dates {
 	return dates
 }
 
-func findNthColor(i int) *color.RGBA {
-	n := (13 + i*71) % len(palette.WebSafe)
+func (vr *VisualRoadmap) calculateColors() *VisualRoadmap {
+	epicCount := -1
+	projectCount := -1
+	for i := range vr.Projects {
+		p := &vr.Projects[i]
 
-	c := palette.WebSafe[n].(color.RGBA)
+		if p.Indentation == 0 {
+			epicCount++
+			projectCount = -1
+		}
+		projectCount++
 
-	return &c
+		c := p.Color
+		if c == nil {
+			c = pickFgColor(epicCount, projectCount, int(p.Indentation))
+		}
+
+		p.Color = c
+	}
+
+	return vr
+}
+
+func (vr *VisualRoadmap) collectProjectMilestones() map[int]*Milestone {
+	foundMilestones := map[int]*Milestone{}
+	for i := range vr.Projects {
+		p := &vr.Projects[i]
+
+		if p.Milestone == 0 {
+			continue
+		}
+
+		mk := int(p.Milestone) - 1
+
+		var endAt *time.Time
+		if p.Dates != nil {
+			endAt = &p.Dates.EndAt
+		}
+
+		milestone, ok := foundMilestones[mk]
+		if !ok {
+			foundMilestones[mk] = &Milestone{
+				DeadlineAt: endAt,
+				Color:      p.Color,
+			}
+			continue
+		}
+
+		if milestone.Color == nil && p.Color != nil {
+			milestone.Color = p.Color
+		}
+
+		if endAt == nil {
+			continue
+		}
+
+		if milestone.DeadlineAt == nil {
+			milestone.DeadlineAt = endAt
+		}
+
+		if milestone.DeadlineAt.Before(*endAt) {
+			milestone.DeadlineAt = endAt
+		}
+	}
+
+	return foundMilestones
+}
+
+func (vr *VisualRoadmap) applyProjectMilestone(projectMilestones map[int]*Milestone) *VisualRoadmap {
+	for i, m := range projectMilestones {
+		if len(vr.Milestones) < i {
+			panic("original milestone not found")
+		}
+
+		om := &vr.Milestones[i]
+
+		if om.Color == nil {
+			om.Color = m.Color
+		}
+
+		if m.DeadlineAt == nil {
+			continue
+		}
+
+		if om.DeadlineAt == nil {
+			om.DeadlineAt = m.DeadlineAt
+		}
+
+		if om.DeadlineAt.Before(*m.DeadlineAt) {
+			om.DeadlineAt = m.DeadlineAt
+		}
+	}
+
+	for i := range vr.Milestones {
+		if vr.Milestones[i].Color == nil {
+			vr.Milestones[i].Color = &canvas.Darkgray
+		}
+	}
+
+	return vr
 }
 
 var fontFamily *canvas.FontFamily
 var lightGrey = color.RGBA{R: 220, G: 220, B: 220, A: 255}
 
-func (vr VisualRoadmap) Draw(fullW, headerH, lineH float64, dateFormat string) *canvas.Canvas {
+func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64, dateFormat string) *canvas.Canvas {
 	if vr.Dates == nil {
 		headerH = 0.0
 	}
@@ -191,7 +220,7 @@ func (vr VisualRoadmap) Draw(fullW, headerH, lineH float64, dateFormat string) *
 	return c
 }
 
-func (vr VisualRoadmap) drawHeader(ctx *canvas.Context, fullW, fullH, headerH, lineH, strokeW float64, dateFormat string) {
+func (vr *VisualRoadmap) drawHeader(ctx *canvas.Context, fullW, fullH, headerH, lineH, strokeW float64, dateFormat string) {
 	if vr.Dates == nil {
 		return
 	}
@@ -203,7 +232,7 @@ func (vr VisualRoadmap) drawHeader(ctx *canvas.Context, fullW, fullH, headerH, l
 	vr.markHeaderDates(ctx, fullW, fullH, headerH, strokeW)
 }
 
-func (vr VisualRoadmap) drawHeaderBaseline(ctx *canvas.Context, fullW, fullH, headerH float64) {
+func (vr *VisualRoadmap) drawHeaderBaseline(ctx *canvas.Context, fullW, fullH, headerH float64) {
 	p := &canvas.Path{}
 	p.MoveTo(0, 0)
 	p.LineTo(fullW*2/3, 0)
@@ -214,7 +243,7 @@ func (vr VisualRoadmap) drawHeaderBaseline(ctx *canvas.Context, fullW, fullH, he
 	ctx.DrawPath(x, y, p)
 }
 
-func (vr VisualRoadmap) writeHeaderDates(ctx *canvas.Context, fullW, fullH, lineH float64, dateFormat string) {
+func (vr *VisualRoadmap) writeHeaderDates(ctx *canvas.Context, fullW, fullH, lineH float64, dateFormat string) {
 	x := fullW / 3
 	y := fullH
 	face := fontFamily.Face(lineH*1.5, canvas.Black, canvas.FontRegular, canvas.FontNormal)
@@ -226,7 +255,7 @@ func (vr VisualRoadmap) writeHeaderDates(ctx *canvas.Context, fullW, fullH, line
 	ctx.DrawText(x, y, canvas.NewTextBox(face, date, 0.0, lineH, canvas.Right, canvas.Center, 0.0, 0.0))
 }
 
-func (vr VisualRoadmap) markHeaderDates(ctx *canvas.Context, fullW, fullH, headerH, strokeW float64) {
+func (vr *VisualRoadmap) markHeaderDates(ctx *canvas.Context, fullW, fullH, headerH, strokeW float64) {
 	markH := headerH / 10.0
 
 	p1 := &canvas.Path{}
@@ -243,7 +272,7 @@ func (vr VisualRoadmap) markHeaderDates(ctx *canvas.Context, fullW, fullH, heade
 	ctx.DrawPath(x, y, p1, p2)
 }
 
-func (vr VisualRoadmap) writeProjects(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
+func (vr *VisualRoadmap) writeProjects(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
 	textW := fullW / 3
 	indentationW := textW / 20
 	face := fontFamily.Face(lineH*1.5, canvas.Black, canvas.FontRegular, canvas.FontNormal)
@@ -256,7 +285,7 @@ func (vr VisualRoadmap) writeProjects(ctx *canvas.Context, fullW, fullH, headerH
 	}
 }
 
-func (vr VisualRoadmap) drawProjects(ctx *canvas.Context, fullW, fullH, headerH, lineH, strokeW float64) {
+func (vr *VisualRoadmap) drawProjects(ctx *canvas.Context, fullW, fullH, headerH, lineH, strokeW float64) {
 	h := lineH / 2
 	maxW := fullW * 2 / 3
 	roadmapInterval := vr.Dates.EndAt.Sub(vr.Dates.StartAt).Hours()
@@ -290,7 +319,7 @@ func (vr VisualRoadmap) drawProjects(ctx *canvas.Context, fullW, fullH, headerH,
 	ctx.SetStrokeWidth(strokeW)
 }
 
-func (vr VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, headerH, lineH float64, dateFormat string) {
+func (vr *VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, headerH, lineH float64, dateFormat string) {
 	if vr.Dates == nil {
 		return
 	}
@@ -326,13 +355,13 @@ func (vr VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, header
 	}
 }
 
-func (vr VisualRoadmap) drawLines(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
+func (vr *VisualRoadmap) drawLines(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
 	vr.drawHeaderLine(ctx, fullW, fullH, headerH)
 	vr.drawProjectLines(ctx, fullW, fullH, headerH, lineH)
 
 }
 
-func (vr VisualRoadmap) drawHeaderLine(ctx *canvas.Context, fullW, fullH, headerH float64) {
+func (vr *VisualRoadmap) drawHeaderLine(ctx *canvas.Context, fullW, fullH, headerH float64) {
 	if vr.Dates == nil {
 		return
 	}
@@ -345,7 +374,7 @@ func (vr VisualRoadmap) drawHeaderLine(ctx *canvas.Context, fullW, fullH, header
 	ctx.DrawPath(0, 0, p)
 }
 
-func (vr VisualRoadmap) drawProjectLines(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
+func (vr *VisualRoadmap) drawProjectLines(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
 	var paths []*canvas.Path
 
 	for i := range vr.Projects {
