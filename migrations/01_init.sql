@@ -4,7 +4,7 @@ CREATE TABLE "roadmaps" (
     "id" bigint NOT NULL UNIQUE CONSTRAINT positive_id CHECK (id > 0),
     "prev_id" bigint NULL REFERENCES roadmaps (id),
     "date_format" text NOT NULL,
-    "base_url" text NOT NULL,
+    "base_url" text NOT NULL DEFAULT '',
     "projects" jsonb,
     "milestones" jsonb,
     "created_at" timestamp NOT NULL DEFAULT NOW(),
