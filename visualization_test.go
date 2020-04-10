@@ -164,27 +164,36 @@ func TestVisualRoadmap_calculateProjectDates(t *testing.T) {
 			&VisualRoadmap{},
 		},
 		{
-			"complex",
+			"find dates bottom up",
 			fields{
 				Projects: []Project{
-					{Title: "Initial development", Dates: &Dates{StartAt: dates0402, EndAt: dates0405}},
 					{Title: "Bring website online"},
 					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1},
 					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
-					{Title: "Command line tool", Dates: &Dates{StartAt: dates0418, EndAt: dates0419}},
-					{Title: "Create backend SVG generation", Indentation: 1},
-					{Title: "Marketing"},
 				},
 			},
 			&VisualRoadmap{
 				Projects: []Project{
-					{Title: "Initial development", Dates: &Dates{StartAt: dates0402, EndAt: dates0405}},
 					{Title: "Bring website online", Dates: &Dates{StartAt: dates0402, EndAt: dates0418}},
 					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1},
 					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
+				},
+			},
+		},
+		{
+			"find dates top down",
+			fields{
+				Projects: []Project{
+					{Title: "Command line tool", Dates: &Dates{StartAt: dates0418, EndAt: dates0419}},
+					{Title: "Create backend SVG generation", Indentation: 1},
+					{Title: "Create documentation page", Indentation: 1},
+				},
+			},
+			&VisualRoadmap{
+				Projects: []Project{
 					{Title: "Command line tool", Dates: &Dates{StartAt: dates0418, EndAt: dates0419}},
 					{Title: "Create backend SVG generation", Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Indentation: 1},
-					{Title: "Marketing"},
+					{Title: "Create documentation page", Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Indentation: 1},
 				},
 			},
 		},
@@ -240,7 +249,7 @@ func TestVisualRoadmap_findDatesBottomUp(t *testing.T) {
 			&Dates{StartAt: dates0405, EndAt: dates0415},
 		},
 		{
-			"project has dates, but nothing can be found bottom-up",
+			"project has no dates, but nothing can be found bottom-up",
 			fields{
 				Projects: []Project{
 					{},
@@ -270,6 +279,23 @@ func TestVisualRoadmap_findDatesBottomUp(t *testing.T) {
 			&Dates{StartAt: dates0405, EndAt: dates0418},
 		},
 		{
+			"project and children do not have dates, but grand-children do",
+			fields{
+				Projects: []Project{
+					{Dates: &Dates{StartAt: dates0402, EndAt: dates0420}},
+					{Indentation: 1},
+					{Indentation: 2},
+					{Dates: &Dates{StartAt: dates0405, EndAt: dates0415}, Indentation: 3},
+					{Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 3},
+					{Dates: &Dates{StartAt: dates0402, EndAt: dates0420}, Indentation: 1},
+				},
+			},
+			args{
+				1,
+			},
+			&Dates{StartAt: dates0405, EndAt: dates0418},
+		},
+		{
 			"start 0 has dates, sub-projects are not checked",
 			fields{
 				Projects: []Project{
@@ -283,23 +309,6 @@ func TestVisualRoadmap_findDatesBottomUp(t *testing.T) {
 				0,
 			},
 			&Dates{StartAt: dates0408, EndAt: dates0408},
-		},
-		{
-			"start 2 does not have dates",
-			fields{
-				Projects: []Project{
-					{},
-					{Dates: &Dates{StartAt: dates0402, EndAt: dates0420}, Indentation: 1},
-					{},
-					{Dates: &Dates{StartAt: dates0405, EndAt: dates0415}, Indentation: 1},
-					{Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
-					{Dates: &Dates{StartAt: dates0402, EndAt: dates0420}},
-				},
-			},
-			args{
-				2,
-			},
-			&Dates{StartAt: dates0405, EndAt: dates0418},
 		},
 	}
 	for _, tt := range tests {
@@ -434,12 +443,10 @@ func TestVisualRoadmap_calculateProjectColors(t *testing.T) {
 	color1 := &color.RGBA{255, 0, 0, 255}
 	color2 := &color.RGBA{0, 255, 0, 255}
 	color3 := pickFgColor(0, 0, 0)
-	color4 := pickFgColor(1, 1, 1)
-	color5 := pickFgColor(1, 2, 1)
-	color6 := pickFgColor(2, 1, 1)
-	color7 := pickFgColor(3, 0, 0)
+	color4 := pickFgColor(0, 1, 1)
+	color5 := pickFgColor(0, 2, 1)
 
-	_, _, _, _, _, _, _ = color1, color2, color3, color4, color5, color6, color7
+	_, _, _, _, _ = color1, color2, color3, color4, color5
 
 	rand.Seed(0)
 
@@ -459,27 +466,34 @@ func TestVisualRoadmap_calculateProjectColors(t *testing.T) {
 			&VisualRoadmap{},
 		},
 		{
-			"complex",
+			"does not overwrite existing colors",
+			fields{
+				Projects: []Project{
+					{Title: "Bring website online", Color: color1},
+					{Title: "Command line tool", Color: color2},
+				},
+			},
+			&VisualRoadmap{
+				Projects: []Project{
+					{Title: "Bring website online", Color: color1},
+					{Title: "Command line tool", Color: color2},
+				},
+			},
+		},
+		{
+			"sets colors for all projects without a color",
 			fields{
 				Projects: []Project{
 					{Title: "Initial development"},
-					{Title: "Bring website online", Color: color1},
 					{Title: "Select and purchase domain", Indentation: 1},
 					{Title: "Create server infrastructure", Indentation: 1},
-					{Title: "Command line tool", Color: color2},
-					{Title: "Create backend SVG generation", Indentation: 1},
-					{Title: "Marketing"},
 				},
 			},
 			&VisualRoadmap{
 				Projects: []Project{
 					{Title: "Initial development", Color: color3},
-					{Title: "Bring website online", Color: color1},
 					{Title: "Select and purchase domain", Indentation: 1, Color: color4},
 					{Title: "Create server infrastructure", Indentation: 1, Color: color5},
-					{Title: "Command line tool", Color: color2},
-					{Title: "Create backend SVG generation", Indentation: 1, Color: color6},
-					{Title: "Marketing", Color: color7},
 				},
 			},
 		},
@@ -515,11 +529,24 @@ func TestVisualRoadmap_calculatePercentage(t *testing.T) {
 			&VisualRoadmap{},
 		},
 		{
-			"complex",
+			"does not overwrite existing percentages",
 			fields{
 				Projects: []Project{
 					{Percentage: 35},
 					{Percentage: 32, Indentation: 1},
+				},
+			},
+			&VisualRoadmap{
+				Projects: []Project{
+					{Percentage: 35},
+					{Percentage: 32, Indentation: 1},
+				},
+			},
+		},
+		{
+			"calculates average percentage of sub-projects if missing",
+			fields{
+				Projects: []Project{
 					{},
 					{Percentage: 43, Indentation: 1},
 					{Percentage: 45, Indentation: 1},
@@ -529,8 +556,6 @@ func TestVisualRoadmap_calculatePercentage(t *testing.T) {
 			},
 			&VisualRoadmap{
 				Projects: []Project{
-					{Percentage: 35},
-					{Percentage: 32, Indentation: 1},
 					{Percentage: 46},
 					{Percentage: 43, Indentation: 1},
 					{Percentage: 45, Indentation: 1},
@@ -824,7 +849,7 @@ func TestVisualRoadmap_applyProjectMilestone(t *testing.T) {
 			},
 		},
 		{
-			"milestone end date can be set as deadline by project linked to milestone",
+			"milestone deadline can be set by project linked to milestone",
 			fields{
 				Milestones: []Milestone{
 					{},
@@ -840,6 +865,24 @@ func TestVisualRoadmap_applyProjectMilestone(t *testing.T) {
 				Milestones: []Milestone{
 					{DeadlineAt: &dates0415, Color: defaultMilestoneColor},
 					{Color: defaultMilestoneColor},
+				},
+			},
+		},
+		{
+			"project deadline will not override the milestone deadline",
+			fields{
+				Milestones: []Milestone{
+					{DeadlineAt: &dates0415},
+				},
+			},
+			args{
+				projectMilestones: map[int]*Milestone{
+					0: {DeadlineAt: &dates0418},
+				},
+			},
+			&VisualRoadmap{
+				Milestones: []Milestone{
+					{DeadlineAt: &dates0415, Color: defaultMilestoneColor},
 				},
 			},
 		},

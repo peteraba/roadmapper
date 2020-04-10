@@ -14,6 +14,9 @@ type VisualRoadmap struct {
 	Dates      *Dates
 }
 
+// ToVisual converts a roadmap to a visual roadmap
+// main difference between the two is that the visual roadmap
+// will contain calculated values where possible
 func (r Roadmap) ToVisual() *VisualRoadmap {
 	visual := &VisualRoadmap{}
 
@@ -29,6 +32,9 @@ func (r Roadmap) ToVisual() *VisualRoadmap {
 	return visual
 }
 
+// caluclateProjectDates tries to find reasonable dates for all projects
+// first it tries to find dates bottom up, meaning that based on the sub-projects
+// then it tries to find dates top down, meaning that it will copy over dates from parents
 func (vr *VisualRoadmap) calculateProjectDates() *VisualRoadmap {
 	for i := range vr.Projects {
 		p := &vr.Projects[i]
@@ -53,6 +59,7 @@ func (vr *VisualRoadmap) calculateProjectDates() *VisualRoadmap {
 	return vr
 }
 
+// findDatesBottomUp will look for the minimum start date and maximum end date of sub projects
 func (vr *VisualRoadmap) findDatesBottomUp(start int) *Dates {
 	if vr.Projects == nil || len(vr.Projects) < start {
 		panic(fmt.Errorf("illegal start %d for finding visual dates", start))
@@ -92,6 +99,7 @@ func (vr *VisualRoadmap) findDatesBottomUp(start int) *Dates {
 	return dates
 }
 
+// findDatesTopDown will return the dates of the first ancestor it finds
 func (vr *VisualRoadmap) findDatesTopDown(start int) *Dates {
 	if vr.Projects == nil || len(vr.Projects) < start {
 		panic(fmt.Errorf("illegal start %d for finding visual dates", start))
@@ -120,6 +128,7 @@ func (vr *VisualRoadmap) findDatesTopDown(start int) *Dates {
 	return dates
 }
 
+// calculateProjectColors will set a color for each projects without one
 func (vr *VisualRoadmap) calculateProjectColors() *VisualRoadmap {
 	epicCount := -1
 	projectCount := -1
@@ -143,6 +152,8 @@ func (vr *VisualRoadmap) calculateProjectColors() *VisualRoadmap {
 	return vr
 }
 
+// calculatePecentage will try to calculate the percentage of all projects without a percentage set bottom up,
+// meaning looking at their subprojects
 func (vr *VisualRoadmap) calculatePercentage() *VisualRoadmap {
 	for i := range vr.Projects {
 		p := &vr.Projects[i]
@@ -157,6 +168,7 @@ func (vr *VisualRoadmap) calculatePercentage() *VisualRoadmap {
 	return vr
 }
 
+// findPercentageBottomUp will calculate the average percentage of subprojects
 func (vr *VisualRoadmap) findPercentageBottomUp(start int) uint8 {
 	if vr.Projects == nil || len(vr.Projects) < start {
 		panic(fmt.Errorf("illegal start %d for finding visual dates", start))
@@ -194,6 +206,9 @@ func (vr *VisualRoadmap) findPercentageBottomUp(start int) uint8 {
 	return sum / count
 }
 
+// collectProjectMilestones creates temporary milestones based on project information
+// these will then be used in applyProjectMilestones as default values from milestones
+// at the moment only colors and deadlines are collected
 func (vr *VisualRoadmap) collectProjectMilestones() map[int]*Milestone {
 	foundMilestones := map[int]*Milestone{}
 	for i := range vr.Projects {
@@ -243,6 +258,10 @@ func (vr *VisualRoadmap) collectProjectMilestones() map[int]*Milestone {
 	return foundMilestones
 }
 
+// applyProjectMilestone will apply temporary milestones created in collectProjectMilestones
+// as default values for milestones
+// this means that if milestones don't have deadlines or colors set, they can be set using what was
+// found or generated for the projects linked to a milestone
 func (vr *VisualRoadmap) applyProjectMilestone(projectMilestones map[int]*Milestone) *VisualRoadmap {
 	for i, m := range projectMilestones {
 		if len(vr.Milestones) < i {
@@ -255,17 +274,15 @@ func (vr *VisualRoadmap) applyProjectMilestone(projectMilestones map[int]*Milest
 			om.Color = m.Color
 		}
 
+		if om.DeadlineAt != nil {
+			continue
+		}
+
 		if m.DeadlineAt == nil {
 			continue
 		}
 
-		if om.DeadlineAt == nil {
-			om.DeadlineAt = m.DeadlineAt
-		}
-
-		if om.DeadlineAt.Before(*m.DeadlineAt) {
-			om.DeadlineAt = m.DeadlineAt
-		}
+		om.DeadlineAt = m.DeadlineAt
 	}
 
 	for i := range vr.Milestones {
