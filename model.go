@@ -330,7 +330,7 @@ func splitLine(line, indentation string) (uint8, string, string) {
 
 // isLineProject returns true if a given line appears to represent a project
 func isLineProject(line string) bool {
-	line = strings.TrimLeft(line, "\t\r ")
+	line = strings.Trim(line, "\t\r ")
 
 	// empty line should be skipped
 	if len(line) == 0 {
@@ -347,7 +347,7 @@ func isLineProject(line string) bool {
 
 // isLineMilestone returns true if a given line appears to represent a milestone
 func isLineMilestone(line string) bool {
-	line = strings.TrimLeft(line, "\t\r ")
+	line = strings.Trim(line, "\t\r ")
 
 	// empty line should be skipped
 	if len(line) == 0 {

@@ -363,12 +363,15 @@ func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64) *canvas.Canvas {
 
 	vr.drawHeader(ctx, fullW, fullH, headerH, lineH, strokeW)
 
+	vr.drawProjectBackgrounds(ctx, fullW, fullH, headerH, lineH)
 	vr.writeProjects(ctx, fullW, fullH, headerH, lineH)
 	vr.drawProjects(ctx, fullW, fullH, headerH, lineH, strokeW)
 
 	vr.drawMilestones(ctx, fullW, fullH, headerH, lineH)
 
 	vr.drawLines(ctx, fullW, fullH, headerH, lineH)
+
+	vr.drawToday(ctx, fullW, fullH, headerH, lineH)
 
 	return c
 }
@@ -530,10 +533,45 @@ func (vr *VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, heade
 	}
 }
 
+func (vr *VisualRoadmap) drawToday(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
+	if vr.Dates == nil {
+		return
+	}
+
+	now := time.Now()
+
+	if now.Before(vr.Dates.StartAt) || now.After(vr.Dates.EndAt) {
+		return
+	}
+
+	if vr.Dates == nil {
+		return
+	}
+
+	maxW := fullW * 2 / 3
+	y := fullH - headerH/2
+	roadmapInterval := vr.Dates.EndAt.Sub(vr.Dates.StartAt).Hours()
+
+	todayFromStart := now.Sub(vr.Dates.StartAt).Hours()
+	w := todayFromStart / roadmapInterval * maxW
+
+	p := &canvas.Path{}
+	p.MoveTo(w, 0)
+	p.LineTo(w, fullH)
+
+	ctx.SetStrokeColor(canvas.Red)
+	ctx.SetDashes(0.0, 8.0, 12.0)
+	ctx.DrawPath(fullW/3, 0, p)
+
+	x := w + fullW/3
+	face := fontFamily.Face(lineH*1.5, canvas.Red, canvas.FontRegular, canvas.FontNormal)
+	date := now.Format(vr.DateFormat)
+	ctx.DrawText(x, y, canvas.NewTextBox(face, date, 0.0, lineH, canvas.Center, canvas.Center, 0.0, 0.0))
+}
+
 func (vr *VisualRoadmap) drawLines(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
 	vr.drawHeaderLine(ctx, fullW, fullH, headerH)
 	vr.drawProjectLines(ctx, fullW, fullH, headerH, lineH)
-
 }
 
 func (vr *VisualRoadmap) drawHeaderLine(ctx *canvas.Context, fullW, fullH, headerH float64) {
@@ -566,6 +604,32 @@ func (vr *VisualRoadmap) drawProjectLines(ctx *canvas.Context, fullW, fullH, hea
 	p.LineTo(fullW/3, fullH)
 	paths = append(paths, p)
 
-	ctx.SetStrokeColor(canvas.Lightgray)
+	ctx.SetStrokeColor(canvas.Darkgray)
 	ctx.DrawPath(0, 0, paths...)
+}
+
+func (vr *VisualRoadmap) drawProjectBackgrounds(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
+	var c1 color.RGBA
+	var epicCount = -1
+
+	for i := range vr.Projects {
+		h0 := fullH - headerH - (float64(i+1) * (lineH))
+		h1 := h0 + lineH
+
+		if vr.Projects[i].Indentation == 0 {
+			epicCount++
+			c1 = pickBgColor(epicCount)
+		}
+
+		p := &canvas.Path{}
+		p.MoveTo(0, h0)
+		p.LineTo(fullW, h0)
+		p.LineTo(fullW, h1)
+		p.LineTo(0, h1)
+		p.Close()
+
+		ctx.SetFillColor(c1)
+		ctx.SetStrokeColor(canvas.Lightgray)
+		ctx.DrawPath(0, 0, p)
+	}
 }
