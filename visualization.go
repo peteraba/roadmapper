@@ -427,14 +427,36 @@ func (vr *VisualRoadmap) markHeaderDates(ctx *canvas.Context, fullW, fullH, head
 
 func (vr *VisualRoadmap) writeProjects(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
 	textW := fullW / 3
-	indentationW := textW / 20
-	face := fontFamily.Face(lineH*1.5, canvas.Black, canvas.FontRegular, canvas.FontNormal)
 	ctx.SetFillColor(canvas.Black)
 
 	for i, p := range vr.Projects {
 		y := fullH - float64(i)*lineH - headerH
-		indent := float64(p.Indentation) * indentationW
-		ctx.DrawText(0, y, canvas.NewTextBox(face, p.Title, textW, lineH, canvas.Left, canvas.Center, indent, 0.0))
+		indentW := float64(p.Indentation) * textW / 20
+		font := vr.createFont(p.Indentation, lineH)
+		ctx.DrawText(0, y, canvas.NewTextBox(font, p.Title, textW, lineH, canvas.Left, canvas.Center, indentW, 0.0))
+	}
+}
+
+func (vr *VisualRoadmap) createFont(indentation uint8, lineH float64) canvas.FontFace {
+	switch indentation {
+	case 0:
+		fontSize := lineH * 1.5
+		return fontFamily.Face(fontSize, canvas.Black, canvas.FontBold, canvas.FontNormal)
+	case 1:
+		fontSize := lineH * 1.5
+		return fontFamily.Face(fontSize, canvas.Black, canvas.FontRegular, canvas.FontNormal)
+	case 2:
+		fontSize := lineH * 1.35
+		return fontFamily.Face(fontSize, canvas.Black, canvas.FontRegular, canvas.FontNormal)
+	case 3:
+		fontSize := lineH * 1.2
+		return fontFamily.Face(fontSize, canvas.Black, canvas.FontRegular, canvas.FontNormal)
+	case 4:
+		fontSize := lineH * 1.05
+		return fontFamily.Face(fontSize, canvas.Black, canvas.FontRegular, canvas.FontNormal)
+	default:
+		fontSize := lineH * 0.9
+		return fontFamily.Face(fontSize, canvas.Black, canvas.FontRegular, canvas.FontNormal)
 	}
 }
 

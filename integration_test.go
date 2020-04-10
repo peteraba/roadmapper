@@ -132,7 +132,6 @@ func TestApp_TextToVisual(t *testing.T) {
 }
 
 func TestApp_Server(t *testing.T) {
-
 	txtBaseUrl := "https://example.com/foo"
 
 	// create chrome instance
