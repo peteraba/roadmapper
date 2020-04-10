@@ -6,12 +6,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/chromedp/chromedp"
+	"github.com/labstack/gommon/log"
+
 	_ "github.com/lib/pq"
 	"github.com/ory/dockertest"
 	"github.com/stretchr/testify/assert"
@@ -77,30 +78,62 @@ func setupApp(t *testing.T, dbResource *dockertest.Resource) chan os.Signal {
 	rw := CreateDbReadWriter(applicationName, dbHost, dbPort, dbName, dbUser, dbPass, true)
 	go Serve(quit, appPort, "", "", rw, cb, matomoDomain, docBaseUrl, false)
 
-	migrateUp(dbUser, dbPass, dbHost, dbPort, dbName, 0)
+	_, err := migrateUp(dbUser, dbPass, dbHost, dbPort, dbName, 0)
+	if err != nil {
+		t.Fatalf("failed to run migrations: %v", err)
+	}
 
 	return quit
 }
 
-func TestApp_Server(t *testing.T) {
-	txt := `Initial development [2020-02-12, 2020-02-20]
+var txt = `Initial development [2020-02-12, 2020-02-20]
 Bring website online
 	Select and purchase domain [2020-02-04, 2020-02-25, 100%, /issues/1]
 	Create server infrastructure [2020-02-25, 2020-02-28, 100%]
 Command line tool [|1]
-	Create backend SVG generation [2020-03-03, 2020-03-10, 100%]
-	Replace frontend SVG generation with backend [2020-03-08, 2020-03-12, 100%]
+	Create backend SVG generation [2020-03-03, 2020-03-10, 70%]
+	Replace frontend SVG generation with backend [2020-03-08, 2020-03-12, 55%]
 	Create documentation page [2020-03-13, 2020-03-31, 20%]
 Marketing
-	Create Facebook page [2020-03-17, 2020-03-25, 0%]
-	Write blog posts [2020-03-17, 2020-03-31, 0%]
-	Share blog post on social media [2020-03-17, 2020-03-31, 0%]
-	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0%]
+	Create Facebook page [2020-03-17, 2020-03-25]
+	Write blog posts [2020-03-17, 2020-03-31, 2%]
+	Share blog post on social media [2020-03-17, 2020-03-31]
+	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15]
 
 |Milestone 0.1
 |Milestone 0.2 [2020-02-12, #00ff00, https://example.com/abc, bcdef]`
 
-	txtBaseUrl := ""
+func TestApp_TextToRoadmap(t *testing.T) {
+	now := time.Now()
+	txtBaseUrl := "https://example.com/foo"
+	content := Content(txt)
+
+	roadmap := content.ToRoadmap(123, nil, "2006-01-02", txtBaseUrl, now)
+
+	actual := roadmap.String()
+
+	assert.Equal(t, txt, actual)
+}
+
+func TestApp_TextToVisual(t *testing.T) {
+	now := time.Now()
+	txtBaseUrl := "https://example.com/foo"
+	content := Content(txt)
+	expectedProjectLength := 13
+	expectedMilestoneLength := 2
+	expectedDeadline1 := time.Date(2020, 3, 31, 0, 0, 0, 0, time.UTC)
+
+	roadmap := content.ToRoadmap(123, nil, "2006-01-02", txtBaseUrl, now)
+	visualRoadmap := roadmap.ToVisual()
+
+	assert.Len(t, visualRoadmap.Projects, expectedProjectLength)
+	assert.Len(t, visualRoadmap.Milestones, expectedMilestoneLength)
+	assert.Equal(t, &expectedDeadline1, visualRoadmap.Milestones[0].DeadlineAt)
+}
+
+func TestApp_Server(t *testing.T) {
+
+	txtBaseUrl := "https://example.com/foo"
 
 	// create chrome instance
 	ctx, cancel := chromedp.NewContext(
@@ -129,12 +162,6 @@ Marketing
 		want       string
 	}{
 		{
-			name:       "empty baseUrl",
-			txt:        txt,
-			txtBaseUrl: "",
-			svgMatch:   "",
-		},
-		{
 			name:       "all filled",
 			txt:        txt,
 			txtBaseUrl: txtBaseUrl,
@@ -149,7 +176,7 @@ Marketing
 			err := chromedp.Run(ctx,
 				chromedp.Navigate(baseUrl),
 				// wait for form element to become visible (ie, page is loaded)
-				chromedp.WaitVisible(`#dbRoadmap-form`),
+				chromedp.WaitVisible(`#roadmap-form`),
 				// set the value of the textarea
 				chromedp.SetValue(`#txt`, tt.txt),
 				// set the value of the base url
@@ -157,11 +184,11 @@ Marketing
 				// set the value of the base url
 				chromedp.Submit(`#form-submit`),
 				// wait for redirect
-				chromedp.WaitVisible(`#dbRoadmap-svg`),
+				chromedp.WaitVisible(`#roadmap-svg`),
 				// retrieve relevant values
 				chromedp.Value(`#txt`, &txtFound),
 				chromedp.Value(`#base-url`, &txtBaseUrlFound),
-				chromedp.OuterHTML(`#dbRoadmap-svg`, &svgFound),
+				chromedp.OuterHTML(`#roadmap-svg`, &svgFound),
 			)
 
 			if err != nil {
