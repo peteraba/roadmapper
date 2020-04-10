@@ -630,6 +630,20 @@ func TestVisualRoadmap_findPercentageBottomUp(t *testing.T) {
 			args{0},
 			32,
 		},
+		{
+			"percentage is not set average of children is used recursively",
+			fields{
+				Projects: []Project{
+					{},
+					{Percentage: 32, Indentation: 1},
+					{Indentation: 1},
+					{Percentage: 43, Indentation: 2},
+					{Percentage: 29, Indentation: 2},
+				},
+			},
+			args{0},
+			34,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -172,7 +172,7 @@ func (vr *VisualRoadmap) calculatePercentages() *VisualRoadmap {
 	return vr
 }
 
-// findPercentageBottomUp will calculate the average percentage of subprojects
+// findPercentageBottomUp will calculate the average percentage of sub-projects
 func (vr *VisualRoadmap) findPercentageBottomUp(start int) uint8 {
 	if vr.Projects == nil || len(vr.Projects) < start {
 		panic(fmt.Errorf("illegal start %d for finding visual dates", start))
@@ -186,7 +186,7 @@ func (vr *VisualRoadmap) findPercentageBottomUp(start int) uint8 {
 
 	var sum, count uint8
 	for i := start + 1; i < len(vr.Projects); i++ {
-		p := vr.Projects[i]
+		p := &vr.Projects[i]
 		if p.Indentation < matchIndentation {
 			break
 		}
@@ -196,7 +196,7 @@ func (vr *VisualRoadmap) findPercentageBottomUp(start int) uint8 {
 		}
 
 		if p.Percentage == 0 {
-			vr.findPercentageBottomUp(i)
+			p.Percentage = vr.findPercentageBottomUp(i)
 		}
 
 		sum += p.Percentage
@@ -559,12 +559,12 @@ func (vr *VisualRoadmap) drawToday(ctx *canvas.Context, fullW, fullH, headerH, l
 	p.MoveTo(w, 0)
 	p.LineTo(w, fullH)
 
-	ctx.SetStrokeColor(canvas.Red)
+	ctx.SetStrokeColor(canvas.Darkcyan)
 	ctx.SetDashes(0.0, 8.0, 12.0)
 	ctx.DrawPath(fullW/3, 0, p)
 
 	x := w + fullW/3
-	face := fontFamily.Face(lineH*1.5, canvas.Red, canvas.FontRegular, canvas.FontNormal)
+	face := fontFamily.Face(lineH*1.5, canvas.Darkcyan, canvas.FontRegular, canvas.FontNormal)
 	date := now.Format(vr.DateFormat)
 	ctx.DrawText(x, y, canvas.NewTextBox(face, date, 0.0, lineH, canvas.Center, canvas.Center, 0.0, 0.0))
 }
