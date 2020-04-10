@@ -2,7 +2,6 @@ package main
 
 import (
 	"image/color"
-	"image/color/palette"
 	"reflect"
 	"testing"
 	"time"
@@ -1119,48 +1118,6 @@ func Test_charsToUint8(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("charsToUint8() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_getNextColor(t *testing.T) {
-	type args struct {
-		colorNum *uint8
-		nextNum  uint8
-	}
-
-	var a1, b1, c1 uint8 = 0, 125, 200
-	var a2, b2, c2 uint8 = 71, 196, 271 % 256
-
-	tests := []struct {
-		name string
-		args args
-		want color.Color
-	}{
-		{
-			name: "a",
-			args: args{colorNum: &a1, nextNum: a2},
-			want: palette.WebSafe[a2],
-		},
-		{
-			name: "b",
-			args: args{colorNum: &b1, nextNum: b2},
-			want: palette.WebSafe[b2],
-		},
-		{
-			name: "c",
-			args: args{colorNum: &c1, nextNum: c2},
-			want: palette.WebSafe[c2],
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := getNextColor(tt.args.colorNum); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getNextColor() = %v, want %v", got, tt.want)
-			}
-			if *tt.args.colorNum != tt.args.nextNum {
-				t.Errorf("getNextColor() -> colorNum: %v, want %v", *tt.args.colorNum, tt.args.nextNum)
 			}
 		})
 	}

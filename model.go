@@ -4,18 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
-	"image/color/palette"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 )
 
+// Dates represents a pair of start end end dates
 type Dates struct {
 	StartAt time.Time `json:"start_at"`
 	EndAt   time.Time `json:"end_at"`
 }
 
+// Roadmap represents a roadmap, the main entity of Roadmapper
 type Roadmap struct {
 	ID         uint64
 	PrevID     *uint64
@@ -28,6 +29,7 @@ type Roadmap struct {
 	AccessedAt time.Time
 }
 
+// Project represents a project that belongs to a Roadmap
 type Project struct {
 	Indentation uint8       `json:"indentation"`
 	Title       string      `json:"title"`
@@ -38,6 +40,7 @@ type Project struct {
 	Milestone   uint8       `json:"milestone,omitempty"`
 }
 
+// Milestone represents a milestone set for the roadmap
 type Milestone struct {
 	Title      string      `json:"title"`
 	DeadlineAt *time.Time  `json:"deadline_at,omitempty"`
@@ -45,8 +48,10 @@ type Milestone struct {
 	URLs       []string    `json:"urls,omitempty"` // nolint
 }
 
+// Content represents a raw string version of a roadmap
 type Content string
 
+// ToLines splits a Content into lines, a slice of strings
 func (c Content) ToLines() []string {
 	if len(c) == 0 {
 		return nil
@@ -55,6 +60,7 @@ func (c Content) ToLines() []string {
 	return strings.Split(string(c), "\n")
 }
 
+// ToRoadmap converts a Content to a Roadmap ready to be persisted or to be turned into a VisualRoadmap which can then be rendered
 func (c Content) ToRoadmap(id uint64, prevID *uint64, dateFormat, baseUrl string, now time.Time) Roadmap {
 	r := Roadmap{
 		ID:         id,
@@ -75,6 +81,7 @@ func (c Content) ToRoadmap(id uint64, prevID *uint64, dateFormat, baseUrl string
 	return r
 }
 
+// findIndentation looks at the beginning of the lines of Content and return the first string of spaces and tabs found
 func (c Content) findIndentation() string {
 	lines := c.ToLines()
 
@@ -95,6 +102,7 @@ func (c Content) findIndentation() string {
 	return "\t"
 }
 
+// toProjects converts Content to a slice of projects
 func (c Content) toProjects(indentation, dateFormat, baseUrl string) []Project {
 	var projects []Project
 
@@ -133,15 +141,17 @@ func (c Content) toProjects(indentation, dateFormat, baseUrl string) []Project {
 	return projects
 }
 
+// ToContent converts a Roadmap into a Content
 func (r Roadmap) ToContent() Content {
-	return Content(r.ToString())
+	return Content(r.String())
 }
 
-func (r Roadmap) ToString() string {
+// String converts a Roadmap into a string
+func (r Roadmap) String() string {
 	var lines []string
 
 	for _, p := range r.Projects {
-		lines = append(lines, p.ToString(r.DateFormat))
+		lines = append(lines, p.String(r.DateFormat))
 	}
 
 	if len(r.Projects) > 0 && len(r.Milestones) > 0 {
@@ -149,13 +159,14 @@ func (r Roadmap) ToString() string {
 	}
 
 	for _, m := range r.Milestones {
-		lines = append(lines, m.ToString(r.DateFormat))
+		lines = append(lines, m.String(r.DateFormat))
 	}
 
 	return strings.Join(lines, "\n")
 }
 
-func (p Project) ToString(dateFormat string) string {
+// String converts a Project into a string
+func (p Project) String(dateFormat string) string {
 	indentation := strings.Repeat("\t", int(p.Indentation))
 
 	var extra []string
@@ -186,7 +197,8 @@ func (p Project) ToString(dateFormat string) string {
 	return fmt.Sprintf("%s%s [%s]", indentation, p.Title, strings.Join(extra, ", "))
 }
 
-func (m Milestone) ToString(dateFormat string) string {
+// String converts a Milestone into a string
+func (m Milestone) String(dateFormat string) string {
 	var extra []string
 
 	if m.DeadlineAt != nil {
@@ -206,6 +218,7 @@ func (m Milestone) ToString(dateFormat string) string {
 	return fmt.Sprintf("|%s [%s]", m.Title, strings.Join(extra, ", "))
 }
 
+// ToDates converts a Roadmap into a Dates pointer
 func (r Roadmap) ToDates() *Dates {
 	var d *Dates
 
@@ -248,6 +261,7 @@ func (r Roadmap) ToDates() *Dates {
 	return d
 }
 
+// toMilestones converts Content into a slice of Milestones
 func (c Content) toMilestones(dateFormat, baseUrl string) []Milestone {
 	var milestones []Milestone
 
@@ -281,6 +295,7 @@ func (c Content) toMilestones(dateFormat, baseUrl string) []Milestone {
 	return milestones
 }
 
+// splitLine splits a Content line into a title and extra information, plus returns the indentation level found
 func splitLine(line, indentation string) (uint8, string, string) {
 	var (
 		n uint8
@@ -313,8 +328,9 @@ func splitLine(line, indentation string) (uint8, string, string) {
 	return n, strings.Trim(line[:lo], "\t\r "), strings.Trim(line[lo+1:lc], "\t\r ")
 }
 
+// isLineProject returns true if a given line appears to represent a project
 func isLineProject(line string) bool {
-	line = strings.TrimLeft(line, "\t ")
+	line = strings.TrimLeft(line, "\t\r ")
 
 	// empty line should be skipped
 	if len(line) == 0 {
@@ -329,8 +345,9 @@ func isLineProject(line string) bool {
 	return true
 }
 
+// isLineMilestone returns true if a given line appears to represent a milestone
 func isLineMilestone(line string) bool {
-	line = strings.TrimLeft(line, "\t ")
+	line = strings.TrimLeft(line, "\t\r ")
 
 	// empty line should be skipped
 	if len(line) == 0 {
@@ -345,6 +362,7 @@ func isLineMilestone(line string) bool {
 	return true
 }
 
+// parseExtra returns data found in extra parts of lines representing projects and milestones
 func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, *color.RGBA, []string, uint8, uint8, error) {
 	parts := strings.Split(extra, ", ")
 
@@ -367,6 +385,7 @@ func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, *col
 	return startAt, endAt, c, urls, percent, milestone, nil
 }
 
+// parseExtraPart returns data found in one piece of extra information
 func parseExtraPart(part string, f, t *time.Time, u []string, c *color.RGBA, p, m uint8, dateFormat, baseUrl string) (*time.Time, *time.Time, []string, *color.RGBA, uint8, uint8) {
 	t2, err := time.Parse(dateFormat, part)
 	if err == nil {
@@ -410,6 +429,7 @@ func parseExtraPart(part string, f, t *time.Time, u []string, c *color.RGBA, p, 
 
 var errCannotParsePercentage = errors.New("can not parse string as percentage")
 
+// parsePercentage tries to parse a string as a percentage between 0 and 100
 func parsePercentage(part string) (uint8, error) {
 	if len(part) < 2 {
 		return 0, errCannotParsePercentage
@@ -434,6 +454,8 @@ func parsePercentage(part string) (uint8, error) {
 
 var errCannotParseMilestone = errors.New("can not parse string as milestone")
 
+// parseMilestone tries to parse a string as a milestone number
+// project milestones start with a | character and continue with a positive integer
 func parseMilestone(part string) (uint8, error) {
 	if len(part) < 2 {
 		return 0, errCannotParseMilestone
@@ -453,6 +475,7 @@ func parseMilestone(part string) (uint8, error) {
 	return 0, errCannotParseMilestone
 }
 
+// parseColor tries to parse a string as a color in a hexadecimal representation (e.g #fa3, #ffaa33)
 func parseColor(part string) (*color.RGBA, error) {
 	if len(part) != 4 && len(part) != 7 {
 		return nil, errors.New("invalid hexa color length")
@@ -470,6 +493,7 @@ func parseColor(part string) (*color.RGBA, error) {
 	return &color.RGBA{R: s[0], G: s[1], B: s[2], A: 255}, nil
 }
 
+// charsToUnit8 converts a string containing a hexadecimal representation of a color into decimal representation
 func charsToUint8(part string) ([3]uint8, error) {
 	if len(part) != 3 && len(part) != 6 {
 		return [3]uint8{}, errors.New("invalid hexadecimal color string")
@@ -495,6 +519,7 @@ func charsToUint8(part string) ([3]uint8, error) {
 	return res, nil
 }
 
+// colorToHexa converts a color into a hexadecimal string representation (e.g. #fa3, #ffaa33)
 func colorToHexa(c color.Color) string {
 	if c == nil {
 		return ""
@@ -504,16 +529,11 @@ func colorToHexa(c color.Color) string {
 	return fmt.Sprintf("#%s%s%s", twoDigitHexa(r), twoDigitHexa(g), twoDigitHexa(b))
 }
 
+// twoDigitHexa converts a number into a hexadecimal representation of a string
 func twoDigitHexa(i uint32) string {
 	if i > 0xf {
 		return fmt.Sprintf("%x", uint8(i))
 	}
 
 	return fmt.Sprintf("0%x", uint8(i))
-}
-
-func getNextColor(colorNum *uint8) color.Color {
-	*colorNum = (*colorNum + 71) % uint8(len(palette.WebSafe))
-
-	return palette.WebSafe[*colorNum]
 }
