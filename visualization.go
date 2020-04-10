@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"image/color"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/tdewolff/canvas"
@@ -12,6 +14,7 @@ type VisualRoadmap struct {
 	Projects   []Project
 	Milestones []Milestone
 	Dates      *Dates
+	DateFormat string
 }
 
 // ToVisual converts a roadmap to a visual roadmap
@@ -23,8 +26,9 @@ func (r Roadmap) ToVisual() *VisualRoadmap {
 	visual.Dates = r.ToDates()
 	visual.Projects = r.Projects
 	visual.Milestones = r.Milestones
+	visual.DateFormat = r.DateFormat
 
-	visual.calculateProjectDates().calculateProjectColors().calculatePercentage()
+	visual.calculateProjectDates().calculateProjectColors().calculatePercentages().applyBaseUrl(r.BaseURL)
 
 	projectMilestones := visual.collectProjectMilestones()
 	visual.applyProjectMilestone(projectMilestones)
@@ -152,9 +156,9 @@ func (vr *VisualRoadmap) calculateProjectColors() *VisualRoadmap {
 	return vr
 }
 
-// calculatePecentage will try to calculate the percentage of all projects without a percentage set bottom up,
+// calculatePercentages will try to calculate the percentage of all projects without a percentage set bottom up,
 // meaning looking at their subprojects
-func (vr *VisualRoadmap) calculatePercentage() *VisualRoadmap {
+func (vr *VisualRoadmap) calculatePercentages() *VisualRoadmap {
 	for i := range vr.Projects {
 		p := &vr.Projects[i]
 
@@ -204,6 +208,44 @@ func (vr *VisualRoadmap) findPercentageBottomUp(start int) uint8 {
 	}
 
 	return sum / count
+}
+
+func (vr *VisualRoadmap) applyBaseUrl(baseUrl string) *VisualRoadmap {
+	if baseUrl == "" {
+		return vr
+	}
+
+	for i := range vr.Projects {
+		p := &vr.Projects[i]
+
+		for j := range p.URLs {
+			u := &p.URLs[j]
+
+			parsedUrl, err := url.ParseRequestURI(*u)
+			if err == nil && parsedUrl.Scheme != "" && parsedUrl.Host != "" {
+				continue
+			}
+
+			*u = fmt.Sprintf("%s/%s", strings.TrimRight(baseUrl, "/"), strings.TrimLeft(*u, "/"))
+		}
+	}
+
+	for i := range vr.Milestones {
+		m := &vr.Milestones[i]
+
+		for j := range m.URLs {
+			u := &m.URLs[j]
+
+			parsedUrl, err := url.ParseRequestURI(*u)
+			if err == nil && parsedUrl.Scheme != "" && parsedUrl.Host != "" {
+				continue
+			}
+
+			*u = fmt.Sprintf("%s/%s", strings.TrimRight(baseUrl, "/"), strings.TrimLeft(*u, "/"))
+		}
+	}
+
+	return vr
 }
 
 // collectProjectMilestones creates temporary milestones based on project information
@@ -298,7 +340,7 @@ var fontFamily *canvas.FontFamily
 var myLightGrey = color.RGBA{R: 220, G: 220, B: 220, A: 255}
 var defaultMilestoneColor = &canvas.Darkgray
 
-func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64, dateFormat string) *canvas.Canvas {
+func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64) *canvas.Canvas {
 	if vr.Dates == nil {
 		headerH = 0.0
 	}
@@ -319,26 +361,26 @@ func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64, dateFormat string) 
 	ctx := canvas.NewContext(c)
 	ctx.SetStrokeWidth(strokeW)
 
-	vr.drawHeader(ctx, fullW, fullH, headerH, lineH, strokeW, dateFormat)
+	vr.drawHeader(ctx, fullW, fullH, headerH, lineH, strokeW)
 
 	vr.writeProjects(ctx, fullW, fullH, headerH, lineH)
 	vr.drawProjects(ctx, fullW, fullH, headerH, lineH, strokeW)
 
-	vr.drawMilestones(ctx, fullW, fullH, headerH, lineH, dateFormat)
+	vr.drawMilestones(ctx, fullW, fullH, headerH, lineH)
 
 	vr.drawLines(ctx, fullW, fullH, headerH, lineH)
 
 	return c
 }
 
-func (vr *VisualRoadmap) drawHeader(ctx *canvas.Context, fullW, fullH, headerH, lineH, strokeW float64, dateFormat string) {
+func (vr *VisualRoadmap) drawHeader(ctx *canvas.Context, fullW, fullH, headerH, lineH, strokeW float64) {
 	if vr.Dates == nil {
 		return
 	}
 
 	vr.drawHeaderBaseline(ctx, fullW, fullH, headerH)
 
-	vr.writeHeaderDates(ctx, fullW, fullH, lineH, dateFormat)
+	vr.writeHeaderDates(ctx, fullW, fullH, lineH)
 
 	vr.markHeaderDates(ctx, fullW, fullH, headerH, strokeW)
 }
@@ -354,15 +396,15 @@ func (vr *VisualRoadmap) drawHeaderBaseline(ctx *canvas.Context, fullW, fullH, h
 	ctx.DrawPath(x, y, p)
 }
 
-func (vr *VisualRoadmap) writeHeaderDates(ctx *canvas.Context, fullW, fullH, lineH float64, dateFormat string) {
+func (vr *VisualRoadmap) writeHeaderDates(ctx *canvas.Context, fullW, fullH, lineH float64) {
 	x := fullW / 3
 	y := fullH
 	face := fontFamily.Face(lineH*1.5, canvas.Black, canvas.FontRegular, canvas.FontNormal)
-	date := vr.Dates.StartAt.Format(dateFormat)
+	date := vr.Dates.StartAt.Format(vr.DateFormat)
 	ctx.DrawText(x, y, canvas.NewTextBox(face, date, 0.0, lineH, canvas.Left, canvas.Center, 0.0, 0.0))
 
 	x = fullW
-	date = vr.Dates.EndAt.Format(dateFormat)
+	date = vr.Dates.EndAt.Format(vr.DateFormat)
 	ctx.DrawText(x, y, canvas.NewTextBox(face, date, 0.0, lineH, canvas.Right, canvas.Center, 0.0, 0.0))
 }
 
@@ -430,7 +472,7 @@ func (vr *VisualRoadmap) drawProjects(ctx *canvas.Context, fullW, fullH, headerH
 	ctx.SetStrokeWidth(strokeW)
 }
 
-func (vr *VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, headerH, lineH float64, dateFormat string) {
+func (vr *VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
 	if vr.Dates == nil {
 		return
 	}
@@ -461,7 +503,7 @@ func (vr *VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, heade
 
 		x := w + fullW/3
 		face := fontFamily.Face(lineH*1.5, c, canvas.FontRegular, canvas.FontNormal)
-		date := m.DeadlineAt.Format(dateFormat)
+		date := m.DeadlineAt.Format(vr.DateFormat)
 		ctx.DrawText(x, y, canvas.NewTextBox(face, date, 0.0, lineH, canvas.Center, canvas.Center, 0.0, 0.0))
 	}
 }

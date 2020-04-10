@@ -61,8 +61,8 @@ func TestRoadmap_ToVisual(t *testing.T) {
 	}{
 		{
 			"empty",
-			fields{0, nil, "", "", nil, nil, dates0402, dates0402, dates0402},
-			&VisualRoadmap{nil, nil, nil},
+			fields{CreatedAt: dates0402, UpdatedAt: dates0402, AccessedAt: dates0402},
+			&VisualRoadmap{},
 		},
 		{
 			"complex",
@@ -89,6 +89,7 @@ func TestRoadmap_ToVisual(t *testing.T) {
 				now,
 			},
 			&VisualRoadmap{
+				DateFormat: "02.01.2006",
 				Projects: []Project{
 					{Title: "Initial development", Dates: &Dates{StartAt: dates0402, EndAt: dates0405}, URLs: urls1, Color: color3},
 					{Title: "Bring website online", Dates: &Dates{StartAt: dates0402, EndAt: dates0418}, Color: color1, Milestone: 1},
@@ -572,8 +573,8 @@ func TestVisualRoadmap_calculatePercentage(t *testing.T) {
 				Milestones: tt.fields.Milestones,
 				Dates:      tt.fields.Dates,
 			}
-			if got := vr.calculatePercentage(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("calculatePercentage() = %v, want %v", got, tt.want)
+			if got := vr.calculatePercentages(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("calculatePercentages() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -639,6 +640,80 @@ func TestVisualRoadmap_findPercentageBottomUp(t *testing.T) {
 			}
 			if got := vr.findPercentageBottomUp(tt.args.start); got != tt.want {
 				t.Errorf("findPercentageBottomUp() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVisualRoadmap_applyBaseUrl(t *testing.T) {
+	type fields struct {
+		Projects   []Project
+		Milestones []Milestone
+		Dates      *Dates
+		DateFormat string
+	}
+	type args struct {
+		baseUrl string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *VisualRoadmap
+	}{
+		{
+			"empty",
+			fields{},
+			args{},
+			&VisualRoadmap{},
+		},
+		{
+			"apply base url on project urls",
+			fields{
+				Projects: []Project{
+					{URLs: []string{"https://example.com/foo", "bar"}},
+					{URLs: []string{"https://example.com/baz", "quix"}},
+				},
+			},
+			args{
+				baseUrl: "https://example.com/",
+			},
+			&VisualRoadmap{
+				Projects: []Project{
+					{URLs: []string{"https://example.com/foo", "https://example.com/bar"}},
+					{URLs: []string{"https://example.com/baz", "https://example.com/quix"}},
+				},
+			},
+		},
+		{
+			"apply base url on milestone urls",
+			fields{
+				Milestones: []Milestone{
+					{URLs: []string{"https://example.com/foo", "bar"}},
+					{URLs: []string{"https://example.com/baz", "quix"}},
+				},
+			},
+			args{
+				baseUrl: "https://example.com/",
+			},
+			&VisualRoadmap{
+				Milestones: []Milestone{
+					{URLs: []string{"https://example.com/foo", "https://example.com/bar"}},
+					{URLs: []string{"https://example.com/baz", "https://example.com/quix"}},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			vr := &VisualRoadmap{
+				Projects:   tt.fields.Projects,
+				Milestones: tt.fields.Milestones,
+				Dates:      tt.fields.Dates,
+				DateFormat: tt.fields.DateFormat,
+			}
+			if got := vr.applyBaseUrl(tt.args.baseUrl); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("applyBaseUrl() = %v, want %v", got, tt.want)
 			}
 		})
 	}

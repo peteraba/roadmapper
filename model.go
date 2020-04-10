@@ -401,7 +401,7 @@ func parseExtraPart(part string, f, t *time.Time, u []string, c *color.RGBA, p, 
 		prefixedUrl := fmt.Sprintf("%s/%s", strings.TrimRight(baseUrl, "/"), strings.TrimLeft(part, "/"))
 		_, err = url.ParseRequestURI(prefixedUrl)
 		if err == nil {
-			return f, t, append(u, prefixedUrl), c, p, m
+			return f, t, append(u, part), c, p, m
 		}
 	}
 

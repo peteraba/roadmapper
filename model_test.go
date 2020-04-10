@@ -800,7 +800,7 @@ func Test_parseExtraPart(t *testing.T) {
 			args:      args{part: "asd", u: []string{url}, dateFormat: "2006-01-02", baseUrl: "http://example.com/"},
 			startAt:   nil,
 			endAt:     nil,
-			urls:      []string{url, "http://example.com/asd"},
+			urls:      []string{url, "asd"},
 			percent:   0,
 			milestone: 0,
 			wantColor: nil,
