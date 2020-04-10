@@ -21,7 +21,7 @@ func (r Roadmap) ToVisual() *VisualRoadmap {
 	visual.Projects = r.Projects
 	visual.Milestones = r.Milestones
 
-	visual.calculateDates().calculateColors()
+	visual.calculateProjectDates().calculateProjectColors().calculatePercentage()
 
 	projectMilestones := visual.collectProjectMilestones()
 	visual.applyProjectMilestone(projectMilestones)
@@ -29,7 +29,7 @@ func (r Roadmap) ToVisual() *VisualRoadmap {
 	return visual
 }
 
-func (vr *VisualRoadmap) calculateDates() *VisualRoadmap {
+func (vr *VisualRoadmap) calculateProjectDates() *VisualRoadmap {
 	for i := range vr.Projects {
 		p := &vr.Projects[i]
 
@@ -120,7 +120,7 @@ func (vr *VisualRoadmap) findDatesTopDown(start int) *Dates {
 	return dates
 }
 
-func (vr *VisualRoadmap) calculateColors() *VisualRoadmap {
+func (vr *VisualRoadmap) calculateProjectColors() *VisualRoadmap {
 	epicCount := -1
 	projectCount := -1
 	for i := range vr.Projects {
@@ -143,12 +143,67 @@ func (vr *VisualRoadmap) calculateColors() *VisualRoadmap {
 	return vr
 }
 
+func (vr *VisualRoadmap) calculatePercentage() *VisualRoadmap {
+	for i := range vr.Projects {
+		p := &vr.Projects[i]
+
+		if p.Percentage != 0 {
+			continue
+		}
+
+		p.Percentage = vr.findPercentageBottomUp(i)
+	}
+
+	return vr
+}
+
+func (vr *VisualRoadmap) findPercentageBottomUp(start int) uint8 {
+	if vr.Projects == nil || len(vr.Projects) < start {
+		panic(fmt.Errorf("illegal start %d for finding visual dates", start))
+	}
+
+	if vr.Projects[start].Percentage != 0 {
+		return vr.Projects[start].Percentage
+	}
+
+	matchIndentation := vr.Projects[start].Indentation + 1
+
+	var sum, count uint8
+	for i := start + 1; i < len(vr.Projects); i++ {
+		p := vr.Projects[i]
+		if p.Indentation < matchIndentation {
+			break
+		}
+
+		if p.Indentation > matchIndentation {
+			continue
+		}
+
+		if p.Percentage == 0 {
+			vr.findPercentageBottomUp(i)
+		}
+
+		sum += p.Percentage
+		count++
+	}
+
+	if count == 0 {
+		return 0
+	}
+
+	return sum / count
+}
+
 func (vr *VisualRoadmap) collectProjectMilestones() map[int]*Milestone {
 	foundMilestones := map[int]*Milestone{}
 	for i := range vr.Projects {
 		p := &vr.Projects[i]
 
 		if p.Milestone == 0 {
+			continue
+		}
+
+		if p.Color == nil && p.Dates == nil {
 			continue
 		}
 
@@ -215,7 +270,7 @@ func (vr *VisualRoadmap) applyProjectMilestone(projectMilestones map[int]*Milest
 
 	for i := range vr.Milestones {
 		if vr.Milestones[i].Color == nil {
-			vr.Milestones[i].Color = &canvas.Darkgray
+			vr.Milestones[i].Color = defaultMilestoneColor
 		}
 	}
 
@@ -223,7 +278,8 @@ func (vr *VisualRoadmap) applyProjectMilestone(projectMilestones map[int]*Milest
 }
 
 var fontFamily *canvas.FontFamily
-var lightGrey = color.RGBA{R: 220, G: 220, B: 220, A: 255}
+var myLightGrey = color.RGBA{R: 220, G: 220, B: 220, A: 255}
+var defaultMilestoneColor = &canvas.Darkgray
 
 func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64, dateFormat string) *canvas.Canvas {
 	if vr.Dates == nil {
@@ -344,7 +400,7 @@ func (vr *VisualRoadmap) drawProjects(ctx *canvas.Context, fullW, fullH, headerH
 		w := x1 - x0
 		y := fullH - float64(i)*lineH - headerH - lineH/4*3
 
-		ctx.SetFillColor(lightGrey)
+		ctx.SetFillColor(myLightGrey)
 		ctx.DrawPath(x0+fullW/3, y, canvas.RoundedRectangle(w, h, r))
 
 		if p.Percentage > 0 {
