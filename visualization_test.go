@@ -32,7 +32,8 @@ func TestRoadmap_ToVisual(t *testing.T) {
 	color3 := &color.RGBA{34, 9, 1, 255}
 	color4 := &color.RGBA{148, 27, 12, 255}
 	color5 := &color.RGBA{148, 27, 12, 255}
-	color6 := &color.RGBA{224, 155, 26, 255}
+	color6 := &color.RGBA{120, 37, 6, 255}
+	color7 := &color.RGBA{224, 155, 26, 255}
 
 	type fields struct {
 		ID         uint64
@@ -68,6 +69,7 @@ func TestRoadmap_ToVisual(t *testing.T) {
 					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1},
 					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1},
 					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Milestone: 1, Color: color2},
+					{Title: "Create backend SVG generation", Indentation: 1},
 					{Title: "Marketing"},
 				},
 				[]Milestone{
@@ -85,7 +87,8 @@ func TestRoadmap_ToVisual(t *testing.T) {
 					{Title: "Select and purchase domain", Dates: &Dates{StartAt: dates0402, EndAt: dates0415}, Indentation: 1, Color: color4},
 					{Title: "Create server infrastructure", Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 1, Color: color5},
 					{Title: "Command line tool", Percentage: percentage1, Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Color: color2, Milestone: 1},
-					{Title: "Marketing", Color: color6},
+					{Title: "Create backend SVG generation", Dates: &Dates{StartAt: dates0418, EndAt: dates0419}, Indentation: 1, Color: color6},
+					{Title: "Marketing", Color: color7},
 				},
 				Milestones: []Milestone{
 					{Title: "Milestone 0.1", DeadlineAt: &dates0419, URLs: urls2, Color: color1},
@@ -120,6 +123,37 @@ func TestRoadmap_ToVisual(t *testing.T) {
 					}
 				}
 				t.Errorf("ToVisual() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestVisualRoadmap_findDatesTopDown(t *testing.T) {
+	type fields struct {
+		Projects   []Project
+		Milestones []Milestone
+		Dates      *Dates
+	}
+	type args struct {
+		start int
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *Dates
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			vr := &VisualRoadmap{
+				Projects:   tt.fields.Projects,
+				Milestones: tt.fields.Milestones,
+				Dates:      tt.fields.Dates,
+			}
+			if got := vr.findDatesTopDown(tt.args.start); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("findDatesTopDown() = %v, want %v", got, tt.want)
 			}
 		})
 	}

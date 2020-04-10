@@ -40,6 +40,16 @@ func (vr *VisualRoadmap) calculateDates() *VisualRoadmap {
 		p.Dates = vr.findDatesBottomUp(i)
 	}
 
+	for i := range vr.Projects {
+		p := &vr.Projects[i]
+
+		if p.Dates != nil {
+			continue
+		}
+
+		p.Dates = vr.findDatesTopDown(i)
+	}
+
 	return vr
 }
 
@@ -77,6 +87,34 @@ func (vr *VisualRoadmap) findDatesBottomUp(start int) *Dates {
 		if dates.EndAt.Before(p.Dates.EndAt) {
 			dates.EndAt = p.Dates.EndAt
 		}
+	}
+
+	return dates
+}
+
+func (vr *VisualRoadmap) findDatesTopDown(start int) *Dates {
+	if vr.Projects == nil || len(vr.Projects) < start {
+		panic(fmt.Errorf("illegal start %d for finding visual dates", start))
+	}
+
+	if vr.Projects[start].Dates != nil {
+		return vr.Projects[start].Dates
+	}
+
+	currentIndentation := vr.Projects[start].Indentation
+
+	var dates *Dates
+	for i := start - 1; i >= 0; i-- {
+		p := vr.Projects[i]
+		if p.Indentation >= currentIndentation {
+			continue
+		}
+
+		if p.Dates != nil {
+			return p.Dates
+		}
+
+		currentIndentation = p.Indentation
 	}
 
 	return dates
