@@ -96,14 +96,14 @@ const layoutTemplate = `<!doctype html>
 
 	<div class="container-fluid roadmap-dashboard section" id="roadmap-dashboard">
 		<h1 class="h1">Dashboard</h1>
-		<div id="roadmap-svg"></div>
-		<div id="roadmap-download-buttons">
-			<a class="btn btn-primary" href="{{ .CurrentUrl }}/png">PNG download</a>
-			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/svg">SVG download</a>
-			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/jpg">JPG download</a>
-			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/gif">GIF download</a>
-			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/pdf">PDF download</a>
-		</div>
+		<p id="roadmap-svg"></p>
+		<p class="roadmap-download-buttons">
+			<a class="btn btn-primary" href="{{ .CurrentUrl }}/png" data-fileformat="png">PNG download</a>
+			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/svg" data-fileformat="svg">SVG download</a>
+			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/jpg" data-fileformat="jpg">JPG download</a>
+			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/gif" data-fileformat="gif">GIF download</a>
+			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/pdf" data-fileformat="pdf">PDF download</a>
+		</p>
 		<hr class="hr">
 	</div>
 
