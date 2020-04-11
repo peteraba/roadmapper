@@ -127,7 +127,7 @@ func createGetRoadRoadmapImage(rw DbReadWriter, cb CodeBuilder) func(c echo.Cont
 
 		img := renderImg(cvs, format)
 
-		ctx.Response().Header().Set(echo.HeaderContentType, "image/svg+xml")
+		setHeaderContentType(ctx.Response().Header(), format)
 
 		return ctx.String(http.StatusOK, string(img))
 	}
@@ -135,12 +135,14 @@ func createGetRoadRoadmapImage(rw DbReadWriter, cb CodeBuilder) func(c echo.Cont
 
 func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl string, selfHosted bool) func(c echo.Context) error {
 	return func(ctx echo.Context) error {
-		roadmap, code, err := load(rw, cb, ctx.Param("identifier"))
+		identifier := ctx.Param("identifier")
+
+		roadmap, code, err := load(rw, cb, identifier)
 		if err != nil {
 			return ctx.HTML(code, err.Error())
 		}
 
-		output, err := bootstrapRoadmap(roadmap, matomoDomain, docBaseUrl, selfHosted)
+		output, err := bootstrapRoadmap(roadmap, matomoDomain, docBaseUrl, ctx.Request().RequestURI, selfHosted)
 		if err != nil {
 			log.Print(err)
 			return ctx.HTML(ErrorToHttpCode(err, http.StatusInternalServerError), err.Error())
@@ -286,6 +288,21 @@ func renderImg(cvs *canvas.Canvas, fileFormat fileFormat) []byte {
 	}
 
 	return buf.Bytes()
+}
+
+func setHeaderContentType(header http.Header, fileFormat fileFormat) {
+	switch fileFormat {
+	case svgFormat:
+		header.Set(echo.HeaderContentType, "image/svg+xml")
+	case pdfFormat:
+		header.Set(echo.HeaderContentType, "application/pdf")
+	case pngFormat:
+		header.Set(echo.HeaderContentType, "image/png")
+	case gifFormat:
+		header.Set(echo.HeaderContentType, "image/gif")
+	case jpgFormat:
+		header.Set(echo.HeaderContentType, "image/jpeg")
+	}
 }
 
 func getCanvasSizes(fw, hh, lh uint64) (uint64, uint64, uint64) {

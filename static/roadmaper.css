@@ -9,3 +9,7 @@
 .modal {
   display: block;
 }
+
+#roadmap-download-buttons {
+  padding: 1em 0;
+}

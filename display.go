@@ -97,6 +97,13 @@ const layoutTemplate = `<!doctype html>
 	<div class="container-fluid roadmap-dashboard section" id="roadmap-dashboard">
 		<h1 class="h1">Dashboard</h1>
 		<div id="roadmap-svg"></div>
+		<div id="roadmap-download-buttons">
+			<a class="btn btn-primary" href="{{ .CurrentUrl }}/png">PNG download</a>
+			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/svg">SVG download</a>
+			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/jpg">JPG download</a>
+			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/gif">GIF download</a>
+			<a class="btn btn-secondary" href="{{ .CurrentUrl }}/pdf">PDF download</a>
+		</div>
 		<hr class="hr">
 	</div>
 
@@ -176,7 +183,7 @@ var dateFormatMap = map[string]string{
 	"1.2.2020":   "M/D/YYYY (3.7.2020)",
 }
 
-func bootstrapRoadmap(roadmap *Roadmap, matomoDomain, docBaseUrl string, selfHosted bool) (string, error) {
+func bootstrapRoadmap(roadmap *Roadmap, matomoDomain, docBaseUrl, currentUrl string, selfHosted bool) (string, error) {
 	writer := bytes.NewBufferString("")
 
 	t, err := template.New("layout").Parse(layoutTemplate)
@@ -201,6 +208,7 @@ func bootstrapRoadmap(roadmap *Roadmap, matomoDomain, docBaseUrl string, selfHos
 		DocBaseUrl    string
 		DateFormat    string
 		BaseUrl       string
+		CurrentUrl    string
 		Title         string
 		SelfHosted    bool
 		HasRoadmap    bool
@@ -213,6 +221,7 @@ func bootstrapRoadmap(roadmap *Roadmap, matomoDomain, docBaseUrl string, selfHos
 		DocBaseUrl:    docBaseUrl,
 		DateFormat:    dateFormat,
 		BaseUrl:       baseUrl,
+		CurrentUrl:    currentUrl,
 		Title:         title,
 		SelfHosted:    selfHosted,
 		HasRoadmap:    hasRoadmap,
