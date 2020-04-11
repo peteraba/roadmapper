@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
-	"math/rand"
 )
 
 var colors = [][]color.RGBA{
@@ -226,11 +225,12 @@ func pickFgColor(epicCount, projectCount, indentation int) *color.RGBA {
 		return &c[len(c)/2]
 
 	default:
-		d := rand.Intn(len(c) / 2)
-		if projectCount%2 == 0 {
-			return &c[len(c)/2+d]
+		ind := indentation - 1
+		n := (len(c)/2 - projectCount - ind*5) % len(c)
+		if n < 0 {
+			n += len(c)
 		}
-		return &c[len(c)/2-d]
+		return &c[n]
 	}
 }
 
