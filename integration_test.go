@@ -6,9 +6,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/chromedp/chromedp"
 	"github.com/labstack/gommon/log"
@@ -86,7 +89,8 @@ func setupApp(t *testing.T, dbResource *dockertest.Resource) chan os.Signal {
 	return quit
 }
 
-var txt = `Initial development [2020-02-12, 2020-02-20]
+var (
+	txt = `Initial development [2020-02-12, 2020-02-20]
 Bring website online
 	Select and purchase domain [2020-02-04, 2020-02-25, 100%, /issues/1]
 	Create server infrastructure [2020-02-25, 2020-02-28, 100%]
@@ -102,10 +106,11 @@ Marketing
 
 |Milestone 0.1
 |Milestone 0.2 [2020-02-12, #00ff00, https://example.com/abc, bcdef]`
+	txtBaseUrl = "https://example.com/foo"
+)
 
 func TestApp_TextToRoadmap(t *testing.T) {
 	now := time.Now()
-	txtBaseUrl := "https://example.com/foo"
 	content := Content(txt)
 
 	roadmap := content.ToRoadmap(123, nil, "2006-01-02", txtBaseUrl, now)
@@ -117,7 +122,6 @@ func TestApp_TextToRoadmap(t *testing.T) {
 
 func TestApp_TextToVisual(t *testing.T) {
 	now := time.Now()
-	txtBaseUrl := "https://example.com/foo"
 	content := Content(txt)
 	expectedProjectLength := 13
 	expectedMilestoneLength := 2
@@ -131,9 +135,132 @@ func TestApp_TextToVisual(t *testing.T) {
 	assert.Equal(t, &expectedDeadline1, visualRoadmap.Milestones[0].DeadlineAt)
 }
 
-func TestApp_Server(t *testing.T) {
-	txtBaseUrl := "https://example.com/foo"
+func TestApp_Commandline(t *testing.T) {
+	var (
+		dateFormat        = "2006-01-02"
+		fw, hh, lh uint64 = 800, 80, 30
+		rw                = CreateFileReadWriter()
+	)
 
+	type args struct {
+		rw                  FileReadWriter
+		content, output     string
+		format              fileFormat
+		dateFormat, baseUrl string
+		fw, hh, lh          uint64
+	}
+
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"svg size",
+			args{
+				rw,
+				txt,
+				"test.svg",
+				svgFormat,
+				dateFormat,
+				txtBaseUrl,
+				fw,
+				hh,
+				lh,
+			},
+		},
+		{
+			"pdf size",
+			args{
+				rw,
+				txt,
+				"test.pdf",
+				pdfFormat,
+				dateFormat,
+				txtBaseUrl,
+				fw,
+				hh,
+				lh,
+			},
+		},
+		{
+			"png size",
+			args{
+				rw,
+				txt,
+				"test.png",
+				pngFormat,
+				dateFormat,
+				txtBaseUrl,
+				fw,
+				hh,
+				lh,
+			},
+		},
+		{
+			"gif size",
+			args{
+				rw,
+				txt,
+				"test.gif",
+				gifFormat,
+				dateFormat,
+				txtBaseUrl,
+				fw,
+				hh,
+				lh,
+			},
+		},
+		{
+			"jpg size",
+			args{
+				rw,
+				txt,
+				"test.jpg",
+				jpgFormat,
+				dateFormat,
+				txtBaseUrl,
+				fw,
+				hh,
+				lh,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := Render(
+				rw,
+				tt.args.content,
+				tt.args.output,
+				tt.args.format,
+				tt.args.dateFormat,
+				tt.args.baseUrl,
+				tt.args.fw,
+				tt.args.hh,
+				tt.args.lh,
+			)
+
+			require.NoError(t, err)
+
+			expectedData, err := ioutil.ReadFile(fmt.Sprintf("goldenfiles/%s", tt.args.output))
+			actualData, err := ioutil.ReadFile(tt.args.output)
+
+			ed0, ad0 := float64(len(expectedData)), float64(len(actualData))
+			ed1, ad1 := ed0*1.1, ad0*1.1
+
+			assert.Greater(t, ed1, ad0, "generated and golden files differ a lot")
+			assert.Less(t, ed0, ad1, "generated and golden files differ a lot")
+
+			if !t.Failed() {
+				err = os.Remove(tt.args.output) // remove a single file
+				if err != nil {
+					t.Errorf("failed to delete file: %s", tt.args.output)
+				}
+			}
+		})
+	}
+}
+
+func TestApp_Server(t *testing.T) {
 	// create chrome instance
 	ctx, cancel := chromedp.NewContext(
 		context.Background(),
