@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
+	github.com/ajstarks/svgo v0.0.0-20200320125537-f189e35d30ca // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/chromedp/chromedp v0.5.3
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
@@ -15,6 +16,7 @@ require (
 	github.com/go-pg/pg v8.0.6+incompatible
 	github.com/go-pg/pg/v9 v9.1.3 // indirect
 	github.com/gosuri/uitable v0.0.4
+	github.com/jung-kurt/gofpdf v1.16.2 // indirect
 	github.com/kevinburke/go-bindata v3.19.0+incompatible // indirect
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0
@@ -28,10 +30,13 @@ require (
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1
 	github.com/tdewolff/canvas v0.0.0-20200405143149-4ba3ed64cbd5
+	github.com/tdewolff/minify/v2 v2.7.3 // indirect
 	github.com/urfave/cli/v2 v2.2.0
 	github.com/valyala/fasttemplate v1.1.0 // indirect
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
+	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
+	gonum.org/v1/plot v0.7.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"image/gif"
+	"image/jpeg"
 	"net/http"
 	"net/url"
 	"os"
@@ -11,12 +13,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tdewolff/canvas"
-
 	"github.com/gosuri/uitable"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
+	"github.com/tdewolff/canvas"
+	"github.com/tdewolff/canvas/rasterizer"
 )
 
 const (
@@ -25,11 +27,34 @@ const (
 	defaultSvgLineHeight   = 40
 )
 
-type renderType string
+type fileFormat string
 
 const (
-	svgType renderType = "svg"
+	svgFormat fileFormat = "svg"
+	pngFormat fileFormat = "png"
+	pdfFormat fileFormat = "pdf"
+	jpgFormat fileFormat = "jpg"
+	gifFormat fileFormat = "gif"
 )
+
+func newFormatType(t string) (fileFormat, error) {
+	switch t {
+	case "svg":
+		return svgFormat, nil
+	case "pdf":
+		return pdfFormat, nil
+	case "png":
+		return pngFormat, nil
+	case "jpg":
+		return jpgFormat, nil
+	case "jpeg":
+		return jpgFormat, nil
+	case "gif":
+		return gifFormat, nil
+	}
+
+	return "", fmt.Errorf("unsupported image format: %s", t)
+}
 
 func Serve(quit chan os.Signal, port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl string, selfHosted bool) {
 	// Setup
@@ -44,7 +69,7 @@ func Serve(quit chan os.Signal, port uint, certFile, keyFile string, rw DbReadWr
 
 	e.GET("/", createGetRoadmap(rw, cb, matomoDomain, docBaseUrl, selfHosted))
 	e.POST("/", createPostRoadmap(rw, cb))
-	e.GET("/:identifier/svg", createGetRoadRoadmapSVG(rw, cb))
+	e.GET("/:identifier/:format", createGetRoadRoadmapImage(rw, cb))
 	e.GET("/:identifier", createGetRoadmap(rw, cb, matomoDomain, docBaseUrl, selfHosted))
 	e.POST("/:identifier", createPostRoadmap(rw, cb))
 
@@ -66,8 +91,15 @@ func Serve(quit chan os.Signal, port uint, certFile, keyFile string, rw DbReadWr
 	}
 }
 
-func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) error {
+func createGetRoadRoadmapImage(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) error {
 	return func(ctx echo.Context) error {
+		format, err := newFormatType(ctx.Param("format"))
+		if err != nil {
+			log.Print(err)
+
+			return err
+		}
+
 		fw, err := strconv.ParseUint(ctx.QueryParam("width"), 10, 64)
 		if err != nil {
 			fw = defaultSvgWidth
@@ -93,7 +125,7 @@ func createGetRoadRoadmapSVG(rw DbReadWriter, cb CodeBuilder) func(c echo.Contex
 
 		cvs := roadmap.ToVisual().Draw(float64(fw), float64(hh), float64(lh))
 
-		img := renderImg(cvs, svgType)
+		img := renderImg(cvs, format)
 
 		ctx.Response().Header().Set(echo.HeaderContentType, "image/svg+xml")
 
@@ -198,27 +230,59 @@ func startWrapper(e *echo.Echo, certFile, keyFile string) func(port uint) error 
 	}
 }
 
-func Render(rw FileReadWriter, content, output, dateFormat, baseUrl string, fw, hh, lh uint64) error {
+func Render(rw FileReadWriter, content, output string, fileFormat fileFormat, dateFormat, baseUrl string, fw, hh, lh uint64) error {
 	fw, hh, lh = getCanvasSizes(fw, hh, lh)
 
 	roadmap := Content(content).ToRoadmap(0, nil, dateFormat, baseUrl, time.Now())
 	cvs := roadmap.ToVisual().Draw(float64(fw), float64(hh), float64(lh))
-	img := renderImg(cvs, svgType)
+	img := renderImg(cvs, fileFormat)
 
 	err := rw.Write(output, string(img))
 
 	return err
 }
 
-func renderImg(cvs *canvas.Canvas, renderType renderType) []byte {
+func renderImg(cvs *canvas.Canvas, fileFormat fileFormat) []byte {
 	var buf bytes.Buffer
 
-	switch renderType {
-	case svgType:
-		svg := canvas.NewSVG(&buf, cvs.W, cvs.H)
+	switch fileFormat {
+	case svgFormat:
+		img := canvas.NewSVG(&buf, cvs.W, cvs.H)
 
-		cvs.Render(svg)
-		svg.Close()
+		cvs.Render(img)
+		img.Close()
+	case pdfFormat:
+		img := canvas.NewPDF(&buf, cvs.W, cvs.H)
+
+		cvs.Render(img)
+		img.Close()
+	case pngFormat:
+		w := rasterizer.PNGWriter(3.2)
+
+		err := w(&buf, cvs)
+		if err != nil {
+			return nil
+		}
+	case gifFormat:
+		options := &gif.Options{
+			NumColors: 256,
+		}
+		w := rasterizer.GIFWriter(3.2, options)
+
+		err := w(&buf, cvs)
+		if err != nil {
+			return nil
+		}
+	case jpgFormat:
+		options := &jpeg.Options{
+			Quality: 90,
+		}
+		w := rasterizer.JPGWriter(3.2, options)
+
+		err := w(&buf, cvs)
+		if err != nil {
+			return nil
+		}
 	}
 
 	return buf.Bytes()

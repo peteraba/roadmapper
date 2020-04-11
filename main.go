@@ -75,6 +75,7 @@ func main() {
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "input", Usage: "input file", Aliases: []string{"i"}},
 					&cli.StringFlag{Name: "output", Usage: "output file", Aliases: []string{"o"}},
+					&cli.StringFlag{Name: "format", Usage: "image format to be used (supported: svg, png, pdf", Aliases: []string{"f"}, Value: "svg", EnvVars: []string{"IMAGE_FORMAT"}},
 					&cli.Uint64Flag{Name: "width", Usage: "width of output file", Aliases: []string{"w"}},
 					&cli.Uint64Flag{Name: "headerHeight", Usage: "width of output file", Aliases: []string{"hh"}},
 					&cli.Uint64Flag{Name: "lineHeight", Usage: "width of output file", Aliases: []string{"lh"}},
@@ -82,11 +83,19 @@ func main() {
 					&cli.StringFlag{Name: "baseUrl", Usage: "base url to use for non-color, non-date extra values", Value: "", EnvVars: []string{"BASE_URL"}},
 				},
 				Action: func(c *cli.Context) error {
+					format, err := newFormatType(c.String("format"))
+					if err != nil {
+						log.Print(err)
+
+						return err
+					}
+
 					rw := CreateFileReadWriter()
-					err := Render(
+					err = Render(
 						rw,
 						c.String("input"),
 						c.String("output"),
+						format,
 						c.String("dateFormat"),
 						c.String("baseUrl"),
 						c.Uint64("width"),

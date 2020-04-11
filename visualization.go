@@ -340,6 +340,7 @@ var fontFamily *canvas.FontFamily
 var myLightGrey = color.RGBA{R: 220, G: 220, B: 220, A: 255}
 var defaultMilestoneColor = &canvas.Darkgray
 
+// Draw will draw a roadmap on a canvas.Canvas
 func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64) *canvas.Canvas {
 	if vr.Dates == nil {
 		headerH = 0.0
@@ -361,6 +362,7 @@ func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64) *canvas.Canvas {
 	ctx := canvas.NewContext(c)
 	ctx.SetStrokeWidth(strokeW)
 
+	vr.drawBackground(ctx, fullW, fullH, headerH)
 	vr.drawHeader(ctx, fullW, fullH, headerH, lineH, strokeW)
 
 	vr.drawProjectBackgrounds(ctx, fullW, fullH, headerH, lineH)
@@ -374,6 +376,19 @@ func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64) *canvas.Canvas {
 	vr.drawToday(ctx, fullW, fullH, headerH, lineH)
 
 	return c
+}
+
+func (vr *VisualRoadmap) drawBackground(ctx *canvas.Context, fullW, fullH, headerH float64) {
+	p := &canvas.Path{}
+	p.MoveTo(0, 0)
+	p.LineTo(0, fullH+headerH)
+	p.LineTo(fullW, fullH+headerH)
+	p.LineTo(fullW, 0)
+	p.LineTo(0, 0)
+	p.Close()
+
+	ctx.SetFillColor(canvas.White)
+	ctx.DrawPath(0, 0, p)
 }
 
 func (vr *VisualRoadmap) drawHeader(ctx *canvas.Context, fullW, fullH, headerH, lineH, strokeW float64) {
@@ -464,6 +479,10 @@ func (vr *VisualRoadmap) createFont(indentation uint8, lineH float64) canvas.Fon
 }
 
 func (vr *VisualRoadmap) drawProjects(ctx *canvas.Context, fullW, fullH, headerH, lineH, strokeW float64) {
+	if vr.Dates == nil {
+		return
+	}
+
 	h := lineH / 2
 	maxW := fullW * 2 / 3
 	roadmapInterval := vr.Dates.EndAt.Sub(vr.Dates.StartAt).Hours()
