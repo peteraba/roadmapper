@@ -301,12 +301,12 @@ Command line tool
 	Create documentation page [2020-03-13, 2020-03-31, 20%]
 Marketing
 	Create Facebook page [2020-03-17, 2020-03-25, 40%]
-	Write blog posts [2020-03-17, 2020-03-31, 0%]
+	Write blog posts [2020-03-17, 2020-03-31]
 	Share blog post on social media [2020-03-17, 2020-03-31, 30%]
-	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0]
+	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15]
 
 |Milestone 0.1
-|Milestone 0.2 [2020-02-12, #7FB800, https://example.com/abc, bcdef]`;
+|Milestone 0.2 [2020-02-12, https://example.com/abc, bcdef]`;
         setSelectedIndex(dateFormatField, '2006-01-02');
         baseUrlField.value = 'https://github.com/peteraba/roadmapper';
 

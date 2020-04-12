@@ -100,12 +100,12 @@ Command line tool
 	Create documentation page [2020-03-13, 2020-03-31, 20%]
 Marketing
 	Create Facebook page [2020-03-17, 2020-03-25, 40%]
-	Write blog posts [2020-03-17, 2020-03-31, 0%]
+	Write blog posts [2020-03-17, 2020-03-31]
 	Share blog post on social media [2020-03-17, 2020-03-31, 30%]
-	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0]
+	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15]
 
 |Milestone 0.1
-|Milestone 0.2 [2020-02-12, #7FB800, https://example.com/abc, bcdef]`
+|Milestone 0.2 [2020-02-12, https://example.com/abc, bcdef]`
 	txtBaseUrl = "https://example.com/foo"
 )
 
@@ -125,20 +125,20 @@ func TestApp_TextToVisual(t *testing.T) {
 	content := Content(txt)
 	expectedProjectLength := 13
 	expectedMilestoneLength := 2
-	expectedDeadline1 := time.Date(2020, 3, 31, 0, 0, 0, 0, time.UTC)
+	expectedDeadline1 := time.Date(2020, 3, 12, 0, 0, 0, 0, time.UTC)
 
 	roadmap := content.ToRoadmap(123, nil, "2006-01-02", txtBaseUrl, now)
 	visualRoadmap := roadmap.ToVisual()
 
 	assert.Len(t, visualRoadmap.Projects, expectedProjectLength)
 	assert.Len(t, visualRoadmap.Milestones, expectedMilestoneLength)
-	assert.Equal(t, &expectedDeadline1, visualRoadmap.Milestones[0].DeadlineAt)
+	assert.Equal(t, expectedDeadline1.String(), visualRoadmap.Milestones[0].DeadlineAt.String())
 }
 
 func TestApp_Commandline(t *testing.T) {
 	var (
 		dateFormat        = "2006-01-02"
-		fw, hh, lh uint64 = 800, 80, 30
+		fw, lh     uint64 = 800, 30
 		rw                = CreateFileReadWriter()
 	)
 
@@ -147,7 +147,7 @@ func TestApp_Commandline(t *testing.T) {
 		content, output     string
 		format              fileFormat
 		dateFormat, baseUrl string
-		fw, hh, lh          uint64
+		fw, lh              uint64
 	}
 
 	tests := []struct {
@@ -164,7 +164,6 @@ func TestApp_Commandline(t *testing.T) {
 				dateFormat,
 				txtBaseUrl,
 				fw,
-				hh,
 				lh,
 			},
 		},
@@ -178,7 +177,6 @@ func TestApp_Commandline(t *testing.T) {
 				dateFormat,
 				txtBaseUrl,
 				fw,
-				hh,
 				lh,
 			},
 		},
@@ -192,7 +190,6 @@ func TestApp_Commandline(t *testing.T) {
 				dateFormat,
 				txtBaseUrl,
 				fw,
-				hh,
 				lh,
 			},
 		},
@@ -206,7 +203,6 @@ func TestApp_Commandline(t *testing.T) {
 				dateFormat,
 				txtBaseUrl,
 				fw,
-				hh,
 				lh,
 			},
 		},
@@ -220,7 +216,6 @@ func TestApp_Commandline(t *testing.T) {
 				dateFormat,
 				txtBaseUrl,
 				fw,
-				hh,
 				lh,
 			},
 		},
@@ -235,7 +230,6 @@ func TestApp_Commandline(t *testing.T) {
 				tt.args.dateFormat,
 				tt.args.baseUrl,
 				tt.args.fw,
-				tt.args.hh,
 				tt.args.lh,
 			)
 
