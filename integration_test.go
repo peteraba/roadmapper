@@ -251,7 +251,9 @@ func TestApp_Commandline(t *testing.T) {
 			require.NoError(t, err)
 
 			expectedData, err := ioutil.ReadFile(fmt.Sprintf("goldenfiles/%s", tt.args.output))
+			require.NoError(t, err)
 			actualData, err := ioutil.ReadFile(tt.args.output)
+			require.NoError(t, err)
 
 			ed0, ad0 := float64(len(expectedData)), float64(len(actualData))
 			ed1, ad1 := ed0*1.1, ad0*1.1
