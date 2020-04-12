@@ -37,7 +37,7 @@ var dateFormatMap = map[string]string{
 	"1.2.2020":   "M/D/YYYY (3.7.2020)",
 }
 
-func bootstrapRoadmap(roadmap *Roadmap, matomoDomain, docBaseUrl, currentUrl string, selfHosted bool) (string, error) {
+func bootstrapRoadmap(roadmap *Roadmap, matomoDomain, docBaseURL, currentURL string, selfHosted bool) (string, error) {
 	writer := bytes.NewBufferString("")
 
 	layoutTemplate, err := Asset("templates/index.html")
@@ -50,12 +50,12 @@ func bootstrapRoadmap(roadmap *Roadmap, matomoDomain, docBaseUrl, currentUrl str
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	var dateFormat, baseUrl, title, raw string
+	var dateFormat, baseURL, title, raw string
 	hasRoadmap := false
 
 	if roadmap != nil {
 		dateFormat = roadmap.DateFormat
-		baseUrl = roadmap.BaseURL
+		baseURL = roadmap.BaseURL
 		title = ""
 		raw = string(roadmap.ToContent())
 		hasRoadmap = true
@@ -77,10 +77,10 @@ func bootstrapRoadmap(roadmap *Roadmap, matomoDomain, docBaseUrl, currentUrl str
 	}{
 		Roadmap:       roadmap,
 		MatomoDomain:  matomoDomain,
-		DocBaseUrl:    docBaseUrl,
+		DocBaseUrl:    docBaseURL,
 		DateFormat:    dateFormat,
-		BaseUrl:       baseUrl,
-		CurrentUrl:    currentUrl,
+		BaseUrl:       baseURL,
+		CurrentUrl:    currentURL,
 		Title:         title,
 		SelfHosted:    selfHosted,
 		HasRoadmap:    hasRoadmap,
