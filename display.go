@@ -98,6 +98,16 @@ const layoutTemplate = `<!doctype html>
 		<h1 class="h1">Dashboard</h1>
 		<p id="roadmap-svg"></p>
 		<div class="row roadmap-svg-control">
+			<div class="col-4">
+				<form class="form-inline">
+					<label for="img-width" class="my-1 mr-2">Width</label>
+					<input type="number" step="100" id="img-width" min="800" max="30000" value="800" class="my-1 mr-sm-2" disabled>
+					<div class="custom-control custom-checkbox my-1 mr-sm-2">
+						<input type="checkbox" class="custom-control-input" id="img-width-enabled">
+						<label class="custom-control-label" for="img-width-enabled">Manual width</label>
+					</div>
+				</form>
+			</div>
 			<p class="roadmap-download-buttons col-8">
 				<a class="btn btn-primary" href="{{ .CurrentUrl }}/png" data-fileformat="png">PNG download</a>
 				<a class="btn btn-secondary" href="{{ .CurrentUrl }}/svg" data-fileformat="svg">SVG download</a>
@@ -105,17 +115,6 @@ const layoutTemplate = `<!doctype html>
 				<a class="btn btn-secondary" href="{{ .CurrentUrl }}/gif" data-fileformat="gif">GIF download</a>
 				<a class="btn btn-secondary" href="{{ .CurrentUrl }}/pdf" data-fileformat="pdf">PDF download</a>
 			</p>
-			<div class="col-4">
-				<form class="form-inline">
-					<div class="form-group mb-2">
-						<input type="number" step="100" id="img-width" min="800" max="30000" value="800" disabled>
-					</div>
-					<div class="form-group mx-sm-3 mb-2">
-						<input type="checkbox" class="form-check-input" id="img-width-enabled">
-						<label class="form-check-label" for="number-enabled">Enabled</label>
-					</div>
-				</form>
-			</div>
 		</div>
 		<hr class="hr">
 	</div>
