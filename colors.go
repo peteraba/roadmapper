@@ -8,7 +8,6 @@ import (
 /**
 https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717
 https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54
-https://coolors.co/app/0a2463-3e92cc-fffaff-d8315b-1e1b18
 */
 var colors = [][]color.RGBA{
 	// https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54 # 3 - VIVID CERULEAN
@@ -155,6 +154,30 @@ var colors = [][]color.RGBA{
 		mustParseColor("#FDDFD5"),
 		// mustParseColor("#FEEFEA"),
 	},
+	// https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54 # 5 - PRUSSIAN BLUE
+	{
+		mustParseColor("#020408"),
+		mustParseColor("#030810"),
+		mustParseColor("#040C17"),
+		mustParseColor("#05101F"),
+		mustParseColor("#061427"),
+		mustParseColor("#08182E"),
+		mustParseColor("#091D36"),
+		mustParseColor("#0A213E"),
+		mustParseColor("#0B2545"),
+		mustParseColor("#0C284D"),
+		mustParseColor("#0D2C54"), // 0
+		mustParseColor("#233F63"),
+		mustParseColor("#395273"),
+		mustParseColor("#4F6582"),
+		mustParseColor("#657892"),
+		mustParseColor("#7B8BA1"),
+		mustParseColor("#919FB1"),
+		mustParseColor("#A7B2C0"),
+		mustParseColor("#BDC5D0"),
+		mustParseColor("#D3D8DF"),
+		// mustParseColor("#E9EBEF"),
+	},
 	// https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54 # 2 - UCLA GOLD
 	{
 		mustParseColor("#181100"),
@@ -203,30 +226,6 @@ var colors = [][]color.RGBA{
 		mustParseColor("#E7F2D0"),
 		// mustParseColor("#F3F8E7"),
 	},
-	// https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54 # 5 - PRUSSIAN BLUE
-	{
-		mustParseColor("#020408"),
-		mustParseColor("#030810"),
-		mustParseColor("#040C17"),
-		mustParseColor("#05101F"),
-		mustParseColor("#061427"),
-		mustParseColor("#08182E"),
-		mustParseColor("#091D36"),
-		mustParseColor("#0A213E"),
-		mustParseColor("#0B2545"),
-		mustParseColor("#0C284D"),
-		mustParseColor("#0D2C54"), // 0
-		mustParseColor("#233F63"),
-		mustParseColor("#395273"),
-		mustParseColor("#4F6582"),
-		mustParseColor("#657892"),
-		mustParseColor("#7B8BA1"),
-		mustParseColor("#919FB1"),
-		mustParseColor("#A7B2C0"),
-		mustParseColor("#BDC5D0"),
-		mustParseColor("#D3D8DF"),
-		// mustParseColor("#E9EBEF"),
-	},
 	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #5 - EERIE BLACK
 	{
 		mustParseColor("#030303"),
@@ -253,6 +252,8 @@ var colors = [][]color.RGBA{
 	},
 }
 
+// pickFgColor will pick a color for a project based on
+// the number of epic, task and indentation
 func pickFgColor(epicCount, taskCount, indentation int) *color.RGBA {
 	c := colors[epicCount%len(colors)]
 
@@ -276,12 +277,16 @@ func pickFgColor(epicCount, taskCount, indentation int) *color.RGBA {
 	}
 }
 
+// pickBgColor will pick a color for main project
 func pickBgColor(epicCount int) color.RGBA {
 	c := colors[epicCount%len(colors)]
 
 	return c[len(c)-1]
 }
 
+// mustParseColor turns parses a string as a hexadecimal color
+// it will panic in case it is not possible
+// meant to be used for hardcoded colors...
 func mustParseColor(part string) color.RGBA {
 	if len(part) != 4 && len(part) != 7 {
 		panic(fmt.Errorf("invalid hexa color length: %d", len(part)))
