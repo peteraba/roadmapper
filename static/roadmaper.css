@@ -9,3 +9,11 @@
 .modal {
   display: block;
 }
+
+.roadmap-svg-control {
+  margin: 1em 0;
+}
+
+.roadmap-download-buttons {
+  text-align: right;
+}

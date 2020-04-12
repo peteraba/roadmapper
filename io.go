@@ -2,11 +2,11 @@ package main
 
 import (
 	"bufio"
-	"errors"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/go-pg/pg"
@@ -52,66 +52,40 @@ func (dl DbReadWriter) connect() *pg.DB {
 	return db
 }
 
-type roadmap struct {
-	Id         int64
-	PrevId     int64
-	Txt        string
-	DateFormat string
-	BaseUrl    string
-	UpdatedAt  time.Time
-	AccessedAt time.Time
-}
-
-func (d DbReadWriter) Read(code Code) ([]string, string, string, error) {
+func (d DbReadWriter) Read(code Code) (*Roadmap, error) {
 	db := d.connect()
 	defer db.Close()
 
-	r := &roadmap{Id: code.ID()}
+	r := &Roadmap{ID: code.ID()}
 
 	err := db.Select(r)
 	if err != nil {
-		return nil, "", "", err
+		if err == sql.ErrNoRows {
+			return nil, HttpError{error: err, status: http.StatusNotFound}
+		}
+
+		return nil, HttpError{error: err, status: http.StatusInternalServerError}
 	}
 
 	r.UpdatedAt = time.Now()
-	_, err = db.Exec("UPDATE roadmaps SET accessed_at = NOW() WHERE id = ?", r.Id)
+	_, err = db.Exec("UPDATE roadmaps SET accessed_at = NOW() WHERE id = ?", r.ID)
 	if err != nil {
-		return nil, "", "", err
+		return nil, HttpError{error: err, status: http.StatusInternalServerError}
 	}
 
-	return strings.Split(r.Txt, "\n"), r.DateFormat, r.BaseUrl, nil
+	return r, nil
 }
 
-func (d DbReadWriter) Write(cb CodeBuilder, code Code, content, dateFormat, baseUrl string) (Code, error) {
+func (d DbReadWriter) Write(cb CodeBuilder, roadmap Roadmap) error {
 	db := d.connect()
 	defer db.Close()
 
-	// we must find a code that does not yet exist
-	newCode := cb.New()
-	found := false
-	for i := 0; i < 100; i++ {
-		_, _, _, err := d.Read(newCode)
-		if err != nil {
-			found = true
-			break
-		}
-		newCode = cb.New()
+	_, err := db.Model(&roadmap).Insert()
+	if err != nil {
+		return HttpError{error: err, status: http.StatusInternalServerError}
 	}
 
-	if !found {
-		return nil, errors.New("no new code found during insert")
-	}
-
-	var prevID int64
-	if code != nil {
-		prevID = code.ID()
-	}
-
-	r := &roadmap{Id: newCode.ID(), PrevId: prevID, Txt: content, DateFormat: dateFormat, BaseUrl: baseUrl, UpdatedAt: time.Now()}
-
-	err := db.Insert(r)
-
-	return newCode, err
+	return err
 }
 
 func CreateFileReadWriter() FileReadWriter {
@@ -130,7 +104,7 @@ func (f FileReadWriter) Read(input string) ([]string, error) {
 	if input != "" {
 		file, err = os.Open(input)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("can't open file (%s): %w", input, err)
 		}
 	}
 
@@ -141,7 +115,7 @@ func (f FileReadWriter) Read(input string) ([]string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading file (%s): %w", input, err)
 	}
 
 	return lines, nil

@@ -6,15 +6,28 @@ const app = () => {
     roadmapForm();
     privacyPolicy();
 
-    if (!roadmap || !roadmap.Children) {
+    if (!hasRoadmap) {
         document.querySelectorAll('.roadmap-dashboard-link').forEach(element => element.classList.add('disabled'));
         document.getElementById('roadmap-dashboard').remove();
 
         return;
     }
 
+    const imgWidth = document.getElementById('img-width'),
+        imgWidthEnabled = document.getElementById('img-width-enabled');
+
     window.addEventListener('resize', () => {
+        if (imgWidth.disabled) {
+            refreshSvg();
+        }
+    });
+
+    imgWidth.addEventListener('change', () => {
         refreshSvg();
+    });
+
+    imgWidthEnabled.addEventListener('change', () => {
+        imgWidth.disabled = !imgWidth.disabled;
     });
 
     refreshSvg();

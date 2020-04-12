@@ -17,7 +17,7 @@ func (cb CodeBuilder) NewFromString(s string) (Code, error) {
 	return newCode64FromString(s)
 }
 
-func (cb CodeBuilder) NewFromID(id int64) (Code, error) {
+func (cb CodeBuilder) NewFromID(id uint64) (Code, error) {
 	return Code64(id), nil
 }
 
@@ -31,20 +31,20 @@ func NewCodeBuilder() CodeBuilder {
 
 type Code interface {
 	String() string
-	ID() int64
+	ID() uint64
 }
 
-type Code64 int64
+type Code64 uint64
 
 func (c Code64) String() string {
-	if c > maxCode64 || c < 0 {
+	if c > maxCode64 {
 		panic("code out of bound")
 	}
 
-	return toCode64(int64(c))
+	return toCode64(uint64(c))
 }
-func (c Code64) ID() int64 {
-	return int64(c)
+func (c Code64) ID() uint64 {
+	return uint64(c)
 }
 
 func newCode64() Code64 {
@@ -53,7 +53,7 @@ func newCode64() Code64 {
 
 func newCode64FromString(s string) (Code64, error) {
 	var (
-		n   int64
+		n   uint64
 		m   = getAllowedMap()
 		num int
 		ok  bool
@@ -65,7 +65,7 @@ func newCode64FromString(s string) (Code64, error) {
 			return Code64(0), fmt.Errorf("invalid character '%c' in code: %s", runeValue, s)
 		}
 
-		n += int64(num) << (idx * 6)
+		n += uint64(num) << (idx * 6)
 	}
 
 	if n > maxCode64 {
@@ -75,7 +75,7 @@ func newCode64FromString(s string) (Code64, error) {
 	return Code64(n), nil
 }
 
-func toCode64(n int64) string {
+func toCode64(n uint64) string {
 	// mask the first two bits, we'll only use 30
 	n &= maxCode64
 

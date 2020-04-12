@@ -1,4 +1,4 @@
-//go:generate go-bindata -o bindata.go migrations/
+//go:generate go-bindata -o bindata.go migrations/ templates/
 
 package main
 
@@ -75,22 +75,29 @@ func main() {
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "input", Usage: "input file", Aliases: []string{"i"}},
 					&cli.StringFlag{Name: "output", Usage: "output file", Aliases: []string{"o"}},
+					&cli.StringFlag{Name: "format", Usage: "image format to be used (supported: svg, png, pdf", Aliases: []string{"f"}, Value: "svg", EnvVars: []string{"IMAGE_FORMAT"}},
 					&cli.Uint64Flag{Name: "width", Usage: "width of output file", Aliases: []string{"w"}},
-					&cli.Uint64Flag{Name: "headerHeight", Usage: "width of output file", Aliases: []string{"hh"}},
 					&cli.Uint64Flag{Name: "lineHeight", Usage: "width of output file", Aliases: []string{"lh"}},
 					&cli.StringFlag{Name: "dateFormat", Usage: "date format to use", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
 					&cli.StringFlag{Name: "baseUrl", Usage: "base url to use for non-color, non-date extra values", Value: "", EnvVars: []string{"BASE_URL"}},
 				},
 				Action: func(c *cli.Context) error {
+					format, err := newFormatType(c.String("format"))
+					if err != nil {
+						log.Print(err)
+
+						return err
+					}
+
 					rw := CreateFileReadWriter()
-					err := Render(
+					err = Render(
 						rw,
 						c.String("input"),
 						c.String("output"),
+						format,
 						c.String("dateFormat"),
 						c.String("baseUrl"),
 						c.Uint64("width"),
-						c.Uint64("headerHeight"),
 						c.Uint64("lineHeight"),
 					)
 					if err != nil {
@@ -120,11 +127,11 @@ func main() {
 				Aliases: []string{"co"},
 				Usage:   "convert between id and code",
 				Flags: []cli.Flag{
-					&cli.Int64Flag{Name: "id", Aliases: []string{"i"}, Usage: "id to convert to code"},
+					&cli.Uint64Flag{Name: "id", Aliases: []string{"i"}, Usage: "id to convert to code"},
 					&cli.StringFlag{Name: "code", Aliases: []string{"c"}, Usage: "code to convert to id"},
 				},
 				Action: func(c *cli.Context) error {
-					err := Convert(cb, c.Int64("id"), c.String("code"))
+					err := Convert(cb, c.Uint64("id"), c.String("code"))
 					return err
 				},
 			},

@@ -6,12 +6,16 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/chromedp/chromedp"
+	"github.com/labstack/gommon/log"
+
 	_ "github.com/lib/pq"
 	"github.com/ory/dockertest"
 	"github.com/stretchr/testify/assert"
@@ -77,28 +81,180 @@ func setupApp(t *testing.T, dbResource *dockertest.Resource) chan os.Signal {
 	rw := CreateDbReadWriter(applicationName, dbHost, dbPort, dbName, dbUser, dbPass, true)
 	go Serve(quit, appPort, "", "", rw, cb, matomoDomain, docBaseUrl, false)
 
-	migrateUp(dbUser, dbPass, dbHost, dbPort, dbName, 0)
+	_, err := migrateUp(dbUser, dbPass, dbHost, dbPort, dbName, 0)
+	if err != nil {
+		t.Fatalf("failed to run migrations: %v", err)
+	}
 
 	return quit
 }
 
-func TestApp_Server(t *testing.T) {
-	txt := `Initial development [2020-02-12, 2020-02-20]
+var (
+	txt = `Initial development [2020-02-12, 2020-02-20, 60%]
 Bring website online
 	Select and purchase domain [2020-02-04, 2020-02-25, 100%, /issues/1]
-	Create server infrastructure [2020-02-25, 2020-02-28, 100%]
+	Create server infrastructure [2020-02-25, 2020-02-28, 100%, |1]
 Command line tool
 	Create backend SVG generation [2020-03-03, 2020-03-10, 100%]
-	Replace frontend SVG generation with backend [2020-03-08, 2020-03-12, 100%]
+	Replace frontend SVG generation with backend [2020-03-08, 2020-03-12, 100%, |1]
 	Create documentation page [2020-03-13, 2020-03-31, 20%]
 Marketing
-	Create Facebook page [2020-03-17, 2020-03-25, 0%]
-	Write blog posts [2020-03-17, 2020-03-31, 0%]
-	Share blog post on social media [2020-03-17, 2020-03-31, 0%]
-	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 0]`
+	Create Facebook page [2020-03-17, 2020-03-25, 40%]
+	Write blog posts [2020-03-17, 2020-03-31]
+	Share blog post on social media [2020-03-17, 2020-03-31, 30%]
+	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15]
 
-	txtBaseUrl := ""
+|Milestone 0.1
+|Milestone 0.2 [2020-02-12, https://example.com/abc, bcdef]`
+	txtBaseUrl = "https://example.com/foo"
+)
 
+func TestApp_TextToRoadmap(t *testing.T) {
+	now := time.Now()
+	content := Content(txt)
+
+	roadmap := content.ToRoadmap(123, nil, "2006-01-02", txtBaseUrl, now)
+
+	actual := roadmap.String()
+
+	assert.Equal(t, txt, actual)
+}
+
+func TestApp_TextToVisual(t *testing.T) {
+	now := time.Now()
+	content := Content(txt)
+	expectedProjectLength := 13
+	expectedMilestoneLength := 2
+	expectedDeadline1 := time.Date(2020, 3, 12, 0, 0, 0, 0, time.UTC)
+
+	roadmap := content.ToRoadmap(123, nil, "2006-01-02", txtBaseUrl, now)
+	visualRoadmap := roadmap.ToVisual()
+
+	assert.Len(t, visualRoadmap.Projects, expectedProjectLength)
+	assert.Len(t, visualRoadmap.Milestones, expectedMilestoneLength)
+	assert.Equal(t, expectedDeadline1.String(), visualRoadmap.Milestones[0].DeadlineAt.String())
+}
+
+func TestApp_Commandline(t *testing.T) {
+	var (
+		dateFormat        = "2006-01-02"
+		fw, lh     uint64 = 800, 30
+		rw                = CreateFileReadWriter()
+	)
+
+	type args struct {
+		rw                  FileReadWriter
+		content, output     string
+		format              fileFormat
+		dateFormat, baseUrl string
+		fw, lh              uint64
+	}
+
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"svg size",
+			args{
+				rw,
+				txt,
+				"test.svg",
+				svgFormat,
+				dateFormat,
+				txtBaseUrl,
+				fw,
+				lh,
+			},
+		},
+		{
+			"pdf size",
+			args{
+				rw,
+				txt,
+				"test.pdf",
+				pdfFormat,
+				dateFormat,
+				txtBaseUrl,
+				fw,
+				lh,
+			},
+		},
+		{
+			"png size",
+			args{
+				rw,
+				txt,
+				"test.png",
+				pngFormat,
+				dateFormat,
+				txtBaseUrl,
+				fw,
+				lh,
+			},
+		},
+		{
+			"gif size",
+			args{
+				rw,
+				txt,
+				"test.gif",
+				gifFormat,
+				dateFormat,
+				txtBaseUrl,
+				fw,
+				lh,
+			},
+		},
+		{
+			"jpg size",
+			args{
+				rw,
+				txt,
+				"test.jpg",
+				jpgFormat,
+				dateFormat,
+				txtBaseUrl,
+				fw,
+				lh,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := Render(
+				rw,
+				tt.args.content,
+				tt.args.output,
+				tt.args.format,
+				tt.args.dateFormat,
+				tt.args.baseUrl,
+				tt.args.fw,
+				tt.args.lh,
+			)
+
+			require.NoError(t, err)
+
+			expectedData, err := ioutil.ReadFile(fmt.Sprintf("goldenfiles/%s", tt.args.output))
+			actualData, err := ioutil.ReadFile(tt.args.output)
+
+			ed0, ad0 := float64(len(expectedData)), float64(len(actualData))
+			ed1, ad1 := ed0*1.1, ad0*1.1
+
+			assert.Greater(t, ed1, ad0, "generated and golden files differ a lot")
+			assert.Less(t, ed0, ad1, "generated and golden files differ a lot")
+
+			if !t.Failed() {
+				err = os.Remove(tt.args.output) // remove a single file
+				if err != nil {
+					t.Errorf("failed to delete file: %s", tt.args.output)
+				}
+			}
+		})
+	}
+}
+
+func TestApp_Server(t *testing.T) {
 	// create chrome instance
 	ctx, cancel := chromedp.NewContext(
 		context.Background(),
@@ -125,12 +281,6 @@ Marketing
 		svgMatch   string
 		want       string
 	}{
-		{
-			name:       "empty baseUrl",
-			txt:        txt,
-			txtBaseUrl: "",
-			svgMatch:   "",
-		},
 		{
 			name:       "all filled",
 			txt:        txt,
