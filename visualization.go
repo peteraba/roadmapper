@@ -10,6 +10,7 @@ import (
 	"github.com/tdewolff/canvas"
 )
 
+// VisualRoadmap represent a roadmap in a way that is prepared for visualization
 type VisualRoadmap struct {
 	Projects   []Project
 	Milestones []Milestone

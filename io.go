@@ -49,10 +49,10 @@ func (dl dbLogger) AfterQuery(q *pg.QueryEvent) {
 
 // connect ensures connects to a database
 // it can optionally set up the previously query hooks if needed
-func (dl DbReadWriter) connect() *pg.DB {
-	db := pg.Connect(dl.pgOptions)
+func (drw DbReadWriter) connect() *pg.DB {
+	db := pg.Connect(drw.pgOptions)
 
-	if dl.logQueries {
+	if drw.logQueries {
 		db.AddQueryHook(dbLogger{})
 	}
 
@@ -60,8 +60,8 @@ func (dl DbReadWriter) connect() *pg.DB {
 }
 
 // Read reads a Roadmap from the database
-func (d DbReadWriter) Read(code Code) (*Roadmap, error) {
-	db := d.connect()
+func (drw DbReadWriter) Read(code Code) (*Roadmap, error) {
+	db := drw.connect()
 	defer db.Close()
 
 	r := &Roadmap{ID: code.ID()}
@@ -85,8 +85,8 @@ func (d DbReadWriter) Read(code Code) (*Roadmap, error) {
 }
 
 // Write writes a roadmap to the database
-func (d DbReadWriter) Write(cb CodeBuilder, roadmap Roadmap) error {
-	db := d.connect()
+func (drw DbReadWriter) Write(cb CodeBuilder, roadmap Roadmap) error {
+	db := drw.connect()
 	defer db.Close()
 
 	_, err := db.Model(&roadmap).Insert()
@@ -107,7 +107,7 @@ type FileReadWriter struct {
 }
 
 // Read reads a Roadmap from the file system (or standard i/o)
-func (f FileReadWriter) Read(input string) ([]string, error) {
+func (frw FileReadWriter) Read(input string) ([]string, error) {
 	var (
 		file = os.Stdin
 		err  error
@@ -134,7 +134,7 @@ func (f FileReadWriter) Read(input string) ([]string, error) {
 }
 
 // Write writes a roadmap to the file system (or standard i/o)
-func (f FileReadWriter) Write(output string, content string) error {
+func (frw FileReadWriter) Write(output string, content string) error {
 	if output == "" {
 		_, err := fmt.Print(content)
 

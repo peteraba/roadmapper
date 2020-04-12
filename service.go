@@ -55,6 +55,7 @@ func newFormatType(t string) (fileFormat, error) {
 	return "", fmt.Errorf("unsupported image format: %s", t)
 }
 
+// Serve sets up a Roadmapper HTTP service using echo
 func Serve(quit chan os.Signal, port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseURL string, selfHosted bool) {
 	// Setup
 	e := echo.New()
@@ -226,6 +227,7 @@ func startWrapper(e *echo.Echo, certFile, keyFile string) func(port uint) error 
 	}
 }
 
+// Render renders a roadmap
 func Render(rw FileReadWriter, content, output string, fileFormat fileFormat, dateFormat, baseUrl string, fw, lh uint64) error {
 	fw, lh = getCanvasSizes(fw, lh)
 
@@ -328,6 +330,7 @@ func load(rw DbReadWriter, cb CodeBuilder, identifier string) (*Roadmap, int, er
 	return roadmap, 0, nil
 }
 
+// Random generates new codes and displays them
 func Random(cb CodeBuilder, count int) error {
 	var codes []Code
 	for i := 0; i < count; i++ {
@@ -339,6 +342,7 @@ func Random(cb CodeBuilder, count int) error {
 	return nil
 }
 
+// Convert converts a number to a string representation of a code and vice-versa
 func Convert(cb CodeBuilder, id uint64, code string) error {
 	var n Code
 	var err error
