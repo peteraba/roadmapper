@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"image/color"
 )
@@ -12,7 +11,31 @@ https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54
 https://coolors.co/app/0a2463-3e92cc-fffaff-d8315b-1e1b18
 */
 var colors = [][]color.RGBA{
-	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #2
+	// https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54 # 3 - VIVID CERULEAN
+	{
+		mustParseColor("#001016"),
+		mustParseColor("#001F2C"),
+		mustParseColor("#002E41"),
+		mustParseColor("#003D57"),
+		mustParseColor("#004C6C"),
+		mustParseColor("#005B82"),
+		mustParseColor("#006A97"),
+		mustParseColor("#0079AD"),
+		mustParseColor("#0088C2"),
+		mustParseColor("#0097D8"),
+		mustParseColor("#00A6ED"), // 0
+		mustParseColor("#17AEEE"),
+		mustParseColor("#2EB6F0"),
+		mustParseColor("#45BEF1"),
+		mustParseColor("#5CC6F3"),
+		mustParseColor("#73CEF5"),
+		mustParseColor("#8BD6F6"),
+		mustParseColor("#A2DEF8"),
+		mustParseColor("#B9E6FA"),
+		mustParseColor("#D0EEFB"),
+		// mustParseColor("#E7F6FD"),
+	},
+	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #2 - VIVID RASPBERRY
 	{
 		mustParseColor("#18000B"),
 		mustParseColor("#2F0015"),
@@ -26,7 +49,7 @@ var colors = [][]color.RGBA{
 		mustParseColor("#E80068"),
 		mustParseColor("#FF0072"), // 0
 		mustParseColor("#FF177E"),
-		mustParseColor("#FF177E"),
+		mustParseColor("#FF2E8B"),
 		mustParseColor("#FF4598"),
 		mustParseColor("#FF5CA5"),
 		mustParseColor("#FF73B2"),
@@ -36,32 +59,7 @@ var colors = [][]color.RGBA{
 		mustParseColor("#FFD0E5"),
 		// mustParseColor("#FFE7F2"),
 	},
-	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #3
-	{
-		mustParseColor("#01140F"),
-		mustParseColor("#02271E"),
-		mustParseColor("#023B2C"),
-		mustParseColor("#034E3B"),
-		mustParseColor("#036249"),
-		mustParseColor("#047558"),
-		mustParseColor("#048966"),
-		mustParseColor("#059C75"),
-		mustParseColor("#05B083"),
-		mustParseColor("#06C392"),
-		mustParseColor("#06D6A0"), // 0
-		mustParseColor("#1CD9A8"),
-		mustParseColor("#33DDB1"),
-		mustParseColor("#49E1B9"),
-		mustParseColor("#60E4C2"),
-		mustParseColor("#77E8CB"),
-		mustParseColor("#77E8CB"),
-		mustParseColor("#8DECD3"),
-		mustParseColor("#A4F0DC"),
-		mustParseColor("#BBF3E5"),
-		mustParseColor("#D1F7ED"),
-		// mustParseColor("#E8FBF6"),
-	},
-	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #1
+	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #1 - FLUORESCENT ORANGE
 	{
 		mustParseColor("#181200"),
 		mustParseColor("#2F2300"),
@@ -85,7 +83,31 @@ var colors = [][]color.RGBA{
 		mustParseColor("#FFF3D0"),
 		// mustParseColor("#FFF9E7"),
 	},
-	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #4
+	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #3 - CARIBBEAN GREEN
+	{
+		mustParseColor("#01140F"),
+		mustParseColor("#02271E"),
+		mustParseColor("#023B2C"),
+		mustParseColor("#034E3B"),
+		mustParseColor("#036249"),
+		mustParseColor("#047558"),
+		mustParseColor("#048966"),
+		mustParseColor("#059C75"),
+		mustParseColor("#05B083"),
+		mustParseColor("#06C392"),
+		mustParseColor("#06D6A0"), // 0
+		mustParseColor("#1CD9A8"),
+		mustParseColor("#33DDB1"),
+		mustParseColor("#49E1B9"),
+		mustParseColor("#60E4C2"),
+		mustParseColor("#77E8CB"),
+		mustParseColor("#8DECD3"),
+		mustParseColor("#A4F0DC"),
+		mustParseColor("#BBF3E5"),
+		mustParseColor("#D1F7ED"),
+		// mustParseColor("#E8FBF6"),
+	},
+	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #4 - ELECTRIC PURPLE
 	{
 		mustParseColor("#120017"),
 		mustParseColor("#24002E"),
@@ -109,7 +131,103 @@ var colors = [][]color.RGBA{
 		mustParseColor("#F3D0FE"),
 		// mustParseColor("#F9E7FE"),
 	},
-	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #5
+	// https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54 # 1 - ORIOLES ORANGE
+	{
+		mustParseColor("#170803"),
+		mustParseColor("#2D0F06"),
+		mustParseColor("#441708"),
+		mustParseColor("#5A1E0B"),
+		mustParseColor("#70250E"),
+		mustParseColor("#872D10"),
+		mustParseColor("#9D3413"),
+		mustParseColor("#B33B16"),
+		mustParseColor("#CA4318"),
+		mustParseColor("#E04A1B"),
+		mustParseColor("#F6511D"), // 0
+		mustParseColor("#F66031"),
+		mustParseColor("#F77046"),
+		mustParseColor("#F8805A"),
+		mustParseColor("#F9906F"),
+		mustParseColor("#FAA083"),
+		mustParseColor("#FAAF98"),
+		mustParseColor("#FBBFAC"),
+		mustParseColor("#FCCFC1"),
+		mustParseColor("#FDDFD5"),
+		// mustParseColor("#FEEFEA"),
+	},
+	// https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54 # 2 - UCLA GOLD
+	{
+		mustParseColor("#181100"),
+		mustParseColor("#2F2100"),
+		mustParseColor("#463200"),
+		mustParseColor("#5D4200"),
+		mustParseColor("#745200"),
+		mustParseColor("#8C6300"),
+		mustParseColor("#A37300"),
+		mustParseColor("#BA8300"),
+		mustParseColor("#D19400"),
+		mustParseColor("#E8A400"),
+		mustParseColor("#FFB400"), // 0
+		mustParseColor("#FFBA17"),
+		mustParseColor("#FFC12E"),
+		mustParseColor("#FFC845"),
+		mustParseColor("#FFCF5C"),
+		mustParseColor("#FFD673"),
+		mustParseColor("#FFDC8B"),
+		mustParseColor("#FFE3A2"),
+		mustParseColor("#FFEAB9"),
+		mustParseColor("#FFF1D0"),
+		// mustParseColor("#FFF8E7"),
+	},
+	// https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54 # 4 - APPLE GREEN
+	{
+		mustParseColor("#0C1100"),
+		mustParseColor("#182200"),
+		mustParseColor("#233300"),
+		mustParseColor("#2F4300"),
+		mustParseColor("#3A5400"),
+		mustParseColor("#466500"),
+		mustParseColor("#517600"),
+		mustParseColor("#5D8600"),
+		mustParseColor("#689700"),
+		mustParseColor("#74A800"),
+		mustParseColor("#7FB800"), // 0
+		mustParseColor("#8ABE17"),
+		mustParseColor("#96C42E"),
+		mustParseColor("#A1CB45"),
+		mustParseColor("#ADD15C"),
+		mustParseColor("#B9D873"),
+		mustParseColor("#C4DE8B"),
+		mustParseColor("#D0E5A2"),
+		mustParseColor("#DCEBB9"),
+		mustParseColor("#E7F2D0"),
+		// mustParseColor("#F3F8E7"),
+	},
+	// https://coolors.co/f6511d-ffb400-00a6ed-7fb800-0d2c54 # 5 - PRUSSIAN BLUE
+	{
+		mustParseColor("#020408"),
+		mustParseColor("#030810"),
+		mustParseColor("#040C17"),
+		mustParseColor("#05101F"),
+		mustParseColor("#061427"),
+		mustParseColor("#08182E"),
+		mustParseColor("#091D36"),
+		mustParseColor("#0A213E"),
+		mustParseColor("#0B2545"),
+		mustParseColor("#0C284D"),
+		mustParseColor("#0D2C54"), // 0
+		mustParseColor("#233F63"),
+		mustParseColor("#395273"),
+		mustParseColor("#4F6582"),
+		mustParseColor("#657892"),
+		mustParseColor("#7B8BA1"),
+		mustParseColor("#919FB1"),
+		mustParseColor("#A7B2C0"),
+		mustParseColor("#BDC5D0"),
+		mustParseColor("#D3D8DF"),
+		// mustParseColor("#E9EBEF"),
+	},
+	// https://coolors.co/ffbf00-ff0072-06d6a0-c200fb-171717 #5 - EERIE BLACK
 	{
 		mustParseColor("#030303"),
 		mustParseColor("#050505"),
@@ -142,8 +260,15 @@ func pickFgColor(epicCount, projectCount, indentation int) *color.RGBA {
 	case 0:
 		return &c[len(c)/2]
 
+	case 1:
+		n := (len(c)/2 - projectCount*2) % len(c)
+		if n < 0 {
+			n += len(c)
+		}
+		return &c[n]
+
 	default:
-		n := (len(c)/2 - projectCount - (indentation)*5) % len(c)
+		n := (len(c)/2 - projectCount*2 + (indentation)*5) % len(c)
 		if n < 0 {
 			n += len(c)
 		}
@@ -159,11 +284,11 @@ func pickBgColor(epic int) color.RGBA {
 
 func mustParseColor(part string) color.RGBA {
 	if len(part) != 4 && len(part) != 7 {
-		panic(errors.New("invalid hexa color length"))
+		panic(fmt.Errorf("invalid hexa color length: %d", len(part)))
 	}
 
 	if part[0] != '#' {
-		panic(errors.New("invalid first character for hexa color"))
+		panic(fmt.Errorf("invalid first character of hexa color. want: #, got: %c", part[0]))
 	}
 
 	s, err := charsToUint8(part[1:])
