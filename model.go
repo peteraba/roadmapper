@@ -370,7 +370,7 @@ func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, *col
 		startAt, endAt *time.Time
 		urls           []string
 		c              *color.RGBA
-		percent        uint8 = 0
+		percent        uint8
 		milestone      uint8
 	)
 

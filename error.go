@@ -6,7 +6,7 @@ type HttpError struct {
 	status int
 }
 
-// ErrorToHttpCode
+// ErrorToHttpCode returns a status code indicated by an HttpError or a default status otherwise
 func ErrorToHttpCode(err error, defaultStatus int) int {
 	switch e := err.(type) {
 	case HttpError:

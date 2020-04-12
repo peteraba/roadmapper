@@ -79,7 +79,7 @@ func main() {
 					&cli.Uint64Flag{Name: "width", Usage: "width of output file", Aliases: []string{"w"}},
 					&cli.Uint64Flag{Name: "lineHeight", Usage: "width of output file", Aliases: []string{"lh"}},
 					&cli.StringFlag{Name: "dateFormat", Usage: "date format to use", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
-					&cli.StringFlag{Name: "baseUrl", Usage: "base url to use for non-color, non-date extra values", Value: "", EnvVars: []string{"BASE_URL"}},
+					&cli.StringFlag{Name: "baseURL", Usage: "base url to use for non-color, non-date extra values", Value: "", EnvVars: []string{"BASE_URL"}},
 				},
 				Action: func(c *cli.Context) error {
 					format, err := newFormatType(c.String("format"))
@@ -96,7 +96,7 @@ func main() {
 						c.String("output"),
 						format,
 						c.String("dateFormat"),
-						c.String("baseUrl"),
+						c.String("baseURL"),
 						c.Uint64("width"),
 						c.Uint64("lineHeight"),
 					)

@@ -55,7 +55,7 @@ func newFormatType(t string) (fileFormat, error) {
 	return "", fmt.Errorf("unsupported image format: %s", t)
 }
 
-func Serve(quit chan os.Signal, port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl string, selfHosted bool) {
+func Serve(quit chan os.Signal, port uint, certFile, keyFile string, rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseURL string, selfHosted bool) {
 	// Setup
 	e := echo.New()
 
@@ -66,10 +66,10 @@ func Serve(quit chan os.Signal, port uint, certFile, keyFile string, rw DbReadWr
 	e.Static("/static", "static")
 	e.Static("/static", "static")
 
-	e.GET("/", createGetRoadmap(rw, cb, matomoDomain, docBaseUrl, selfHosted))
+	e.GET("/", createGetRoadmap(rw, cb, matomoDomain, docBaseURL, selfHosted))
 	e.POST("/", createPostRoadmap(rw, cb))
 	e.GET("/:identifier/:format", createGetRoadRoadmapImage(rw, cb))
-	e.GET("/:identifier", createGetRoadmap(rw, cb, matomoDomain, docBaseUrl, selfHosted))
+	e.GET("/:identifier", createGetRoadmap(rw, cb, matomoDomain, docBaseURL, selfHosted))
 	e.POST("/:identifier", createPostRoadmap(rw, cb))
 
 	// Start server
@@ -127,7 +127,7 @@ func createGetRoadRoadmapImage(rw DbReadWriter, cb CodeBuilder) func(c echo.Cont
 	}
 }
 
-func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl string, selfHosted bool) func(c echo.Context) error {
+func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseURL string, selfHosted bool) func(c echo.Context) error {
 	return func(ctx echo.Context) error {
 		identifier := ctx.Param("identifier")
 
@@ -136,7 +136,7 @@ func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseUrl 
 			return ctx.HTML(code, err.Error())
 		}
 
-		output, err := bootstrapRoadmap(roadmap, matomoDomain, docBaseUrl, ctx.Request().RequestURI, selfHosted)
+		output, err := bootstrapRoadmap(roadmap, matomoDomain, docBaseURL, ctx.Request().RequestURI, selfHosted)
 		if err != nil {
 			log.Print(err)
 			return ctx.HTML(ErrorToHttpCode(err, http.StatusInternalServerError), err.Error())
@@ -156,10 +156,10 @@ func createPostRoadmap(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) err
 
 		content := ctx.FormValue("txt")
 		dateFormat := ctx.FormValue("dateFormat")
-		baseUrl := ctx.FormValue("baseUrl")
+		baseURL := ctx.FormValue("baseURL")
 		now := time.Now()
 
-		roadmap := Content(content).ToRoadmap(newCode64().ID(), prevID, dateFormat, baseUrl, now)
+		roadmap := Content(content).ToRoadmap(newCode64().ID(), prevID, dateFormat, baseURL, now)
 
 		err = rw.Write(cb, roadmap)
 		if err != nil {

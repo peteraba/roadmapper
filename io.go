@@ -12,6 +12,7 @@ import (
 	"github.com/go-pg/pg"
 )
 
+// CreateDbReadWriter creates a DbReadWriter instance
 func CreateDbReadWriter(applicationName, dbHost, dbPort, dbName, dbUser, dbPass string, logQueries bool) DbReadWriter {
 	pgOptions := &pg.Options{
 		Addr:                  fmt.Sprintf("%s:%s", dbHost, dbPort),
@@ -27,6 +28,7 @@ func CreateDbReadWriter(applicationName, dbHost, dbPort, dbName, dbUser, dbPass 
 	return DbReadWriter{pgOptions: pgOptions, logQueries: logQueries}
 }
 
+// DbReadWriter represents a persistence layer using a database (Postgres)
 type DbReadWriter struct {
 	pgOptions  *pg.Options
 	logQueries bool
@@ -34,14 +36,19 @@ type DbReadWriter struct {
 
 type dbLogger struct{}
 
+// BeforeQuery is a go-pg hook that is called before a query is executed
 func (dl dbLogger) BeforeQuery(q *pg.QueryEvent) {
 }
 
+// BeforeQuery is a go-pg hook that is called after a query is executed
+// It's used for logging queries
 func (dl dbLogger) AfterQuery(q *pg.QueryEvent) {
 	formattedQuery, _ := q.FormattedQuery()
 	fmt.Println(formattedQuery)
 }
 
+// connect ensures connects to a database
+// it can optionally set up the previously query hooks if needed
 func (dl DbReadWriter) connect() *pg.DB {
 	db := pg.Connect(dl.pgOptions)
 
@@ -52,6 +59,7 @@ func (dl DbReadWriter) connect() *pg.DB {
 	return db
 }
 
+// Read reads a Roadmap from the database
 func (d DbReadWriter) Read(code Code) (*Roadmap, error) {
 	db := d.connect()
 	defer db.Close()
@@ -76,6 +84,7 @@ func (d DbReadWriter) Read(code Code) (*Roadmap, error) {
 	return r, nil
 }
 
+// Write writes a roadmap to the database
 func (d DbReadWriter) Write(cb CodeBuilder, roadmap Roadmap) error {
 	db := d.connect()
 	defer db.Close()
@@ -88,13 +97,16 @@ func (d DbReadWriter) Write(cb CodeBuilder, roadmap Roadmap) error {
 	return err
 }
 
+// CreateFileReadWriter creates a FileReadWriter instance
 func CreateFileReadWriter() FileReadWriter {
 	return FileReadWriter{}
 }
 
+// FileReadWriter represents a persistence layer using the file system (or standard i/o)
 type FileReadWriter struct {
 }
 
+// Read reads a Roadmap from the file system (or standard i/o)
 func (f FileReadWriter) Read(input string) ([]string, error) {
 	var (
 		file = os.Stdin
@@ -121,6 +133,7 @@ func (f FileReadWriter) Read(input string) ([]string, error) {
 	return lines, nil
 }
 
+// Write writes a roadmap to the file system (or standard i/o)
 func (f FileReadWriter) Write(output string, content string) error {
 	if output == "" {
 		_, err := fmt.Print(content)

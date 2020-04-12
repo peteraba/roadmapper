@@ -1,7 +1,7 @@
 default: build
 
 test:
-	go test .
+	go test -race -v -bench=. .
 	golangci-lint run
 
 generate:

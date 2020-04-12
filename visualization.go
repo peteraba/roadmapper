@@ -28,7 +28,7 @@ func (r Roadmap) ToVisual() *VisualRoadmap {
 	visual.Milestones = r.Milestones
 	visual.DateFormat = r.DateFormat
 
-	visual.calculateProjectDates().calculateProjectColors().calculatePercentages().applyBaseUrl(r.BaseURL)
+	visual.calculateProjectDates().calculateProjectColors().calculatePercentages().applyBaseURL(r.BaseURL)
 
 	projectMilestones := visual.collectProjectMilestones()
 	visual.applyProjectMilestone(projectMilestones)
@@ -210,7 +210,7 @@ func (vr *VisualRoadmap) findPercentageBottomUp(start int) uint8 {
 	return sum / count
 }
 
-func (vr *VisualRoadmap) applyBaseUrl(baseUrl string) *VisualRoadmap {
+func (vr *VisualRoadmap) applyBaseURL(baseUrl string) *VisualRoadmap {
 	if baseUrl == "" {
 		return vr
 	}

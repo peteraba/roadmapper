@@ -659,7 +659,7 @@ func TestVisualRoadmap_findPercentageBottomUp(t *testing.T) {
 	}
 }
 
-func TestVisualRoadmap_applyBaseUrl(t *testing.T) {
+func TestVisualRoadmap_applyBaseURL(t *testing.T) {
 	type fields struct {
 		Projects   []Project
 		Milestones []Milestone
@@ -667,7 +667,7 @@ func TestVisualRoadmap_applyBaseUrl(t *testing.T) {
 		DateFormat string
 	}
 	type args struct {
-		baseUrl string
+		baseURL string
 	}
 	tests := []struct {
 		name   string
@@ -690,7 +690,7 @@ func TestVisualRoadmap_applyBaseUrl(t *testing.T) {
 				},
 			},
 			args{
-				baseUrl: "https://example.com/",
+				baseURL: "https://example.com/",
 			},
 			&VisualRoadmap{
 				Projects: []Project{
@@ -708,7 +708,7 @@ func TestVisualRoadmap_applyBaseUrl(t *testing.T) {
 				},
 			},
 			args{
-				baseUrl: "https://example.com/",
+				baseURL: "https://example.com/",
 			},
 			&VisualRoadmap{
 				Milestones: []Milestone{
@@ -726,8 +726,8 @@ func TestVisualRoadmap_applyBaseUrl(t *testing.T) {
 				Dates:      tt.fields.Dates,
 				DateFormat: tt.fields.DateFormat,
 			}
-			if got := vr.applyBaseUrl(tt.args.baseUrl); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("applyBaseUrl() = %v, want %v", got, tt.want)
+			if got := vr.applyBaseURL(tt.args.baseURL); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("applyBaseURL() = %v, want %v", got, tt.want)
 			}
 		})
 	}
