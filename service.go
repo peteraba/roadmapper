@@ -22,9 +22,8 @@ import (
 )
 
 const (
-	defaultSvgWidth        = 800
-	defaultSvgHeaderHeight = 80
-	defaultSvgLineHeight   = 40
+	defaultSvgWidth      = 800
+	defaultSvgLineHeight = 40
 )
 
 type fileFormat string
@@ -105,17 +104,12 @@ func createGetRoadRoadmapImage(rw DbReadWriter, cb CodeBuilder) func(c echo.Cont
 			fw = defaultSvgWidth
 		}
 
-		hh, err := strconv.ParseUint(ctx.QueryParam("height"), 10, 64)
-		if err != nil {
-			hh = defaultSvgHeaderHeight
-		}
-
 		lh, err := strconv.ParseUint(ctx.QueryParam("lineHeight"), 10, 64)
 		if err != nil {
 			lh = defaultSvgLineHeight
 		}
 
-		fw, hh, lh = getCanvasSizes(fw, hh, lh)
+		fw, lh = getCanvasSizes(fw, lh)
 
 		roadmap, code, err := load(rw, cb, ctx.Param("identifier"))
 		if err != nil {
@@ -123,7 +117,7 @@ func createGetRoadRoadmapImage(rw DbReadWriter, cb CodeBuilder) func(c echo.Cont
 			return ctx.HTML(code, fmt.Sprintf("%v", err))
 		}
 
-		cvs := roadmap.ToVisual().Draw(float64(fw), float64(hh), float64(lh))
+		cvs := roadmap.ToVisual().Draw(float64(fw), float64(lh))
 
 		img := renderImg(cvs, format)
 
@@ -232,11 +226,11 @@ func startWrapper(e *echo.Echo, certFile, keyFile string) func(port uint) error 
 	}
 }
 
-func Render(rw FileReadWriter, content, output string, fileFormat fileFormat, dateFormat, baseUrl string, fw, hh, lh uint64) error {
-	fw, hh, lh = getCanvasSizes(fw, hh, lh)
+func Render(rw FileReadWriter, content, output string, fileFormat fileFormat, dateFormat, baseUrl string, fw, lh uint64) error {
+	fw, lh = getCanvasSizes(fw, lh)
 
 	roadmap := Content(content).ToRoadmap(0, nil, dateFormat, baseUrl, time.Now())
-	cvs := roadmap.ToVisual().Draw(float64(fw), float64(hh), float64(lh))
+	cvs := roadmap.ToVisual().Draw(float64(fw), float64(lh))
 	img := renderImg(cvs, fileFormat)
 
 	err := rw.Write(output, string(img))
@@ -305,18 +299,15 @@ func setHeaderContentType(header http.Header, fileFormat fileFormat) {
 	}
 }
 
-func getCanvasSizes(fw, hh, lh uint64) (uint64, uint64, uint64) {
+func getCanvasSizes(fw, lh uint64) (uint64, uint64) {
 	if fw < defaultSvgWidth {
 		fw = defaultSvgWidth
-	}
-	if hh < defaultSvgHeaderHeight {
-		hh = defaultSvgHeaderHeight
 	}
 	if lh < defaultSvgLineHeight {
 		lh = defaultSvgLineHeight
 	}
 
-	return fw, hh, lh
+	return fw, lh
 }
 
 func load(rw DbReadWriter, cb CodeBuilder, identifier string) (*Roadmap, int, error) {

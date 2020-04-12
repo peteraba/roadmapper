@@ -338,12 +338,14 @@ func (vr *VisualRoadmap) applyProjectMilestone(projectMilestones map[int]*Milest
 
 var fontFamily *canvas.FontFamily
 var myLightGrey = color.RGBA{R: 220, G: 220, B: 220, A: 255}
+var myDarkGray = color.RGBA{R: 95, G: 95, B: 95, A: 255}
 var defaultMilestoneColor = &canvas.Darkgray
 
 // Draw will draw a roadmap on a canvas.Canvas
-func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64) *canvas.Canvas {
-	if vr.Dates == nil {
-		headerH = 0.0
+func (vr *VisualRoadmap) Draw(fullW, lineH float64) *canvas.Canvas {
+	headerH := 0.0
+	if vr.Dates != nil {
+		headerH = lineH * 3
 	}
 
 	strokeW := 2.0
@@ -373,7 +375,9 @@ func (vr *VisualRoadmap) Draw(fullW, headerH, lineH float64) *canvas.Canvas {
 
 	vr.drawLines(ctx, fullW, fullH, headerH, lineH)
 
-	vr.drawToday(ctx, fullW, fullH, headerH, lineH)
+	vr.drawToday(ctx, fullW, fullH, lineH)
+
+	vr.drawLogo(ctx, fullW, fullH, lineH)
 
 	return c
 }
@@ -409,7 +413,7 @@ func (vr *VisualRoadmap) drawHeaderBaseline(ctx *canvas.Context, fullW, fullH, h
 	p.LineTo(fullW*2/3, 0)
 
 	x := fullW / 3
-	y := fullH - headerH/2
+	y := fullH - headerH/3
 	ctx.SetStrokeColor(canvas.Black)
 	ctx.DrawPath(x, y, p)
 }
@@ -417,7 +421,7 @@ func (vr *VisualRoadmap) drawHeaderBaseline(ctx *canvas.Context, fullW, fullH, h
 func (vr *VisualRoadmap) writeHeaderDates(ctx *canvas.Context, fullW, fullH, lineH float64) {
 	x := fullW / 3
 	y := fullH
-	face := fontFamily.Face(lineH*1.5, canvas.Black, canvas.FontRegular, canvas.FontNormal)
+	face := fontFamily.Face(lineH*1.5, canvas.Black, canvas.FontBold, canvas.FontNormal)
 	date := vr.Dates.StartAt.Format(vr.DateFormat)
 	ctx.DrawText(x, y, canvas.NewTextBox(face, date, 0.0, lineH, canvas.Left, canvas.Center, 0.0, 0.0))
 
@@ -438,7 +442,7 @@ func (vr *VisualRoadmap) markHeaderDates(ctx *canvas.Context, fullW, fullH, head
 	p2.LineTo(fullW*2/3-strokeW, markH/2)
 
 	x := fullW / 3
-	y := fullH - headerH/2
+	y := fullH - headerH/3
 	ctx.SetStrokeColor(canvas.Black)
 	ctx.DrawPath(x, y, p1, p2)
 }
@@ -522,9 +526,10 @@ func (vr *VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, heade
 	}
 
 	maxW := fullW * 2 / 3
-	y := fullH - headerH/2
+	y := fullH - headerH/3
 	roadmapInterval := vr.Dates.EndAt.Sub(vr.Dates.StartAt).Hours()
 
+	ctx.SetDashes(0.0, 3.0, 3.0)
 	for _, m := range vr.Milestones {
 		if m.DeadlineAt == nil {
 			continue
@@ -547,12 +552,13 @@ func (vr *VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, heade
 
 		x := w + fullW/3
 		face := fontFamily.Face(lineH*1.5, c, canvas.FontRegular, canvas.FontNormal)
-		date := m.DeadlineAt.Format(vr.DateFormat)
-		ctx.DrawText(x, y, canvas.NewTextBox(face, date, 0.0, lineH, canvas.Center, canvas.Center, 0.0, 0.0))
+		date := fmt.Sprintf("%s\n%s", m.DeadlineAt.Format(vr.DateFormat), m.Title)
+		ctx.DrawText(x, y, canvas.NewTextBox(face, date, 0.0, lineH*2, canvas.Center, canvas.Center, 0.0, 0.0))
 	}
+	ctx.SetDashes(0.0)
 }
 
-func (vr *VisualRoadmap) drawToday(ctx *canvas.Context, fullW, fullH, headerH, lineH float64) {
+func (vr *VisualRoadmap) drawToday(ctx *canvas.Context, fullW, fullH, lineH float64) {
 	if vr.Dates == nil {
 		return
 	}
@@ -568,7 +574,6 @@ func (vr *VisualRoadmap) drawToday(ctx *canvas.Context, fullW, fullH, headerH, l
 	}
 
 	maxW := fullW * 2 / 3
-	y := fullH - headerH/2
 	roadmapInterval := vr.Dates.EndAt.Sub(vr.Dates.StartAt).Hours()
 
 	todayFromStart := now.Sub(vr.Dates.StartAt).Hours()
@@ -578,12 +583,13 @@ func (vr *VisualRoadmap) drawToday(ctx *canvas.Context, fullW, fullH, headerH, l
 	p.MoveTo(w, 0)
 	p.LineTo(w, fullH)
 
-	ctx.SetStrokeColor(canvas.Darkcyan)
+	ctx.SetStrokeColor(myDarkGray)
 	ctx.SetDashes(0.0, 8.0, 12.0)
 	ctx.DrawPath(fullW/3, 0, p)
 
 	x := w + fullW/3
-	face := fontFamily.Face(lineH*1.5, canvas.Darkcyan, canvas.FontRegular, canvas.FontNormal)
+	y := fullH
+	face := fontFamily.Face(lineH*1.5, myDarkGray, canvas.FontRegular, canvas.FontNormal)
 	date := now.Format(vr.DateFormat)
 	ctx.DrawText(x, y, canvas.NewTextBox(face, date, 0.0, lineH, canvas.Center, canvas.Center, 0.0, 0.0))
 }
@@ -651,4 +657,19 @@ func (vr *VisualRoadmap) drawProjectBackgrounds(ctx *canvas.Context, fullW, full
 		ctx.SetStrokeColor(canvas.Lightgray)
 		ctx.DrawPath(0, 0, p)
 	}
+}
+
+func (vr *VisualRoadmap) drawLogo(ctx *canvas.Context, fullW, fullH, lineH float64) {
+	if vr.Dates == nil {
+		return
+	}
+
+	xName := 2.0
+	yName := fullH
+	faceName := fontFamily.Face(lineH*4, canvas.Black, canvas.FontRegular, canvas.FontNormal)
+	ctx.DrawText(xName, yName, canvas.NewTextBox(faceName, "rdmp.app", fullW/3, lineH*2, canvas.Left, canvas.Top, 0.0, 0.0))
+
+	yLink := fullH - lineH*1.8
+	faceLink := fontFamily.Face(lineH*1.5, canvas.Blue, canvas.FontRegular, canvas.FontNormal)
+	ctx.DrawText(xName, yLink, canvas.NewTextBox(faceLink, "https://rdmp.app/", fullW/3, lineH, canvas.Left, canvas.Top, 0.0, 0.0))
 }
