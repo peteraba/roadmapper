@@ -253,7 +253,7 @@ var colors = [][]color.RGBA{
 	},
 }
 
-func pickFgColor(epicCount, projectCount, indentation int) *color.RGBA {
+func pickFgColor(epicCount, taskCount, indentation int) *color.RGBA {
 	c := colors[epicCount%len(colors)]
 
 	switch indentation {
@@ -261,14 +261,14 @@ func pickFgColor(epicCount, projectCount, indentation int) *color.RGBA {
 		return &c[len(c)/2]
 
 	case 1:
-		n := (len(c)/2 - projectCount*2) % len(c)
+		n := (len(c)/2 - taskCount*2) % len(c)
 		if n < 0 {
 			n += len(c)
 		}
 		return &c[n]
 
 	default:
-		n := (len(c)/2 - projectCount*2 + (indentation)*5) % len(c)
+		n := (len(c)/2 - taskCount*2 + (indentation)*5) % len(c)
 		if n < 0 {
 			n += len(c)
 		}
@@ -276,8 +276,8 @@ func pickFgColor(epicCount, projectCount, indentation int) *color.RGBA {
 	}
 }
 
-func pickBgColor(epic int) color.RGBA {
-	c := colors[epic%len(colors)]
+func pickBgColor(epicCount int) color.RGBA {
+	c := colors[epicCount%len(colors)]
 
 	return c[len(c)-1]
 }

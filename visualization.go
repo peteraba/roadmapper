@@ -135,19 +135,19 @@ func (vr *VisualRoadmap) findDatesTopDown(start int) *Dates {
 // calculateProjectColors will set a color for each projects without one
 func (vr *VisualRoadmap) calculateProjectColors() *VisualRoadmap {
 	epicCount := -1
-	projectCount := -1
+	taskCount := -1
 	for i := range vr.Projects {
 		p := &vr.Projects[i]
 
 		if p.Indentation == 0 {
 			epicCount++
-			projectCount = -1
+			taskCount = -1
 		}
-		projectCount++
+		taskCount++
 
 		c := p.Color
 		if c == nil {
-			c = pickFgColor(epicCount, projectCount, int(p.Indentation))
+			c = pickFgColor(epicCount, taskCount, int(p.Indentation))
 		}
 
 		p.Color = c
