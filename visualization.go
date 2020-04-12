@@ -449,7 +449,7 @@ func (vr *VisualRoadmap) writeProjects(ctx *canvas.Context, fullW, fullH, header
 
 	for i, p := range vr.Projects {
 		y := fullH - float64(i)*lineH - headerH
-		indentW := float64(p.Indentation) * textW / 20
+		indentW := float64(p.Indentation)*textW/20 + 2
 		font := vr.createFont(p.Indentation, lineH)
 		ctx.DrawText(0, y, canvas.NewTextBox(font, p.Title, textW, lineH, canvas.Left, canvas.Center, indentW, 0.0))
 	}
