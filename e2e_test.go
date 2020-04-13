@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -241,6 +242,26 @@ func TestApp_Commandline(t *testing.T) {
 	}
 }
 
+var timeout time.Duration
+
+func getTimeout(t *testing.T) time.Duration {
+	if timeout != 0 {
+		return timeout
+	}
+
+	timeout = 15 * time.Second
+	timeoutEnv := os.Getenv("TIMEOUT")
+	if timeoutEnv != "" {
+		timeoutParsed, err := strconv.ParseInt(timeoutEnv, 10, 32)
+		if err != nil {
+			t.Errorf("failed parsing TIMEOUT environment variable '%s': %w", timeoutEnv, err)
+		}
+		timeout = time.Duration(timeoutParsed) * time.Second
+	}
+
+	return timeout
+}
+
 func TestE2E_Server(t *testing.T) {
 	// create chrome instance
 	ctx, cancel := chromedp.NewContext(
@@ -250,7 +271,7 @@ func TestE2E_Server(t *testing.T) {
 	defer cancel()
 
 	// create a timeout
-	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
+	ctx, cancel = context.WithTimeout(ctx, getTimeout(t))
 	defer cancel()
 
 	// create a new database
@@ -295,7 +316,8 @@ func TestE2E_Server(t *testing.T) {
 				// retrieve relevant values
 				chromedp.Value(`#txt`, &txtFound),
 				chromedp.Value(`#base-url`, &txtBaseUrlFound),
-				chromedp.OuterHTML(`#roadmap-svg`, &svgFound),
+				chromedp.WaitVisible(`#roadmap-svg svg`),
+				chromedp.OuterHTML(`#roadmap-svg svg`, &svgFound),
 			)
 
 			if err != nil {
@@ -305,7 +327,6 @@ func TestE2E_Server(t *testing.T) {
 			assert.Equal(t, tt.txt, txtFound)
 			assert.Equal(t, tt.txtBaseURL, txtBaseUrlFound)
 			if tt.svgMatch != "" {
-				log.Printf(svgFound)
 				assert.Contains(t, svgFound, tt.svgMatch)
 			}
 		})
