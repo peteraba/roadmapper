@@ -8,4 +8,4 @@
 [![](https://images.microbadger.com/badges/image/peteraba/roadmapper.svg)](https://microbadger.com/images/peteraba/roadmapper)
 [![License](https://img.shields.io/badge/license-ISC-blue.svg)](https://github.com/peteraba/roadmapper/blob/master/LICENSE)
 
-Roadmapper is CLI tool and webservice designed to help maintaining and tracking roadmaps.
+Roadmapper is a CLI tool and webservice designed to help maintaining and tracking roadmaps. Learn more in the [official documentation](https://docs.rdmp.app/).
