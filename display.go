@@ -50,43 +50,62 @@ func bootstrapRoadmap(roadmap *Roadmap, matomoDomain, docBaseURL, currentURL str
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	var dateFormat, baseURL, title, raw string
-	hasRoadmap := false
+	var (
+		pageTitle    = "New roadmap"
+		roadmapTitle = ""
+		dateFormat   string
+		baseURL      string
+		raw          string
+		hasRoadmap   bool
+		projectURLs  = map[string][]string{}
+	)
 
 	if roadmap != nil {
 		dateFormat = roadmap.DateFormat
 		baseURL = roadmap.BaseURL
-		title = ""
 		raw = string(roadmap.ToContent())
 		hasRoadmap = true
+		pageTitle = roadmap.Title
+		roadmapTitle = roadmap.Title
+
+		for _, p := range roadmap.Projects {
+			if len(p.URLs) < 1 {
+				continue
+			}
+			projectURLs[p.Title] = p.URLs
+		}
 	}
 
 	data := struct {
-		Roadmap       *Roadmap
 		MatomoDomain  string
-		DocBaseUrl    string
+		DocBaseURL    string
 		DateFormat    string
-		BaseUrl       string
-		CurrentUrl    string
-		Title         string
+		BaseURL       string
+		CurrentURL    string
+		PageTitle     string
+		RoadmapTitle  string
 		SelfHosted    bool
 		HasRoadmap    bool
 		Raw           string
 		DateFormats   []string
 		DateFormatMap map[string]string
+		Version       string
+		ProjectURLs   map[string][]string
 	}{
-		Roadmap:       roadmap,
 		MatomoDomain:  matomoDomain,
-		DocBaseUrl:    docBaseURL,
+		DocBaseURL:    docBaseURL,
 		DateFormat:    dateFormat,
-		BaseUrl:       baseURL,
-		CurrentUrl:    currentURL,
-		Title:         title,
+		BaseURL:       baseURL,
+		CurrentURL:    currentURL,
+		PageTitle:     pageTitle,
+		RoadmapTitle:  roadmapTitle,
 		SelfHosted:    selfHosted,
 		HasRoadmap:    hasRoadmap,
 		Raw:           raw,
 		DateFormats:   dateFormats,
 		DateFormatMap: dateFormatMap,
+		Version:       version,
+		ProjectURLs:   projectURLs,
 	}
 
 	err = t.Execute(writer, data)

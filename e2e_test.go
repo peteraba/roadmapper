@@ -30,6 +30,7 @@ const (
 	e2eBaseUrl           = "http://localhost:9876/"
 	e2eMatomoDomain      = "https://example.com/matomo"
 	e2eDocBaseURL        = "https://docs.rdmp.app/"
+	e2eTitle             = "Example Roadmap"
 	e2eTxt               = `Monocle ipsum dolor sit amet
 Ettinger punctual izakaya concierge [2020-02-02, 2020-02-20, 60%]
 	Zürich Baggu bureaux [/issues/1]
@@ -61,7 +62,7 @@ Muji enim
 
 |Laboris ullamco
 |Muji enim finest [2020-02-12, https://example.com/abc, bcdef]`
-	e2eTxtBaseURL = "https://example.com/foo"
+	e2eBaseURL = "https://example.com/foo"
 )
 
 func setupDb(t *testing.T) (*dockertest.Pool, *dockertest.Resource) {
@@ -148,7 +149,7 @@ func TestApp_Commandline(t *testing.T) {
 				"test.svg",
 				svgFormat,
 				dateFormat,
-				e2eTxtBaseURL,
+				e2eBaseURL,
 				fw,
 				lh,
 			},
@@ -161,7 +162,7 @@ func TestApp_Commandline(t *testing.T) {
 				"test.pdf",
 				pdfFormat,
 				dateFormat,
-				e2eTxtBaseURL,
+				e2eBaseURL,
 				fw,
 				lh,
 			},
@@ -174,7 +175,7 @@ func TestApp_Commandline(t *testing.T) {
 				"test.png",
 				pngFormat,
 				dateFormat,
-				e2eTxtBaseURL,
+				e2eBaseURL,
 				fw,
 				lh,
 			},
@@ -187,7 +188,7 @@ func TestApp_Commandline(t *testing.T) {
 				"test.gif",
 				gifFormat,
 				dateFormat,
-				e2eTxtBaseURL,
+				e2eBaseURL,
 				fw,
 				lh,
 			},
@@ -200,7 +201,7 @@ func TestApp_Commandline(t *testing.T) {
 				"test.jpg",
 				jpgFormat,
 				dateFormat,
-				e2eTxtBaseURL,
+				e2eBaseURL,
 				fw,
 				lh,
 			},
@@ -283,23 +284,25 @@ func TestE2E_Server(t *testing.T) {
 	defer teardownApp(t, quit)
 
 	tests := []struct {
-		name       string
-		txt        string
-		txtBaseURL string
-		svgMatch   string
-		want       string
+		name     string
+		txt      string
+		title    string
+		baseURL  string
+		svgMatch string
+		want     string
 	}{
 		{
-			name:       "all filled",
-			txt:        e2eTxt,
-			txtBaseURL: e2eTxtBaseURL,
-			svgMatch:   "Monocle ipsum dolor sit",
+			name:     "all filled",
+			txt:      e2eTxt,
+			title:    e2eTitle,
+			baseURL:  e2eBaseURL,
+			svgMatch: "Monocle ipsum dolor sit",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var txtFound, txtBaseUrlFound, svgFound string
-			_, _, _ = txtFound, e2eTxtBaseURL, svgFound
+			var txtFound, baseUrlFound, titleFound, svgFound string
+			_, _, _ = txtFound, baseUrlFound, svgFound
 
 			err := chromedp.Run(ctx,
 				chromedp.Navigate(e2eBaseUrl),
@@ -308,14 +311,17 @@ func TestE2E_Server(t *testing.T) {
 				// set the value of the textarea
 				chromedp.SetValue(`#txt`, tt.txt),
 				// set the value of the base url
-				chromedp.SetValue(`#base-url`, tt.txtBaseURL),
-				// set the value of the base url
+				chromedp.SetValue(`#base-url`, tt.baseURL),
+				// set the value of the title
+				chromedp.SetValue(`#title`, tt.title),
+				// submit the form
 				chromedp.Submit(`#form-submit`),
 				// wait for redirect
 				chromedp.WaitVisible(`#roadmap-svg`),
 				// retrieve relevant values
 				chromedp.Value(`#txt`, &txtFound),
-				chromedp.Value(`#base-url`, &txtBaseUrlFound),
+				chromedp.Value(`#base-url`, &baseUrlFound),
+				chromedp.Value(`#title`, &titleFound),
 				chromedp.WaitVisible(`#roadmap-svg svg`),
 				chromedp.OuterHTML(`#roadmap-svg svg`, &svgFound),
 			)
@@ -325,7 +331,8 @@ func TestE2E_Server(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.txt, txtFound)
-			assert.Equal(t, tt.txtBaseURL, txtBaseUrlFound)
+			assert.Equal(t, tt.baseURL, baseUrlFound)
+			assert.Equal(t, tt.title, titleFound)
 			if tt.svgMatch != "" {
 				assert.Contains(t, svgFound, tt.svgMatch)
 			}

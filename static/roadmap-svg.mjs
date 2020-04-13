@@ -31,6 +31,8 @@ export const refreshSvg = () => {
     xhttp.onreadystatechange = function() {
         if (this.readyState === 4 && this.status === 200) {
             container.innerHTML = this.responseText.replace(/mm"/g, '"');
+
+            updateSvg();
         }
     };
     xhttp.open("GET", urls.svg, true);
@@ -40,5 +42,28 @@ export const refreshSvg = () => {
         if (elem.dataset.fileformat && urls[elem.dataset.fileformat]) {
             elem.href = urls[elem.dataset.fileformat];
         }
+    });
+};
+
+const updateSvg = () => {
+    if (!projectUrls) {
+        return;
+    }
+
+    document.querySelectorAll('#roadmap-svg > svg > text > tspan').forEach(e => {
+        if (typeof projectUrls[e.innerHTML] === "undefined") {
+            return;
+        }
+
+        let html = e.innerHTML;
+        projectUrls[e.innerHTML].forEach(u => {
+            if (u.substr(0, 4) !== 'http') {
+                u = `${baseUrl}${u}`;
+            }
+
+            html += `&nbsp;<a href="${u}" target="_blank" style="text-decoration: none;">&#x2B08;</a>`;
+        });
+
+        e.innerHTML = html;
     });
 };

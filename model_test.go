@@ -40,6 +40,7 @@ func TestContent_ToRoadmap(t *testing.T) {
 	type args struct {
 		id         uint64
 		prevID     *uint64
+		title      string
 		dateFormat string
 		baseUrl    string
 		now        time.Time
@@ -76,6 +77,7 @@ Marketing
 			args{
 				id:         123,
 				prevID:     &prevID,
+				title:      "example",
 				baseUrl:    "https://example.com",
 				dateFormat: "2006-01-02",
 				now:        now,
@@ -83,6 +85,7 @@ Marketing
 			Roadmap{
 				ID:         123,
 				PrevID:     &prevID,
+				Title:      "example",
 				BaseURL:    "https://example.com",
 				DateFormat: "2006-01-02",
 				Projects: []Project{
@@ -111,7 +114,7 @@ Marketing
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.c.ToRoadmap(tt.args.id, tt.args.prevID, tt.args.dateFormat, tt.args.baseUrl, tt.args.now); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.c.ToRoadmap(tt.args.id, tt.args.prevID, tt.args.title, tt.args.dateFormat, tt.args.baseUrl, tt.args.now); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ToRoadmap() = %v, want %v", got, tt.want)
 			}
 		})

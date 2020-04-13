@@ -47,7 +47,7 @@ func TestIntegration_TextToRoadmap(t *testing.T) {
 	now := time.Now()
 	content := Content(txt)
 
-	roadmap := content.ToRoadmap(123, nil, "2006-01-02", txtBaseURL, now)
+	roadmap := content.ToRoadmap(123, nil, "", "2006-01-02", txtBaseURL, now)
 
 	actual := roadmap.String()
 
@@ -61,7 +61,7 @@ func TestIntegration_TextToVisual(t *testing.T) {
 	expectedMilestoneLength := 2
 	expectedDeadline1 := time.Date(2020, 3, 12, 0, 0, 0, 0, time.UTC)
 
-	roadmap := content.ToRoadmap(123, nil, "2006-01-02", txtBaseURL, now)
+	roadmap := content.ToRoadmap(123, nil, "", "2006-01-02", txtBaseURL, now)
 	visualRoadmap := roadmap.ToVisual()
 
 	assert.Len(t, visualRoadmap.Projects, expectedProjectLength)

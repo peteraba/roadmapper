@@ -155,12 +155,13 @@ func createPostRoadmap(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) err
 			return ctx.Redirect(http.StatusSeeOther, "/?error="+url.QueryEscape(err.Error()))
 		}
 
+		title := ctx.FormValue("title")
 		content := ctx.FormValue("txt")
 		dateFormat := ctx.FormValue("dateFormat")
 		baseURL := ctx.FormValue("baseUrl")
 		now := time.Now()
 
-		roadmap := Content(content).ToRoadmap(newCode64().ID(), prevID, dateFormat, baseURL, now)
+		roadmap := Content(content).ToRoadmap(newCode64().ID(), prevID, title, dateFormat, baseURL, now)
 
 		err = rw.Write(cb, roadmap)
 		if err != nil {
@@ -231,7 +232,7 @@ func startWrapper(e *echo.Echo, certFile, keyFile string) func(port uint) error 
 func Render(rw FileReadWriter, content, output string, fileFormat fileFormat, dateFormat, baseUrl string, fw, lh uint64) error {
 	fw, lh = getCanvasSizes(fw, lh)
 
-	roadmap := Content(content).ToRoadmap(0, nil, dateFormat, baseUrl, time.Now())
+	roadmap := Content(content).ToRoadmap(0, nil, "", dateFormat, baseUrl, time.Now())
 	cvs := roadmap.ToVisual().Draw(float64(fw), float64(lh))
 	img := renderImg(cvs, fileFormat)
 

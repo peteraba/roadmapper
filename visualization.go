@@ -12,6 +12,7 @@ import (
 
 // VisualRoadmap represent a roadmap in a way that is prepared for visualization
 type VisualRoadmap struct {
+	Title      string
 	Projects   []Project
 	Milestones []Milestone
 	Dates      *Dates
@@ -24,6 +25,7 @@ type VisualRoadmap struct {
 func (r Roadmap) ToVisual() *VisualRoadmap {
 	visual := &VisualRoadmap{}
 
+	visual.Title = r.Title
 	visual.Dates = r.ToDates()
 	visual.Projects = r.Projects
 	visual.Milestones = r.Milestones
@@ -382,7 +384,7 @@ func (vr *VisualRoadmap) Draw(fullW, lineH float64) *canvas.Canvas {
 
 	vr.drawToday(ctx, fullW, fullH, lineH)
 
-	vr.drawLogo(ctx, fullW, fullH, lineH)
+	vr.writeTitle(ctx, fullW, fullH, lineH)
 
 	return c
 }
@@ -664,17 +666,15 @@ func (vr *VisualRoadmap) drawProjectBackgrounds(ctx *canvas.Context, fullW, full
 	}
 }
 
-func (vr *VisualRoadmap) drawLogo(ctx *canvas.Context, fullW, fullH, lineH float64) {
+func (vr *VisualRoadmap) writeTitle(ctx *canvas.Context, fullW, fullH, lineH float64) {
 	if vr.Dates == nil {
 		return
 	}
 
-	xName := 2.0
 	yName := fullH
-	faceName := fontFamily.Face(lineH*4, canvas.Black, canvas.FontRegular, canvas.FontNormal)
-	ctx.DrawText(xName, yName, canvas.NewTextBox(faceName, "rdmp.app", fullW/3, lineH*2, canvas.Left, canvas.Top, 0.0, 0.0))
+	titleFont := fontFamily.Face(lineH*2, myDarkGray, canvas.FontRegular, canvas.FontNormal)
+	ctx.DrawText(0, yName, canvas.NewTextBox(titleFont, vr.Title, fullW/3, lineH*2.4, canvas.Left, canvas.Top, 2.0, 0.0))
 
-	yLink := fullH - lineH*1.8
-	faceLink := fontFamily.Face(lineH*1.5, canvas.Blue, canvas.FontRegular, canvas.FontNormal)
-	ctx.DrawText(xName, yLink, canvas.NewTextBox(faceLink, "https://rdmp.app/", fullW/3, lineH, canvas.Left, canvas.Top, 0.0, 0.0))
+	rdmpFont := fontFamily.Face(lineH, myDarkGray, canvas.FontRegular, canvas.FontNormal)
+	ctx.DrawText(0, yName-lineH*2.4, canvas.NewTextBox(rdmpFont, "a roadmap by Roadmapper (http://rdmp.app)", fullW/3, lineH*0.8, canvas.Left, canvas.Top, 2.0, 0.0))
 }

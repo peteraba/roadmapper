@@ -20,6 +20,7 @@ type Dates struct {
 type Roadmap struct {
 	ID         uint64
 	PrevID     *uint64
+	Title      string
 	DateFormat string
 	BaseURL    string
 	Projects   []Project
@@ -61,10 +62,11 @@ func (c Content) ToLines() []string {
 }
 
 // ToRoadmap converts a Content to a Roadmap ready to be persisted or to be turned into a VisualRoadmap which can then be rendered
-func (c Content) ToRoadmap(id uint64, prevID *uint64, dateFormat, baseUrl string, now time.Time) Roadmap {
+func (c Content) ToRoadmap(id uint64, prevID *uint64, title, dateFormat, baseUrl string, now time.Time) Roadmap {
 	r := Roadmap{
 		ID:         id,
 		PrevID:     prevID,
+		Title:      title,
 		DateFormat: dateFormat,
 		BaseURL:    baseUrl,
 		CreatedAt:  now,

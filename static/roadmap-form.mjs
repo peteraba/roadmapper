@@ -1,5 +1,6 @@
 export const roadmapForm = () => {
     const form = document.getElementById('roadmap-form'),
+        titleField = document.getElementById('title'),
         txtField = document.getElementById('txt'),
         txtFieldValid = document.getElementById('txt-valid'),
         txtFieldInvalid = document.getElementById('txt-invalid'),
@@ -291,6 +292,7 @@ export const roadmapForm = () => {
     });
 
     loadExampleBtn.addEventListener('click', _ => {
+        titleField.value = 'Example Roadmap';
         txtField.value = `Monocle ipsum dolor sit amet
 Ettinger punctual izakaya concierge [2020-02-02, 2020-02-20, 60%]
 	Zürich Baggu bureaux [/issues/1]
@@ -323,7 +325,7 @@ Muji enim
 |Laboris ullamco
 |Muji enim finest [2020-02-12, https://example.com/abc, bcdef]`;
         setSelectedIndex(dateFormatField, '2006-01-02');
-        baseUrlField.value = 'https://github.com/peteraba/roadmapper';
+        baseUrlField.value = 'https://example.com/foo';
 
         validateForm(form, txtField, txtFieldValid, txtFieldInvalid, saveBtn);
     });
