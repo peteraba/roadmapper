@@ -1,4 +1,4 @@
-//go:generate go-bindata -o bindata.go migrations/ templates/
+//go:generate go-bindata -o bindata.go migrations/ templates/ fonts/...
 
 package main
 

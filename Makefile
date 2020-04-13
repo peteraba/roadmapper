@@ -39,7 +39,8 @@ deploy:
 	git pull
 	docker pull peteraba/roadmapper
 	docker-compose stop roadmapper
-	docker-compose start roadmapper
+	docker-compose rm -f roadmapper
+	docker-compose up -d roadmapper
 	docker-compose exec roadmapper /roadmapper mu
 
 .PHONY: default test generate e2e build docker install update release deploy

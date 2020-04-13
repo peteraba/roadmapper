@@ -353,7 +353,11 @@ func (vr *VisualRoadmap) Draw(fullW, lineH float64) *canvas.Canvas {
 	fullH := lineH*float64(len(vr.Projects)) + headerH
 
 	fontFamily = canvas.NewFontFamily("roboto")
-	err := fontFamily.LoadFontFile("fonts/Roboto/Roboto-Regular.ttf", canvas.FontRegular)
+	font, err := Asset("fonts/Roboto/Roboto-Regular.ttf")
+	if err != nil {
+		panic(fmt.Errorf("font file not readable: %w", err))
+	}
+	err = fontFamily.LoadFont(font, canvas.FontRegular)
 	if err != nil {
 		panic(fmt.Errorf("font not loaded: %w", err))
 	}
