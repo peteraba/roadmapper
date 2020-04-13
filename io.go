@@ -64,9 +64,9 @@ func (drw DbReadWriter) Read(code Code) (*Roadmap, error) {
 	db := drw.connect()
 	defer db.Close()
 
-	r := &Roadmap{ID: code.ID()}
+	roadmap := &Roadmap{ID: code.ID()}
 
-	err := db.Select(r)
+	err := db.Select(roadmap)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, HttpError{error: err, status: http.StatusNotFound}
@@ -75,13 +75,13 @@ func (drw DbReadWriter) Read(code Code) (*Roadmap, error) {
 		return nil, HttpError{error: err, status: http.StatusInternalServerError}
 	}
 
-	r.UpdatedAt = time.Now()
-	_, err = db.Exec("UPDATE roadmaps SET accessed_at = NOW() WHERE id = ?", r.ID)
+	roadmap.UpdatedAt = time.Now()
+	_, err = db.Exec("UPDATE roadmaps SET accessed_at = NOW() WHERE id = ?", roadmap.ID)
 	if err != nil {
 		return nil, HttpError{error: err, status: http.StatusInternalServerError}
 	}
 
-	return r, nil
+	return roadmap, nil
 }
 
 // Write writes a roadmap to the database

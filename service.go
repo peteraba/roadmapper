@@ -157,7 +157,7 @@ func createPostRoadmap(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) err
 
 		content := ctx.FormValue("txt")
 		dateFormat := ctx.FormValue("dateFormat")
-		baseURL := ctx.FormValue("baseURL")
+		baseURL := ctx.FormValue("baseUrl")
 		now := time.Now()
 
 		roadmap := Content(content).ToRoadmap(newCode64().ID(), prevID, dateFormat, baseURL, now)

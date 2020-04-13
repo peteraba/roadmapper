@@ -1,14 +1,14 @@
 default: build
 
 test:
-	go test -race -v -bench=. .
+	go test -race -bench=. .
 	golangci-lint run
 
 generate:
 	go generate
 
-integration:
-	go test -tags=integration .
+e2e:
+	go test -race -bench=. -tags=e2e .
 
 build: test
 	mkdir -p ./airtmp
@@ -26,7 +26,7 @@ install:
 update:
 	go get -u ./...
 
-release: generate integration
+release: generate e2e
 	$(eval GIT_REV=$(shell git rev-parse HEAD | cut -c1-8))
 	$(eval GIT_TAG=$(shell git describe --exact-match --tags $(git log -n1 --pretty='%h')))
 	go build -o ./build/roadmapper -ldflags "-X main.version=${GIT_REV}" -ldflags "-X main.tag=${GIT_TAG}" .
@@ -42,4 +42,4 @@ deploy:
 	docker-compose start roadmapper
 	docker-compose exec roadmapper /roadmapper mu
 
-.PHONY: default test generate integration build docker install update release deploy
+.PHONY: default test generate e2e build docker install update release deploy
