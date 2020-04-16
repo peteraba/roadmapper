@@ -1,8 +1,9 @@
 .idea
 *.pem
-data
 *.log
 docker\-compose.yml
 airtmp/
 build/
+data
+dist
 docker/roadmapper

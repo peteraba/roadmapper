@@ -20,13 +20,15 @@ docker: test
 	rm -f docker/roadmapper
 
 install:
-	# Install [golangci-lint](https://github.com/golangci/golangci-lint)
+	# Install golangci-lint
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${GOPATH}/bin v1.23.8
+	# Install goreleaser
+	curl -sfL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh
 
 update:
 	go get -u ./...
 
-release: generate e2e
+release: e2e
 	$(eval GIT_REV=$(shell git rev-parse HEAD | cut -c1-8))
 	$(eval GIT_TAG=$(shell git describe --exact-match --tags $(git log -n1 --pretty='%h')))
 	go build -o ./build/roadmapper -ldflags "-X main.version=${GIT_REV}" -ldflags "-X main.tag=${GIT_TAG}" .
