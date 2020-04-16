@@ -52,15 +52,18 @@ export const roadmapForm = () => {
     };
 
     const handlePaste = (e, txtField, txtFieldValid, txtFieldInvalid) => {
-        const before = txtField.value.substr(0, txtField.selectionStart),
-            after = txtField.value.substr(txtField.selectionEnd);
+        const origText = txtField.value,
+            s0 =  txtField.selectionStart,
+            e0 = txtField.selectionEnd,
+            before = origText.substr(0, s0),
+            after = origText.substr(e0);
 
         let lines = (e.clipboardData || window.clipboardData).getData('text').split("\n");
 
         // Remove empty lines from the top
-        while (lines.length > 0 && lines[0].trim() === "") {
-            lines.shift();
-        }
+        // while (lines.length > 0 && lines[0].trim() === "") {
+        //     lines.shift();
+        // }
 
         if (lines.length === 0) {
             return handleInvalidTextarea(txtField, txtFieldValid, txtFieldInvalid, 'empty lines', [0]);
@@ -103,6 +106,9 @@ export const roadmapForm = () => {
         }
 
         txtField.value = before + val + after;
+
+        txtField.selectionStart = s0 + val.length;
+        txtField.selectionEnd = s0 + val.length;
 
         e.preventDefault();
     };
