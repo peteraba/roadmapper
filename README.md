@@ -23,11 +23,8 @@ Roadmapper is a CLI tool and webservice designed to help maintaining and trackin
 - [chromedp](https://github.com/chromedp/chromedp) - A faster, simpler way to drive browsers supporting the Chrome DevTools Protocol.
 - [bindata](https://github.com/kevinburke/go-bindata) - A small utility which generates Go code from any file. Useful for embedding binary data in a Go program.
 
-- [x] links added via JS
-- [x] editor bug: tabs always select whole lines
-- [x] editor bug: indentation errors are not displayed
-- [x] editor bug: spaces are not replaced with tabs sometimes
-- [x] editor bug: pastes cause the cursor to go to the end of the textarea
+### Current TODO:
+
 - [ ] editor feature: implement / restore edit history
 - [ ] backend validation
 - [ ] fix displaying multiline project titles
