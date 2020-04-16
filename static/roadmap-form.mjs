@@ -133,7 +133,6 @@ export const roadmapForm = () => {
         const text = txtField.value,
             s0 = txtField.selectionStart,
             e0 = txtField.selectionEnd,
-            isMultiline = text.substring(s0, e0).indexOf("\n") > -1,
             s1 = lineStart(text, s0) - 1,
             e1 = lineEnd(text, e0),
             v0 = text.substring(s1, e1),
@@ -141,13 +140,8 @@ export const roadmapForm = () => {
 
         txtField.value = text.substring(0, s1) + v1 + text.substring(e1);
 
-        if (isMultiline) {
-            txtField.selectionStart = s1 + 1;
-            txtField.selectionEnd = txtField.selectionStart + v1.length - 1;
-        } else {
-            txtField.selectionStart = s0 + 1;
-            txtField.selectionEnd = s0 + 1;
-        }
+        txtField.selectionStart = s0 + v1.length - v0.length;
+        txtField.selectionEnd = e0 + v1.length - v0.length;
 
         e.preventDefault();
     };
@@ -166,7 +160,7 @@ export const roadmapForm = () => {
             m = lineToCur.match(/^\s+$/);
 
         // Do nothing if we're not somewhere inside the task definition
-        if (m === null) {
+        if (m === null && lineToCur !== "") {
             return;
         }
 
