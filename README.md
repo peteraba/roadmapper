@@ -25,8 +25,7 @@ Roadmapper is a CLI tool and webservice designed to help maintaining and trackin
 
 ### Current TODO:
 
-- [ ] backend validation
+- [ ] backend validation + errors displayed in frontend
 - [ ] fix displaying multiline project titles
-- [ ] spam filtering
 - [ ] remove color support
 - [ ] stripe overlay for project visualization

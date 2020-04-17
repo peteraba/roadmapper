@@ -364,4 +364,16 @@ Muji enim
         validateForm(form, txtField, txtFieldValid, txtFieldInvalid, saveBtn);
         saveHistory(titleField);
     });
+
+    document.getElementById('are-you-a-human-group').remove();
+
+    const ts = document.getElementById('ts');
+    let t = Math.floor(ts.value);
+    setInterval(
+        _ => {
+            t++;
+            ts.value = `${t}`;
+        },
+        1000
+    )
 };

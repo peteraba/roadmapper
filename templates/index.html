@@ -116,19 +116,19 @@
     <h1 class="h1">Form</h1>
     <form action="" method="POST" id="roadmap-form">
         <div class="form-group">
-            <label for="title">Title</label>
+            <label for="title">Title<sup>*</sup></label>
             <input class="form-control" type="text" id="title" name="title" value="{{ .RoadmapTitle }}" required>
         </div>
         <div class="form-group">
-            <label for="txt">Raw roadmap</label>
-            <textarea class="form-control" id="txt" name="txt" aria-describedby="txt-help" rows="20">{{ .Raw }}</textarea>
+            <label for="txt">Raw roadmap<sup>*</sup></label>
+            <textarea class="form-control" id="txt" name="txt" aria-describedby="txt-help" rows="20" required>{{ .Raw }}</textarea>
             <div class="valid-feedback" id="txt-valid"></div>
             <div class="invalid-feedback" id="txt-invalid"></div>
             <small id="txt-help" class="form-text text-muted"><a href="{{ .DocBaseURL }}/usage/format/">Format documentation</a></small>
         </div>
         <div class="form-group">
-            <label for="date-format">Date format</label>
-            <select id="date-format" name="dateFormat" class="form-control">
+            <label for="date-format">Date format<sup>*</sup></label>
+            <select id="date-format" name="dateFormat" class="form-control" required>
                 {{range $val := .DateFormats }}
                     <option value="{{ $val }}"{{ if eq $val $.DateFormat }} selected{{ end }}>{{ index $.DateFormatMap $val }}</option>
                 {{end}}
@@ -139,6 +139,11 @@
             <input class="form-control" id="base-url" name="baseUrl" type="url" aria-describedby="base-url-help" value="{{ .BaseURL }}" />
             <small id="base-url-help" class="form-text text-muted">URL to prepend for URLs in your roadmap</small>
         </div>
+        <div class="form-group" id="are-you-a-human-group">
+            <label for="are-you-a-human">Are you a human? (Correct answer is "Yes, I am indeed.")<sup>*</sup></label>
+            <input class="form-control" id="are-you-a-human" name="areYouAHuman" required />
+        </div>
+        <input type="hidden" id="ts" name="ts" value="0" />
         <button type="submit" class="btn btn-primary" id="form-submit">Save <i class="fas fa-save"></i></button>
         <button type="button" class="btn btn-danger" id="reset-btn">Reset <i class="fas fa-trash"></i></button>
         <button type="button" class="btn btn-info" id="load-example-btn">Load example <i class="fas fa-question-circle"></i></button>

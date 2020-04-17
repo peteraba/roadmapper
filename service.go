@@ -147,9 +147,42 @@ func createGetRoadmap(rw DbReadWriter, cb CodeBuilder, matomoDomain, docBaseURL 
 	}
 }
 
+const iAmHuman = "Yes, I am indeed."
+const onlyHumansAreAllowed = "only humans are allowed"
+
+func isValidRoadmapRequest(ctx echo.Context) error {
+	areYouAHuman := ctx.FormValue("areYouAHuman")
+
+	if areYouAHuman == iAmHuman {
+		return nil
+	}
+
+	if areYouAHuman != "" {
+		return fmt.Errorf(onlyHumansAreAllowed)
+	}
+
+	timeSpent := ctx.FormValue("ts")
+	ts, err := strconv.ParseUint(timeSpent, 10, 64)
+	if err != nil {
+		return fmt.Errorf(onlyHumansAreAllowed)
+	}
+
+	if ts < 5 {
+		return fmt.Errorf(onlyHumansAreAllowed)
+	}
+
+	return nil
+}
+
 func createPostRoadmap(rw DbReadWriter, cb CodeBuilder) func(c echo.Context) error {
 	return func(ctx echo.Context) error {
 		prevID, err := getPrevID(cb, ctx.Param("identifier"))
+		if err != nil {
+			log.Print(err)
+			return ctx.Redirect(http.StatusSeeOther, "/?error="+url.QueryEscape(err.Error()))
+		}
+
+		err = isValidRoadmapRequest(ctx)
 		if err != nil {
 			log.Print(err)
 			return ctx.Redirect(http.StatusSeeOther, "/?error="+url.QueryEscape(err.Error()))

@@ -314,6 +314,8 @@ func TestE2E_Server(t *testing.T) {
 				chromedp.SetValue(`#base-url`, tt.baseURL),
 				// set the value of the title
 				chromedp.SetValue(`#title`, tt.title),
+				// set the value of the time spent hidden field
+				chromedp.SetValue(`#ts`, "10"),
 				// submit the form
 				chromedp.Submit(`#form-submit`),
 				// wait for redirect
