@@ -170,7 +170,7 @@ func main() {
 						return fmt.Errorf("migration failed: %w", err)
 					}
 
-					log.Printf("up migrations run: %d\n", n)
+					log.Printf("up migrations run: %d", n)
 
 					return nil
 				},
@@ -201,7 +201,7 @@ func main() {
 						return fmt.Errorf("migration failed: %w", err)
 					}
 
-					log.Printf("down migrations run: %d\n", n)
+					log.Printf("down migrations run: %d", n)
 
 					return nil
 				},
