@@ -11,7 +11,9 @@ export const roadmapForm = () => {
         loadExampleBtn = document.getElementById('load-example-btn'),
         resetData = {'txt': txtField.value, 'dateFormat': dateFormatField.value, 'baseUrl': baseUrlField.value};
 
-    let validationTimeout = false;
+    let validationTimeout = false,
+        txtFieldHistory = [txtField.value],
+        txtFieldHistoryNum = 0;
 
     const handleInvalidTextarea = (txtField, txtFieldValid, txtFieldInvalid, msg, lines) => {
         txtField.classList.add('is-invalid');
@@ -59,11 +61,6 @@ export const roadmapForm = () => {
             after = origText.substr(e0);
 
         let lines = (e.clipboardData || window.clipboardData).getData('text').split("\n");
-
-        // Remove empty lines from the top
-        // while (lines.length > 0 && lines[0].trim() === "") {
-        //     lines.shift();
-        // }
 
         if (lines.length === 0) {
             return handleInvalidTextarea(txtField, txtFieldValid, txtFieldInvalid, 'empty lines', [0]);
@@ -114,7 +111,9 @@ export const roadmapForm = () => {
     };
 
     txtField.addEventListener('paste', e => {
+        saveHistory(txtField);
         handlePaste(e, txtField, txtFieldValid, txtFieldInvalid);
+        saveHistory(txtField);
     });
 
     const handleTab = (e, txtField) => {
@@ -194,14 +193,43 @@ export const roadmapForm = () => {
         e.preventDefault();
     };
 
+    const saveHistory = txtField => {
+        txtFieldHistory = txtFieldHistory.slice(0, txtFieldHistoryNum);
+
+        if (txtFieldHistory[txtFieldHistoryNum-1] !== txtField.value) {
+            txtFieldHistory.push(txtField.value);
+            txtFieldHistoryNum++;
+        }
+    };
+
+    const applyHistory = (e, txtField) => {
+        if (!e.ctrlKey) {
+            return;
+        }
+
+        if (!e.shiftKey && txtFieldHistoryNum > 0) {
+            txtFieldHistoryNum--;
+            txtField.value = txtFieldHistory[txtFieldHistoryNum];
+        } else if (e.shiftKey && txtFieldHistoryNum < txtFieldHistory.length - 1) {
+            txtFieldHistoryNum++;
+            txtField.value = txtFieldHistory[txtFieldHistoryNum];
+        }
+    };
+
     txtField.addEventListener('keydown', e => {
         switch (e.key) {
             case 'Tab':
+                saveHistory(txtField);
+
                 return handleTab(e, txtField);
-            case 'Enter':
-                return handleEnter(e, txtField);
             case ' ':
                 return handleSpace(e, txtField);
+            case 'Enter':
+                saveHistory(txtField);
+
+                return handleEnter(e, txtField);
+            case 'z':
+                return applyHistory(e, txtField);
         }
     });
 
@@ -297,6 +325,7 @@ export const roadmapForm = () => {
     });
 
     loadExampleBtn.addEventListener('click', _ => {
+        saveHistory(titleField);
         titleField.value = 'Example Roadmap';
         txtField.value = `Monocle ipsum dolor sit amet
 Ettinger punctual izakaya concierge [2020-02-02, 2020-02-20, 60%]
@@ -333,5 +362,6 @@ Muji enim
         baseUrlField.value = 'https://example.com/foo';
 
         validateForm(form, txtField, txtFieldValid, txtFieldInvalid, saveBtn);
+        saveHistory(titleField);
     });
 };
