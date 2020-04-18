@@ -21,22 +21,22 @@
     <link rel="manifest" href="/static/site.webmanifest">
 
     {{ if .MatomoDomain }}
-        <!-- Matomo -->
-        <script type="text/javascript">
-            var _paq = window._paq || [];
-            /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
-            _paq.push(['trackPageView']);
-            _paq.push(['enableLinkTracking']);
-            (function() {
-                var u="//{{ .MatomoDomain }}/";
-                _paq.push(['setTrackerUrl', u+'matomo.php']);
-                _paq.push(['setSiteId', '1']);
-                var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
-                g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
-            })();
-        </script>
-        <noscript><p><img src="//{{ .MatomoDomain }}/matomo.php?idsite=1&amp;rec=1" style="border:0;" alt="" /></p></noscript>
-        <!-- End Matomo Code -->
+    <!-- Matomo -->
+    <script type="text/javascript">
+        var _paq = window._paq || [];
+        /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+        _paq.push(['trackPageView']);
+        _paq.push(['enableLinkTracking']);
+        (function() {
+            var u="//{{ .MatomoDomain }}/";
+            _paq.push(['setTrackerUrl', u+'matomo.php']);
+            _paq.push(['setSiteId', '1']);
+            var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+            g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+        })();
+    </script>
+    <noscript><p><img src="//{{ .MatomoDomain }}/matomo.php?idsite=1&amp;rec=1" style="border:0;" alt="" /></p></noscript>
+    <!-- End Matomo Code -->
     {{ end }}
 
 </head>
@@ -62,29 +62,29 @@
 </nav>
 
 {{ if .SelfHosted }}
-    <div class="modal fade" id="privacy-policy" tabindex="-1" role="dialog" aria-labelledby="moda-long-title" aria-hidden="false">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title" id="modal-long-title"><i class="fas fa-shield-alt"></i> Data Protection</h4>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p>Please do not store sensitive data on <a href="https://rdmp.app/">https://rdmp.app/</a>.<br>
-                        At the moment it is mainly a <strong>tech demo</strong> <i class="fas fa-exclamation"></i><br><br>
-                        Please use <a href="https://github.com/peteraba/roadmapper">Roadmapper</a> instead,
-                        or read our <a href="{{ .DocBaseURL }}/privacy/privacy-policy/" target="_blank">Data Privacy <i class="fas fa-external-link-alt"></i>.</a>
-                    </p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-link" id="privacy-policy-save">I understand, I promise!</button>
-                    <button type="button" class="btn btn-primary" id="privacy-policy-ok">OK.</button>
-                </div>
+<div class="modal fade" id="privacy-policy" tabindex="-1" role="dialog" aria-labelledby="moda-long-title" aria-hidden="false">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="modal-long-title"><i class="fas fa-shield-alt"></i> Data Protection</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Please do not store sensitive data on <a href="https://rdmp.app/">https://rdmp.app/</a>.<br>
+                    At the moment it is mainly a <strong>tech demo</strong> <i class="fas fa-exclamation"></i><br><br>
+                    Please use <a href="https://github.com/peteraba/roadmapper">Roadmapper</a> instead,
+                    or read our <a href="{{ .DocBaseURL }}/privacy/privacy-policy/" target="_blank">Data Privacy <i class="fas fa-external-link-alt"></i>.</a>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link" id="privacy-policy-save">I understand, I promise!</button>
+                <button type="button" class="btn btn-primary" id="privacy-policy-ok">OK.</button>
             </div>
         </div>
     </div>
+</div>
 {{ end }}
 
 <div class="container-fluid roadmap-dashboard section" id="roadmap-dashboard">
