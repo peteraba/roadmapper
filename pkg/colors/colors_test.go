@@ -25,7 +25,7 @@ func Test_PickFgColor(t *testing.T) {
 				taskCount:   0,
 				indentation: 0,
 			},
-			&color.RGBA{R: 0, G: 166, B: 237, A: 255},
+			&colors[0][10],
 		},
 		{
 			"first sub-project of first epic",
@@ -34,7 +34,7 @@ func Test_PickFgColor(t *testing.T) {
 				taskCount:   1,
 				indentation: 1,
 			},
-			&color.RGBA{R: 0, G: 136, B: 194, A: 255},
+			&colors[0][8],
 		},
 		{
 			"second sub-project of first epic",
@@ -43,16 +43,34 @@ func Test_PickFgColor(t *testing.T) {
 				taskCount:   2,
 				indentation: 1,
 			},
-			&color.RGBA{R: 0, G: 106, B: 151, A: 255},
+			&colors[0][6],
 		},
 		{
-			"first sub-sub-project of first epic",
+			"6th sub-project of first epic",
+			args{
+				epicCount:   0,
+				taskCount:   6,
+				indentation: 1,
+			},
+			&colors[0][18],
+		},
+		{
+			"first sub-sub-project of second epic",
 			args{
 				epicCount:   0,
 				taskCount:   2,
 				indentation: 2,
 			},
-			&color.RGBA{R: 139, G: 214, B: 246, A: 255},
+			&colors[0][11],
+		},
+		{
+			"8th sub-sub-project of second epic",
+			args{
+				epicCount:   0,
+				taskCount:   9,
+				indentation: 2,
+			},
+			&colors[0][17],
 		},
 		{
 			"second epic",
@@ -61,7 +79,7 @@ func Test_PickFgColor(t *testing.T) {
 				taskCount:   0,
 				indentation: 0,
 			},
-			&color.RGBA{R: 255, G: 0, B: 114, A: 255},
+			&colors[1][10],
 		},
 	}
 	for _, tt := range tests {
@@ -240,6 +258,74 @@ func Test_CharsToUint8(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("charsToUint8() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestToHexa(t *testing.T) {
+	type args struct {
+		c color.Color
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			"white",
+			args{color.RGBA{R: 255, G: 255, B: 255, A: 255}},
+			"#ffffff",
+		},
+		{
+			"red",
+			args{color.RGBA{R: 255, G: 0, B: 0, A: 255}},
+			"#ff0000",
+		},
+		{
+			"black",
+			args{color.RGBA{R: 0, G: 0, B: 0, A: 255}},
+			"#000000",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ToHexa(tt.args.c); got != tt.want {
+				t.Errorf("ToHexa() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_twoDigitHexa(t *testing.T) {
+	type args struct {
+		i uint32
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			"zero",
+			args{0},
+			"00",
+		},
+		{
+			"fifteen",
+			args{15},
+			"0f",
+		},
+		{
+			"sixteen",
+			args{16},
+			"10",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := twoDigitHexa(tt.args.i); got != tt.want {
+				t.Errorf("twoDigitHexa() = %v, want %v", got, tt.want)
 			}
 		})
 	}

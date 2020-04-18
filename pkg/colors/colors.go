@@ -271,7 +271,7 @@ func PickFgColor(epicCount, taskCount, indentation int) *color.RGBA {
 		return &c[n]
 
 	default:
-		n := (len(c)/2 - taskCount*2 + (indentation)*5) % len(c)
+		n := (len(c)/2 - taskCount*2 + (indentation-1)*5) % len(c)
 		if n < 0 {
 			n += len(c)
 		}
@@ -290,10 +290,6 @@ func PickBgColor(epicCount int) color.RGBA {
 // it will panic in case it is not possible
 // meant to be used for hardcoded colors...
 func mustParseColor(part string) color.RGBA {
-	if len(part) != 4 && len(part) != 7 {
-		panic(fmt.Errorf("invalid hexa color length: %d", len(part)))
-	}
-
 	if part[0] != '#' {
 		panic(fmt.Errorf("invalid first character of hexa color. want: #, got: %c", part[0]))
 	}
