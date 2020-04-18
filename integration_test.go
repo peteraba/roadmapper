@@ -5,6 +5,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,7 +46,7 @@ Muji enim
 
 func TestIntegration_TextToRoadmap(t *testing.T) {
 	now := time.Now()
-	content := Content(txt)
+	content := roadmap.Content(txt)
 
 	roadmap := content.ToRoadmap(123, nil, "", "2006-01-02", txtBaseURL, now)
 
@@ -56,7 +57,7 @@ func TestIntegration_TextToRoadmap(t *testing.T) {
 
 func TestIntegration_TextToVisual(t *testing.T) {
 	now := time.Now()
-	content := Content(txt)
+	content := roadmap.Content(txt)
 	expectedProjectLength := 28
 	expectedMilestoneLength := 2
 	expectedDeadline1 := time.Date(2020, 3, 12, 0, 0, 0, 0, time.UTC)

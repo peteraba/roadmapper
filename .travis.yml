@@ -16,5 +16,5 @@ script:
   - TIMEOUT=30 make e2e
 
 after_success:
-  - go test -race -tags=e2e -coverprofile=coverage.txt -covermode=atomic
+  - go test -race -coverprofile=coverage.txt -covermode=atomic
   - bash <(curl -s https://codecov.io/bash)

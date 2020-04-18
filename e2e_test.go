@@ -12,13 +12,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ory/dockertest"
-
 	"github.com/chromedp/chromedp"
 	"github.com/labstack/gommon/log"
 	_ "github.com/lib/pq"
+	"github.com/ory/dockertest"
+	"github.com/peteraba/roadmapper/cmd/roadmapper"
+	"github.com/peteraba/roadmapper/pkg/code"
+	"github.com/peteraba/roadmapper/pkg/migrations"
+	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 const (
@@ -109,12 +113,15 @@ func setupApp(t *testing.T, dbResource *dockertest.Resource) chan os.Signal {
 
 	quit := make(chan os.Signal, 1)
 
-	cb := NewCodeBuilder()
+	logger := zap.NewNop()
+	cb := code.NewCodeBuilder()
+	rw := roadmap.CreateDbReadWriter(appName, e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass, true)
 
-	rw := CreateDbReadWriter(applicationName, e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass, true)
-	go Serve(quit, e2eAppPort, "", "", rw, cb, e2eMatomoDomain, e2eDocBaseURL, false)
+	h := roadmap.NewHandler(logger, rw, cb, appVersion, e2eMatomoDomain, e2eDocBaseURL, false)
 
-	_, err := migrateUp(e2eDbUser, e2eDbPass, e2eDbHost, dbPort, e2eDbName, 0)
+	go roadmapper.Serve(quit, e2eAppPort, "", "", h)
+
+	_, err := migrations.Up(e2eDbUser, e2eDbPass, e2eDbHost, dbPort, e2eDbName, 0)
 	if err != nil {
 		t.Fatalf("failed to run migrations: %v", err)
 	}
@@ -126,13 +133,13 @@ func TestApp_Commandline(t *testing.T) {
 	var (
 		dateFormat        = "2006-01-02"
 		fw, lh     uint64 = 800, 30
-		rw                = CreateFileReadWriter()
+		rw                = roadmap.CreateFileReadWriter()
 	)
 
 	type args struct {
-		rw                  FileReadWriter
+		rw                  roadmap.FileReadWriter
 		content, output     string
-		format              fileFormat
+		format              string
 		dateFormat, baseUrl string
 		fw, lh              uint64
 	}
@@ -147,20 +154,7 @@ func TestApp_Commandline(t *testing.T) {
 				rw,
 				e2eTxt,
 				"test.svg",
-				svgFormat,
-				dateFormat,
-				e2eBaseURL,
-				fw,
-				lh,
-			},
-		},
-		{
-			"pdf size",
-			args{
-				rw,
-				e2eTxt,
-				"test.pdf",
-				pdfFormat,
+				"svg",
 				dateFormat,
 				e2eBaseURL,
 				fw,
@@ -173,33 +167,7 @@ func TestApp_Commandline(t *testing.T) {
 				rw,
 				e2eTxt,
 				"test.png",
-				pngFormat,
-				dateFormat,
-				e2eBaseURL,
-				fw,
-				lh,
-			},
-		},
-		{
-			"gif size",
-			args{
-				rw,
-				e2eTxt,
-				"test.gif",
-				gifFormat,
-				dateFormat,
-				e2eBaseURL,
-				fw,
-				lh,
-			},
-		},
-		{
-			"jpg size",
-			args{
-				rw,
-				e2eTxt,
-				"test.jpg",
-				jpgFormat,
+				"png",
 				dateFormat,
 				e2eBaseURL,
 				fw,
@@ -209,8 +177,11 @@ func TestApp_Commandline(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := Render(
+			logger := zap.NewNop()
+
+			err := roadmapper.Render(
 				rw,
+				logger,
 				tt.args.content,
 				tt.args.output,
 				tt.args.format,
@@ -222,13 +193,13 @@ func TestApp_Commandline(t *testing.T) {
 
 			require.NoError(t, err)
 
-			expectedData, err := ioutil.ReadFile(fmt.Sprintf("goldenfiles/%s", tt.args.output))
+			expectedData, err := ioutil.ReadFile(fmt.Sprintf("res/goldenfiles/%s", tt.args.output))
 			require.NoError(t, err)
 			actualData, err := ioutil.ReadFile(tt.args.output)
 			require.NoError(t, err)
 
 			ed0, ad0 := float64(len(expectedData)), float64(len(actualData))
-			ed1, ad1 := ed0*1.1, ad0*1.1
+			ed1, ad1 := ed0*1.2, ad0*1.2
 
 			assert.Greater(t, ed1, ad0, "generated and golden files differ a lot")
 			assert.Less(t, ed0, ad1, "generated and golden files differ a lot")
@@ -250,7 +221,7 @@ func getTimeout(t *testing.T) time.Duration {
 		return timeout
 	}
 
-	timeout = 15 * time.Second
+	timeout = 25 * time.Second
 	timeoutEnv := os.Getenv("TIMEOUT")
 	if timeoutEnv != "" {
 		timeoutParsed, err := strconv.ParseInt(timeoutEnv, 10, 32)

@@ -1,4 +1,4 @@
-//go:generate go-bindata -o bindata.go migrations/ templates/ fonts/...
+//go:generate go-bindata -o pkg/bindata.go res/migrations/ res/templates/ res/fonts/...
 
 package main
 
@@ -8,19 +8,26 @@ import (
 	"os"
 	"time"
 
-	"github.com/labstack/gommon/log"
 	_ "github.com/lib/pq"
+	"github.com/peteraba/roadmapper/cmd/roadmapper"
+	"github.com/peteraba/roadmapper/pkg/code"
+	"github.com/peteraba/roadmapper/pkg/migrations"
+	"github.com/peteraba/roadmapper/pkg/roadmap"
 	cli "github.com/urfave/cli/v2"
+	"go.uber.org/zap"
 )
 
-var applicationName = "roadmapper"
+var appName = "roadmapper"
+var appVersion = "development"
 var tag = ""
-var version = "development"
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	cb := NewCodeBuilder()
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // nolint
+
+	cb := code.NewCodeBuilder()
 
 	app := &cli.App{
 		Commands: []*cli.Command{
@@ -44,8 +51,8 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					quit := make(chan os.Signal, 1)
-					rw := CreateDbReadWriter(
-						applicationName,
+					rw := roadmap.CreateDbReadWriter(
+						appName,
 						c.String("dbHost"),
 						c.String("dbPort"),
 						c.String("dbName"),
@@ -53,17 +60,8 @@ func main() {
 						c.String("dbPass"),
 						c.Bool("logDbQueries"),
 					)
-					Serve(
-						quit,
-						c.Uint("port"),
-						c.String("cert"),
-						c.String("key"),
-						rw,
-						cb,
-						c.String("matomoDomain"),
-						c.String("docBaseUrl"),
-						c.Bool("selfHosted"),
-					)
+					h := roadmap.NewHandler(logger, rw, cb, appVersion, c.String("matomoDomain"), c.String("docBaseUrl"), c.Bool("selfHosted"))
+					roadmapper.Serve(quit, c.Uint("port"), c.String("cert"), c.String("key"), h)
 
 					return nil
 				},
@@ -71,76 +69,43 @@ func main() {
 			{
 				Name:    "cli",
 				Aliases: []string{"c"},
-				Usage:   "render static assets",
+				Usage:   "renders a roadmap",
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "input", Usage: "input file", Aliases: []string{"i"}},
 					&cli.StringFlag{Name: "output", Usage: "output file", Aliases: []string{"o"}},
-					&cli.StringFlag{Name: "format", Usage: "image format to be used (supported: svg, png, pdf", Aliases: []string{"f"}, Value: "svg", EnvVars: []string{"IMAGE_FORMAT"}},
+					&cli.StringFlag{Name: "formatFile", Usage: "image format to be used (supported: svg, png, pdf", Aliases: []string{"f"}, Value: "svg", EnvVars: []string{"IMAGE_FORMAT"}},
 					&cli.Uint64Flag{Name: "width", Usage: "width of output file", Aliases: []string{"w"}},
 					&cli.Uint64Flag{Name: "lineHeight", Usage: "width of output file", Aliases: []string{"lh"}},
 					&cli.StringFlag{Name: "dateFormat", Usage: "date format to use", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
 					&cli.StringFlag{Name: "baseURL", Usage: "base url to use for non-color, non-date extra values", Value: "", EnvVars: []string{"BASE_URL"}},
 				},
 				Action: func(c *cli.Context) error {
-					format, err := newFormatType(c.String("format"))
-					if err != nil {
-						log.Print(err)
-
-						return err
-					}
-
-					rw := CreateFileReadWriter()
-					err = Render(
+					rw := roadmap.CreateFileReadWriter()
+					err := roadmapper.Render(
 						rw,
+						logger,
 						c.String("input"),
 						c.String("output"),
-						format,
+						c.String("formatFile"),
 						c.String("dateFormat"),
 						c.String("baseURL"),
 						c.Uint64("width"),
 						c.Uint64("lineHeight"),
 					)
 					if err != nil {
-						log.Print(err)
+						logger.Error("failed to render roadmap", zap.Error(err))
 					}
 
 					return err
 				},
 			},
 			{
-				Name:    "random",
-				Aliases: []string{"r"},
-				Usage:   "generate random numbers",
-				Flags: []cli.Flag{
-					&cli.IntFlag{Name: "count", Aliases: []string{"c"}, Usage: "count of random numbers to generate", Value: 5},
-				},
-				Action: func(c *cli.Context) error {
-					err := Random(cb, c.Int("count"))
-					if err != nil {
-						log.Print(err)
-					}
-					return err
-				},
-			},
-			{
-				Name:    "convert",
-				Aliases: []string{"co"},
-				Usage:   "convert between id and code",
-				Flags: []cli.Flag{
-					&cli.Uint64Flag{Name: "id", Aliases: []string{"i"}, Usage: "id to convert to code"},
-					&cli.StringFlag{Name: "code", Aliases: []string{"c"}, Usage: "code to convert to id"},
-				},
-				Action: func(c *cli.Context) error {
-					err := Convert(cb, c.Uint64("id"), c.String("code"))
-					return err
-				},
-			},
-			{
 				Name:    "version",
 				Aliases: []string{"v"},
-				Usage:   "display version",
+				Usage:   "display appVersion",
 				Action: func(c *cli.Context) error {
-					fmt.Println(applicationName, version, tag)
+					fmt.Println(appName, appVersion, tag)
+
 					return nil
 				},
 			},
@@ -157,7 +122,7 @@ func main() {
 					&cli.UintFlag{Name: "steps", Aliases: []string{"s"}, Usage: "number of steps to migrate up"},
 				},
 				Action: func(c *cli.Context) error {
-					n, err := migrateUp(
+					n, err := migrations.Up(
 						c.String("dbUser"),
 						c.String("dbPass"),
 						c.String("dbHost"),
@@ -170,7 +135,7 @@ func main() {
 						return fmt.Errorf("migration failed: %w", err)
 					}
 
-					log.Printf("up migrations run: %d", n)
+					logger.Info("up migrations run", zap.Int("count", n))
 
 					return nil
 				},
@@ -188,7 +153,7 @@ func main() {
 					&cli.UintFlag{Name: "steps", Aliases: []string{"s"}, Usage: "number of steps to migrate down"},
 				},
 				Action: func(c *cli.Context) error {
-					n, err := migrateDown(
+					n, err := migrations.Down(
 						c.String("dbUser"),
 						c.String("dbPass"),
 						c.String("dbHost"),
@@ -201,7 +166,7 @@ func main() {
 						return fmt.Errorf("migration failed: %w", err)
 					}
 
-					log.Printf("down migrations run: %d", n)
+					logger.Info("down migrations run", zap.Int("count", n))
 
 					return nil
 				},
@@ -211,6 +176,6 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("app run error", zap.Error(err))
 	}
 }
