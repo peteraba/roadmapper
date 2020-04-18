@@ -13,11 +13,12 @@ Roadmapper is a CLI tool and webservice designed to help maintaining and trackin
 
 ### Thanks to
 
-- [bootstrap](https://getbootstrap.com/) - The world’s most popular front-end component library
+- [Bootstrap](https://getbootstrap.com/) - The world’s most popular front-end component library
 - [cli](https://github.com/urfave/cli) - A simple, fast, and fun package for building command line apps in Go
 - [echo](https://echo.labstack.com/) - High performance, extensible, minimalist Go web framework
-- [canvas](https://github.com/tdewolff/canvas) - Cairo in Go: vector to SVG, PDF, EPS, raster, HTML Canvas, etc.
+- [Canvas](https://github.com/tdewolff/canvas) - Cairo in Go: vector to SVG, PDF, EPS, raster, HTML Canvas, etc.
 - [pq](https://github.com/lib/pq) - A pure Go postgres driver for Go's database/sql package
+- [pg](https://github.com/go-pg/pg) - Golang ORM with focus on PostgreSQL features and performance
 - [uitable](https://github.com/gosuri/uitable) - A go library for representing data as tables for terminal applications.
 - [Testify](https://github.com/stretchr/testify) - A set of packages that provide many tools for testifying that your code will behave as you intend
 - [dockertest](https://github.com/ory/dockertest) - Integration tests against third party services
@@ -29,8 +30,6 @@ Roadmapper is a CLI tool and webservice designed to help maintaining and trackin
 - [ ] backend validation + errors displayed in frontend
 - [ ] fix displaying multiline project titles
 - [ ] improve code coverage
-- [ ] remove color support
-- [ ] stripe overlay for project visualization
 
 ### Long term plans
 
