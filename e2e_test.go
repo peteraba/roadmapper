@@ -114,7 +114,7 @@ func setupApp(t *testing.T, dbResource *dockertest.Resource) chan os.Signal {
 	quit := make(chan os.Signal, 1)
 
 	logger := zap.NewNop()
-	cb := code.NewCodeBuilder()
+	cb := code.Builder{}
 	rw := roadmap.CreateDbReadWriter(appName, e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass, true)
 
 	h := roadmap.NewHandler(logger, rw, cb, appVersion, e2eMatomoDomain, e2eDocBaseURL, false)
