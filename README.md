@@ -13,6 +13,7 @@ Roadmapper is a CLI tool and webservice designed to help maintaining and trackin
 
 ### Thanks to
 
+- [bootstrap](https://getbootstrap.com/) - The world’s most popular front-end component library
 - [cli](https://github.com/urfave/cli) - A simple, fast, and fun package for building command line apps in Go
 - [echo](https://echo.labstack.com/) - High performance, extensible, minimalist Go web framework
 - [canvas](https://github.com/tdewolff/canvas) - Cairo in Go: vector to SVG, PDF, EPS, raster, HTML Canvas, etc.
@@ -20,12 +21,19 @@ Roadmapper is a CLI tool and webservice designed to help maintaining and trackin
 - [uitable](https://github.com/gosuri/uitable) - A go library for representing data as tables for terminal applications.
 - [Testify](https://github.com/stretchr/testify) - A set of packages that provide many tools for testifying that your code will behave as you intend
 - [dockertest](https://github.com/ory/dockertest) - Integration tests against third party services
-- [chromedp](https://github.com/chromedp/chromedp) - A faster, simpler way to drive browsers supporting the Chrome DevTools Protocol.
-- [bindata](https://github.com/kevinburke/go-bindata) - A small utility which generates Go code from any file. Useful for embedding binary data in a Go program.
+- [chromedp](https://github.com/chromedp/chromedp) - A faster, simpler way to drive browsers supporting the Chrome DevTools Protocol
+- [bindata](https://github.com/kevinburke/go-bindata) - A small utility for embedding binary data in a Go program
 
 ### Current TODO:
 
 - [ ] backend validation + errors displayed in frontend
 - [ ] fix displaying multiline project titles
+- [ ] improve code coverage
 - [ ] remove color support
 - [ ] stripe overlay for project visualization
+
+### Long term plans
+
+- Visual roadmap designer
+- Some level of JIRA integration
+- Some level of Trello integration
