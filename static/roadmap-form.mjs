@@ -55,7 +55,7 @@ export const roadmapForm = () => {
 
     const handlePaste = (e, txtField, txtFieldValid, txtFieldInvalid) => {
         const origText = txtField.value,
-            s0 =  txtField.selectionStart,
+            s0 = txtField.selectionStart,
             e0 = txtField.selectionEnd,
             before = origText.substr(0, s0),
             after = origText.substr(e0);
@@ -196,7 +196,7 @@ export const roadmapForm = () => {
     const saveHistory = txtField => {
         txtFieldHistory = txtFieldHistory.slice(0, txtFieldHistoryNum);
 
-        if (txtFieldHistory[txtFieldHistoryNum-1] !== txtField.value) {
+        if (txtFieldHistory[txtFieldHistoryNum - 1] !== txtField.value) {
             txtFieldHistory.push(txtField.value);
             txtFieldHistoryNum++;
         }
@@ -367,12 +367,18 @@ Muji enim
 
     document.getElementById('are-you-a-human-group').remove();
 
+    saveBtn.disabled = true;
+
     const ts = document.getElementById('ts');
     let t = Math.floor(ts.value);
+
     setInterval(
         _ => {
             t++;
             ts.value = `${t}`;
+            if (t === 5) {
+                saveBtn.disabled = false;
+            }
         },
         1000
     )
