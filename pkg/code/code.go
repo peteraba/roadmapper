@@ -5,7 +5,8 @@ import (
 	"math/rand"
 	"strings"
 	"sync"
-	"unicode/utf8"
+
+	"github.com/peteraba/roadmapper/pkg/helper"
 )
 
 const maxCode64 = 0xfffffffffff
@@ -47,7 +48,7 @@ func newCode64FromString(s string) (Code64, error) {
 		ok  bool
 	)
 
-	for idx, runeValue := range reverse(s) {
+	for idx, runeValue := range helper.Reverse(s) {
 		num, ok = m[runeValue]
 		if !ok {
 			return Code64(0), fmt.Errorf("invalid character '%c' in code: %s", runeValue, s)
@@ -78,18 +79,6 @@ func toCode64(n uint64) string {
 	return strings.TrimLeft(string(runes), "0")
 }
 
-// reverse reverses a string
-func reverse(s string) string {
-	size := len(s)
-	buf := make([]byte, size)
-	for start := 0; start < size; {
-		r, n := utf8.DecodeRuneInString(s[start:])
-		start += n
-		utf8.EncodeRune(buf[size-start:], r)
-	}
-	return string(buf)
-}
-
 const allowed = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_~"
 
 var allowedLock = &sync.Mutex{}
@@ -97,14 +86,9 @@ var allowedMap map[rune]int
 
 // getAllowedMap returns a map between runes and their numeric values
 func getAllowedMap() map[rune]int {
-	if len(allowedMap) > 0 {
-		return allowedMap
-	}
-
 	allowedLock.Lock()
 	defer allowedLock.Unlock()
 
-	// re-check to see if concurrent run has already pre-filled the map
 	if len(allowedMap) > 0 {
 		return allowedMap
 	}

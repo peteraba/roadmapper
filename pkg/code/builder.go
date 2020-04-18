@@ -18,8 +18,3 @@ func (b Builder) NewFromID(id uint64) (Code, error) {
 func (b Builder) New() Code {
 	return NewCode64()
 }
-
-// NewCodeBuilder creates a new Builder instance
-func NewCodeBuilder() Builder {
-	return Builder{}
-}

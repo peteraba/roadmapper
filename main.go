@@ -27,7 +27,7 @@ func main() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync() // nolint
 
-	cb := code.NewCodeBuilder()
+	b := code.Builder{}
 
 	app := &cli.App{
 		Commands: []*cli.Command{
@@ -60,7 +60,7 @@ func main() {
 						c.String("dbPass"),
 						c.Bool("logDbQueries"),
 					)
-					h := roadmap.NewHandler(logger, rw, cb, appVersion, c.String("matomoDomain"), c.String("docBaseUrl"), c.Bool("selfHosted"))
+					h := roadmap.NewHandler(logger, rw, b, appVersion, c.String("matomoDomain"), c.String("docBaseUrl"), c.Bool("selfHosted"))
 					roadmapper.Serve(quit, c.Uint("port"), c.String("cert"), c.String("key"), h)
 
 					return nil
