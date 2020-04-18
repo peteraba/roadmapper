@@ -1,14 +1,14 @@
 default: build
 
 test:
-	go test -race -bench=. .
+	go test -race -bench=. ./...
 	golangci-lint run
 
 generate:
 	go generate pkg/...
 
 e2e:
-	go test -race -bench=. -tags=e2e .
+	go test -race -tags=e2e ./...
 
 build: test
 	mkdir -p ./airtmp
