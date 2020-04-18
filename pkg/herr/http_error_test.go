@@ -2,10 +2,36 @@ package herr
 
 import (
 	"net/http"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNewHttpError(t *testing.T) {
+	type args struct {
+		err    error
+		status int
+	}
+	tests := []struct {
+		name string
+		args args
+		want HttpError
+	}{
+		{
+			"foo",
+			args{assert.AnError, 300},
+			HttpError{assert.AnError, 300},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewHttpError(tt.args.err, tt.args.status); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewHttpError() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
 func TestToHttpCode(t *testing.T) {
 	type args struct {
