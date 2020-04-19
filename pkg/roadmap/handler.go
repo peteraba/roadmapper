@@ -47,19 +47,23 @@ func NewHandler(logger *zap.Logger, rw DbReadWriter, cb code.Builder, appVersion
 func (h *Handler) GetRoadmapHTML(ctx echo.Context) error {
 	identifier := ctx.Param("identifier")
 
-	r, c, err := load(h.rw, h.cb, identifier)
+	r, err := load(h.rw, h.cb, identifier)
 	if err != nil {
-		return ctx.HTML(c, err.Error())
+		return h.displayHTML(ctx, r, err)
 	}
 
-	output, err := r.viewHtml(h.appVersion, h.matomoDomain, h.docBaseURL, ctx.Request().RequestURI, h.selfHosted)
+	return h.displayHTML(ctx, r, nil)
+}
+
+func (h *Handler) displayHTML(ctx echo.Context, r *Roadmap, origErr error) error {
+	output, err := r.viewHtml(h.appVersion, h.matomoDomain, h.docBaseURL, ctx.Request().RequestURI, h.selfHosted, origErr)
 	if err != nil {
 		h.Logger.Info("failed to create HTML response", zap.Error(err))
 
 		return ctx.HTML(herr.ToHttpCode(err, http.StatusInternalServerError), err.Error())
 	}
 
-	return ctx.HTML(http.StatusOK, output)
+	return ctx.HTML(herr.ToHttpCode(origErr, http.StatusOK), output)
 }
 
 func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
@@ -92,14 +96,14 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 		return ctx.HTML(http.StatusMethodNotAllowed, err.Error())
 	}
 
-	code, err := h.cb.NewFromID(roadmap.ID)
+	c, err := h.cb.NewFromID(roadmap.ID)
 	if err != nil {
 		h.Logger.Info("failed to generate the new  url", zap.Error(err))
 
 		return ctx.HTML(http.StatusInternalServerError, err.Error())
 	}
 
-	newURL := fmt.Sprintf("/%s", code.String())
+	newURL := fmt.Sprintf("/%s", c.String())
 
 	return ctx.Redirect(http.StatusSeeOther, newURL)
 }
@@ -109,12 +113,12 @@ func (h *Handler) getPrevID(identifier string) (*uint64, error) {
 		return nil, nil
 	}
 
-	code, err := h.cb.NewFromString(identifier)
+	c, err := h.cb.NewFromString(identifier)
 	if err != nil {
 		return nil, herr.NewHttpError(err, http.StatusNotFound)
 	}
 
-	n := code.ID()
+	n := c.ID()
 
 	return &n, err
 }
@@ -166,11 +170,11 @@ func (h *Handler) GetRoadmapImage(ctx echo.Context) error {
 
 	fw, lh = GetCanvasSizes(fw, lh)
 
-	roadmap, c, err := load(h.rw, h.cb, ctx.Param("identifier"))
+	roadmap, err := load(h.rw, h.cb, ctx.Param("identifier"))
 	if err != nil {
 		h.Logger.Info("failed to load roadmap", zap.Error(err))
 
-		return ctx.HTML(c, fmt.Sprintf("%v", err))
+		return ctx.HTML(herr.ToHttpCode(err, http.StatusInternalServerError), fmt.Sprintf("%v", err))
 	}
 
 	cvs := roadmap.ToVisual().Draw(float64(fw), float64(lh))
@@ -182,22 +186,22 @@ func (h *Handler) GetRoadmapImage(ctx echo.Context) error {
 	return ctx.String(http.StatusOK, string(img))
 }
 
-func load(rw DbReadWriter, b code.Builder, identifier string) (*Roadmap, int, error) {
+func load(rw DbReadWriter, b code.Builder, identifier string) (*Roadmap, error) {
 	if identifier == "" {
-		return nil, 0, nil
+		return nil, nil
 	}
 
 	c, err := b.NewFromString(identifier)
 	if err != nil {
-		return nil, http.StatusBadRequest, err
+		return nil, herr.NewHttpError(err, http.StatusBadRequest)
 	}
 
 	roadmap, err := rw.Get(c)
 	if err != nil {
-		return nil, http.StatusNotFound, err
+		return nil, herr.NewHttpError(err, http.StatusInternalServerError)
 	}
 
-	return roadmap, 0, nil
+	return roadmap, nil
 }
 
 const (

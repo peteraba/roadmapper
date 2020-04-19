@@ -24,6 +24,7 @@ func TestRoadmap_viewHtml(t *testing.T) {
 		docBaseURL   string
 		currentURL   string
 		selfHosted   bool
+		err          error
 	}
 	tests := []struct {
 		name    string
@@ -48,7 +49,7 @@ func TestRoadmap_viewHtml(t *testing.T) {
 				UpdatedAt:  tt.fields.UpdatedAt,
 				AccessedAt: tt.fields.AccessedAt,
 			}
-			got, err := r.viewHtml(tt.args.appVersion, tt.args.matomoDomain, tt.args.docBaseURL, tt.args.currentURL, tt.args.selfHosted)
+			got, err := r.viewHtml(tt.args.appVersion, tt.args.matomoDomain, tt.args.docBaseURL, tt.args.currentURL, tt.args.selfHosted, tt.args.err)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("viewHtml() error = %v, wantErr %v", err, tt.wantErr)
 				return

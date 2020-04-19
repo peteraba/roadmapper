@@ -39,10 +39,10 @@ var dateFormatMap = map[string]string{
 	"1.2.2020":   "M/D/YYYY (3.7.2020)",
 }
 
-func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL string, selfHosted bool) (string, error) {
+func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL string, selfHosted bool, origErr error) (string, error) {
 	writer := bytes.NewBufferString("")
 
-	layoutTemplate, err := bindata.Asset("res/templates/index.html")
+	layoutTemplate, err := bindata.Asset("../../res/templates/index.html")
 	if err != nil {
 		return "", fmt.Errorf("failed to load template: %w", err)
 	}
@@ -93,6 +93,7 @@ func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL stri
 		DateFormatMap map[string]string
 		Version       string
 		ProjectURLs   map[string][]string
+		Error         error
 	}{
 		MatomoDomain:  matomoDomain,
 		DocBaseURL:    docBaseURL,
@@ -108,6 +109,7 @@ func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL stri
 		DateFormatMap: dateFormatMap,
 		Version:       appVersion,
 		ProjectURLs:   projectURLs,
+		Error:         origErr,
 	}
 
 	err = t.Execute(writer, data)

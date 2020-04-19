@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/peteraba/roadmapper/pkg/herr"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/labstack/echo"
@@ -17,6 +19,56 @@ import (
 )
 
 func Test_handler_getRoadmapHTML(t *testing.T) {
+	t.Run("fail - not found", func(t *testing.T) {
+		// Setup
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/abc", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/:identifier")
+		ctx.SetParamNames("identifier")
+		ctx.SetParamValues("abc")
+
+		h, drwMock := setupHandler()
+		drwMock.
+			On("Get", mock.AnythingOfType("code.Code64")).
+			Return(nil, herr.NewHttpError(assert.AnError, http.StatusNotFound))
+
+		// Run
+		err := h.GetRoadmapHTML(ctx)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		assert.Contains(t, rec.Body.String(), "</html>")
+	})
+
+	t.Run("fail - loading", func(t *testing.T) {
+		// Setup
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/abc", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/:identifier")
+		ctx.SetParamNames("identifier")
+		ctx.SetParamValues("abc")
+
+		h, drwMock := setupHandler()
+		drwMock.
+			On("Get", mock.AnythingOfType("code.Code64")).
+			Return(nil, assert.AnError)
+
+		// Run
+		err := h.GetRoadmapHTML(ctx)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		assert.Contains(t, rec.Body.String(), "</html>")
+	})
+
 	t.Run("success - new", func(t *testing.T) {
 		// Setup
 		e := echo.New()
@@ -26,9 +78,11 @@ func Test_handler_getRoadmapHTML(t *testing.T) {
 		ctx := e.NewContext(req, rec)
 		h, _ := setupHandler()
 
-		// Assertions
-		require.NoError(t, h.GetRoadmapHTML(ctx))
+		// Run
+		err := h.GetRoadmapHTML(ctx)
 
+		// Assertions
+		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Contains(t, rec.Body.String(), "</html>")
 	})
@@ -55,7 +109,6 @@ func Test_handler_getRoadmapHTML(t *testing.T) {
 
 		// Assertions
 		require.NoError(t, err)
-
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Contains(t, rec.Body.String(), "</html>")
 		drwMock.AssertExpectations(t)

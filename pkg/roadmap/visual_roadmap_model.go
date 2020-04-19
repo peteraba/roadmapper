@@ -38,7 +38,7 @@ func (r Roadmap) ToVisual() *VisualRoadmap {
 	return visual
 }
 
-// caluclateProjectDates tries to find reasonable dates for all projects
+// calculateProjectDates tries to find reasonable dates for all projects
 // first it tries to find dates bottom up, meaning that based on the sub-projects
 // then it tries to find dates top down, meaning that it will copy over dates from parents
 func (vr *VisualRoadmap) calculateProjectDates() *VisualRoadmap {

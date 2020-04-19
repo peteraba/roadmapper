@@ -44,6 +44,11 @@ func TestToHttpCode(t *testing.T) {
 		want int
 	}{
 		{
+			"nil",
+			args{err: nil, defaultStatus: http.StatusTeapot},
+			http.StatusTeapot,
+		},
+		{
 			"http code error",
 			args{err: HttpError{error: assert.AnError, status: http.StatusTeapot}, defaultStatus: http.StatusBadGateway},
 			http.StatusTeapot,
