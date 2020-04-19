@@ -5,6 +5,8 @@ import (
 	"image/color"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_PickFgColor(t *testing.T) {
@@ -295,6 +297,11 @@ func TestToHexa(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("panic on nil", func(t *testing.T) {
+		got := ToHexa(nil)
+		assert.Equal(t, "", got)
+	})
 }
 
 func Test_twoDigitHexa(t *testing.T) {

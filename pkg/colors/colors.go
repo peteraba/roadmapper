@@ -312,11 +312,13 @@ func CharsToUint8(part string) ([3]uint8, error) {
 
 	tmp := []int{}
 	for _, runeValue := range part {
-		if idx := strings.IndexRune("0123456789abcdef", runeValue); idx > -1 {
+		idx := strings.IndexRune("0123456789abcdef", runeValue)
+		if idx < 0 {
+			return [3]uint8{}, fmt.Errorf("invalid charachter: %c", runeValue)
+		}
+		tmp = append(tmp, idx)
+		if len(part) == 3 {
 			tmp = append(tmp, idx)
-			if len(part) == 3 {
-				tmp = append(tmp, idx)
-			}
 		}
 	}
 
