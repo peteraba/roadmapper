@@ -36,13 +36,16 @@ And probably so many others that came before them.
 
 ### Current TODO
 
+- [ ] Enable e2e
 - [ ] Backend validation + errors displayed in frontend
 - [ ] Fix displaying multiline project titles
 - [ ] Improve code coverage
 - [ ] Out of the box alerting
+- [ ] Rest API
 
 ### Long term ideas
 
+- gRPC API
 - Visual roadmap designer
 - Some level of JIRA integration
 - Some level of Trello integration

@@ -7,3 +7,5 @@ build/
 data
 dist
 docker/roadmapper
+
+# generated code

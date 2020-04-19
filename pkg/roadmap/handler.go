@@ -1,3 +1,5 @@
+//go:generate mockery -name DbReadWriter -case snake -inpkg -output .
+
 package roadmap
 
 import (
@@ -45,12 +47,12 @@ func NewHandler(logger *zap.Logger, rw DbReadWriter, cb code.Builder, appVersion
 func (h *Handler) GetRoadmapHTML(ctx echo.Context) error {
 	identifier := ctx.Param("identifier")
 
-	roadmap, c, err := load(h.rw, h.cb, identifier)
+	r, c, err := load(h.rw, h.cb, identifier)
 	if err != nil {
 		return ctx.HTML(c, err.Error())
 	}
 
-	output, err := bootstrapRoadmap(roadmap, h.appVersion, h.matomoDomain, h.docBaseURL, ctx.Request().RequestURI, h.selfHosted)
+	output, err := r.viewHtml(h.appVersion, h.matomoDomain, h.docBaseURL, ctx.Request().RequestURI, h.selfHosted)
 	if err != nil {
 		h.Logger.Info("failed to create HTML response", zap.Error(err))
 
@@ -83,7 +85,7 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 
 	roadmap := Content(content).ToRoadmap(code.NewCode64().ID(), prevID, title, dateFormat, baseURL, now)
 
-	err = h.rw.Write(h.cb, roadmap)
+	err = h.rw.Write(roadmap)
 	if err != nil {
 		h.Logger.Info("failed to write the new roadmap", zap.Error(err))
 
@@ -190,7 +192,7 @@ func load(rw DbReadWriter, b code.Builder, identifier string) (*Roadmap, int, er
 		return nil, http.StatusBadRequest, err
 	}
 
-	roadmap, err := rw.Read(c)
+	roadmap, err := rw.Get(c)
 	if err != nil {
 		return nil, http.StatusNotFound, err
 	}
@@ -253,14 +255,16 @@ func RenderImg(cvs *canvas.Canvas, fileFormat FileFormat) []byte {
 	switch fileFormat {
 	case SvgFormat:
 		img := canvas.NewSVG(&buf, cvs.W, cvs.H)
-		defer img.Close()
 
 		cvs.Render(img)
+
+		img.Close()
 	case PdfFormat:
 		img := canvas.NewPDF(&buf, cvs.W, cvs.H)
-		defer img.Close()
 
 		cvs.Render(img)
+
+		img.Close()
 	case PngFormat:
 		w := rasterizer.PNGWriter(3.2)
 

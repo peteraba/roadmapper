@@ -1,4 +1,4 @@
-package roadmapper
+package main
 
 import (
 	"time"
@@ -8,7 +8,7 @@ import (
 )
 
 // Render renders a roadmap
-func Render(rw roadmap.FileReadWriter, l *zap.Logger, content, output string, fileFormat, dateFormat, baseUrl string, fw, lh uint64) error {
+func Render(io roadmap.IO, l *zap.Logger, content, output string, fileFormat, dateFormat, baseUrl string, fw, lh uint64) error {
 	format, err := roadmap.NewFormatType(fileFormat)
 	if err != nil {
 		l.Info("format is not supported", zap.Error(err))
@@ -22,7 +22,7 @@ func Render(rw roadmap.FileReadWriter, l *zap.Logger, content, output string, fi
 	cvs := r.ToVisual().Draw(float64(fw), float64(lh))
 	img := roadmap.RenderImg(cvs, format)
 
-	err = rw.Write(output, string(img))
+	err = io.Write(output, string(img))
 
 	return err
 }

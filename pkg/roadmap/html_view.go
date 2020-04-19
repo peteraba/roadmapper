@@ -39,10 +39,10 @@ var dateFormatMap = map[string]string{
 	"1.2.2020":   "M/D/YYYY (3.7.2020)",
 }
 
-func bootstrapRoadmap(roadmap *Roadmap, appVersion, matomoDomain, docBaseURL, currentURL string, selfHosted bool) (string, error) {
+func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL string, selfHosted bool) (string, error) {
 	writer := bytes.NewBufferString("")
 
-	layoutTemplate, err := bindata.Asset("templates/index.html")
+	layoutTemplate, err := bindata.Asset("res/templates/index.html")
 	if err != nil {
 		return "", fmt.Errorf("failed to load template: %w", err)
 	}
@@ -53,7 +53,7 @@ func bootstrapRoadmap(roadmap *Roadmap, appVersion, matomoDomain, docBaseURL, cu
 	}
 
 	var (
-		pageTitle    = "New roadmap"
+		pageTitle    = "New Roadmap"
 		roadmapTitle = ""
 		dateFormat   string
 		baseURL      string
@@ -62,15 +62,15 @@ func bootstrapRoadmap(roadmap *Roadmap, appVersion, matomoDomain, docBaseURL, cu
 		projectURLs  = map[string][]string{}
 	)
 
-	if roadmap != nil {
-		dateFormat = roadmap.DateFormat
-		baseURL = roadmap.BaseURL
-		raw = string(roadmap.ToContent())
+	if r != nil {
+		dateFormat = r.DateFormat
+		baseURL = r.BaseURL
+		raw = string(r.ToContent())
 		hasRoadmap = true
-		pageTitle = roadmap.Title
-		roadmapTitle = roadmap.Title
+		pageTitle = r.Title
+		roadmapTitle = r.Title
 
-		for _, p := range roadmap.Projects {
+		for _, p := range r.Projects {
 			if len(p.URLs) < 1 {
 				continue
 			}

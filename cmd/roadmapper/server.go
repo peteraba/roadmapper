@@ -1,4 +1,4 @@
-package roadmapper
+package main
 
 import (
 	"context"

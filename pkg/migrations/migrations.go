@@ -9,6 +9,31 @@ import (
 	migrate "github.com/rubenv/sql-migrate"
 )
 
+type Migrations struct {
+	conn *sql.DB
+}
+
+func New(dbUser, dbPass, dbHost, dbPort, dbName string) *Migrations {
+	conn, err := getConn(dbUser, dbPass, dbHost, dbPort, dbName)
+	if err != nil {
+		panic(err)
+	}
+
+	m := Migrations{
+		conn: conn,
+	}
+
+	return &m
+}
+
+func NewFromConn(conn *sql.DB) *Migrations {
+	m := Migrations{
+		conn: conn,
+	}
+
+	return &m
+}
+
 func getConn(dbUser, dbPass, dbHost, dbPort, dbName string) (*sql.DB, error) {
 	connStr := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
@@ -22,19 +47,14 @@ func getConn(dbUser, dbPass, dbHost, dbPort, dbName string) (*sql.DB, error) {
 	return sql.Open("postgres", connStr)
 }
 
-func Down(dbUser, dbPass, dbHost, dbPort, dbName string, steps int) (int, error) {
-	db, err := getConn(dbUser, dbPass, dbHost, dbPort, dbName)
-	if err != nil {
-		return 0, fmt.Errorf("failed to create a connection: %w", err)
-	}
-
+func (m *Migrations) Down(steps int) (int, error) {
 	source := &migrate.AssetMigrationSource{
 		Asset:    bindata.Asset,
 		AssetDir: bindata.AssetDir,
-		Dir:      "migrations",
+		Dir:      "res/migrations",
 	}
 
-	n, err := migrate.ExecMax(db, "postgres", source, migrate.Down, steps)
+	n, err := migrate.ExecMax(m.conn, "postgres", source, migrate.Down, steps)
 	if err != nil {
 		return 0, fmt.Errorf("migration failed: %w", err)
 	}
@@ -42,19 +62,14 @@ func Down(dbUser, dbPass, dbHost, dbPort, dbName string, steps int) (int, error)
 	return n, nil
 }
 
-func Up(dbUser, dbPass, dbHost, dbPort, dbName string, steps int) (int, error) {
-	db, err := getConn(dbUser, dbPass, dbHost, dbPort, dbName)
-	if err != nil {
-		return 0, fmt.Errorf("failed to create a connection: %w", err)
-	}
-
+func (m *Migrations) Up(steps int) (int, error) {
 	source := &migrate.AssetMigrationSource{
 		Asset:    bindata.Asset,
 		AssetDir: bindata.AssetDir,
-		Dir:      "migrations",
+		Dir:      "res/migrations",
 	}
 
-	n, err := migrate.ExecMax(db, "postgres", source, migrate.Up, steps)
+	n, err := migrate.ExecMax(m.conn, "postgres", source, migrate.Up, steps)
 	if err != nil {
 		return 0, fmt.Errorf("migration failed: %w", err)
 	}
