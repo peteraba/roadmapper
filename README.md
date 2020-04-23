@@ -25,7 +25,7 @@ Roadmapper is a CLI tool and webservice designed to help maintaining and trackin
 - [chromedp](https://github.com/chromedp/chromedp) - A faster, simpler way to drive browsers supporting the Chrome DevTools Protocol
 - [bindata](https://github.com/kevinburke/go-bindata) - A small utility for embedding binary data in a Go program
 
-#### Furthermore it would not exist as it is without the following giants
+#### Furthermore, Roadmapper would not exist as it is without the following giants
 
 - [go](https://github.com/golang/go) - The Go programming language
 - [docker](https://www.docker.com/) - Docker provides a simple and powerful developer experience, workflows and collaboration for creating applications.

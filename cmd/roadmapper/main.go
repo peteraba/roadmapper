@@ -119,11 +119,11 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					m := newMigrations(
-						c.String("dbUser"),
-						c.String("dbPass"),
 						c.String("dbHost"),
 						c.String("dbPort"),
 						c.String("dbName"),
+						c.String("dbUser"),
+						c.String("dbPass"),
 					)
 					n, err := m.Up(c.Int("steps"))
 
@@ -150,11 +150,11 @@ func main() {
 				},
 				Action: func(c *cli.Context) error {
 					m := newMigrations(
-						c.String("dbUser"),
-						c.String("dbPass"),
 						c.String("dbHost"),
 						c.String("dbPort"),
 						c.String("dbName"),
+						c.String("dbUser"),
+						c.String("dbPass"),
 					)
 					n, err := m.Down(c.Int("steps"))
 
