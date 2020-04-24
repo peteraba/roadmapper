@@ -31,6 +31,17 @@ func TestNewHttpError(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("panic on nil error", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("the code did not panic")
+			}
+		}()
+
+		var err error
+		_ = NewHttpError(err, 302)
+	})
 }
 
 func TestToHttpCode(t *testing.T) {

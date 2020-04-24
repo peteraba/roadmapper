@@ -526,9 +526,7 @@ func TestRoadmap_ToDates(t *testing.T) {
 }
 
 func TestContent_toMilestones(t *testing.T) {
-	var (
-		deadlineAt = time.Date(2020, 2, 12, 0, 0, 0, 0, time.UTC)
-	)
+	var deadlineAt = time.Date(2020, 2, 12, 0, 0, 0, 0, time.UTC)
 
 	_ = deadlineAt
 
@@ -611,6 +609,13 @@ func Test_splitLine(t *testing.T) {
 			2,
 			"Select and purchase domain [2020-02-12, 2020-02-20]",
 			"2020-02-04, 2020-02-25, 100%, #f00, /issues/1, |2",
+		},
+		{
+			"empty line",
+			args{"", "\t\t"},
+			0,
+			"",
+			"",
 		},
 	}
 	for _, tt := range tests {
@@ -867,6 +872,16 @@ func Test_parseExtraPart(t *testing.T) {
 			milestone: 3,
 			wantColor: nil,
 		},
+		{
+			name:      "fallback",
+			args:      args{part: "lkjsdflksd", m: 2, dateFormat: "2006-01-02", baseUrl: ""},
+			startAt:   nil,
+			endAt:     nil,
+			urls:      nil,
+			percent:   0,
+			milestone: 2,
+			wantColor: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -930,6 +945,12 @@ func Test_parsePercentage(t *testing.T) {
 		{
 			name:    "-20%",
 			args:    args{part: "-20%"},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "%",
+			args:    args{part: "%"},
 			want:    0,
 			wantErr: true,
 		},
@@ -1053,6 +1074,18 @@ func Test_parseColor(t *testing.T) {
 		{
 			name:    "#33213",
 			args:    args{part: "#33213"},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "!332133",
+			args:    args{part: "!332133"},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name:    "#fazfaz",
+			args:    args{part: "#fazfaz"},
 			want:    nil,
 			wantErr: true,
 		},

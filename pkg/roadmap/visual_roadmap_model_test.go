@@ -218,11 +218,12 @@ func TestVisualRoadmap_findDatesBottomUp(t *testing.T) {
 	dates0402 := time.Date(2020, 4, 2, 0, 0, 0, 0, time.UTC)
 	dates0405 := time.Date(2020, 4, 5, 0, 0, 0, 0, time.UTC)
 	dates0408 := time.Date(2020, 4, 8, 0, 0, 0, 0, time.UTC)
+	dates0412 := time.Date(2020, 4, 12, 0, 0, 0, 0, time.UTC)
 	dates0415 := time.Date(2020, 4, 15, 0, 0, 0, 0, time.UTC)
 	dates0418 := time.Date(2020, 4, 18, 0, 0, 0, 0, time.UTC)
 	dates0420 := time.Date(2020, 4, 20, 0, 0, 0, 0, time.UTC)
 
-	_, _, _, _, _, _ = dates0402, dates0405, dates0408, dates0415, dates0418, dates0420
+	_, _, _, _, _, _, _ = dates0402, dates0405, dates0408, dates0412, dates0415, dates0418, dates0420
 
 	type fields struct {
 		Projects   []Project
@@ -270,8 +271,9 @@ func TestVisualRoadmap_findDatesBottomUp(t *testing.T) {
 			fields{
 				Projects: []Project{
 					{Indentation: 1},
-					{Dates: &Dates{StartAt: dates0405, EndAt: dates0415}, Indentation: 2},
+					{Dates: &Dates{StartAt: dates0412, EndAt: dates0415}, Indentation: 2},
 					{Dates: &Dates{StartAt: dates0408, EndAt: dates0418}, Indentation: 2},
+					{Dates: &Dates{StartAt: dates0405, EndAt: dates0418}, Indentation: 2},
 					{Dates: &Dates{StartAt: dates0402, EndAt: dates0420}, Indentation: 1},
 				},
 			},
@@ -325,6 +327,17 @@ func TestVisualRoadmap_findDatesBottomUp(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("panic if start is out of boundary", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("the code did not panic")
+			}
+		}()
+
+		vr := &VisualRoadmap{}
+		_ = vr.findDatesBottomUp(2)
+	})
 }
 
 func TestVisualRoadmap_findDatesTopDown(t *testing.T) {
@@ -437,6 +450,17 @@ func TestVisualRoadmap_findDatesTopDown(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("panic if start is out of boundary", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("the code did not panic")
+			}
+		}()
+
+		vr := &VisualRoadmap{}
+		_ = vr.findDatesTopDown(2)
+	})
 }
 
 func TestVisualRoadmap_calculateProjectColors(t *testing.T) {
@@ -658,6 +682,17 @@ func TestVisualRoadmap_findPercentageBottomUp(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("panic if start is out of boundary", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("the code did not panic")
+			}
+		}()
+
+		vr := &VisualRoadmap{}
+		_ = vr.findPercentageBottomUp(2)
+	})
 }
 
 func TestVisualRoadmap_applyBaseURL(t *testing.T) {
@@ -989,4 +1024,20 @@ func TestVisualRoadmap_applyProjectMilestone(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("panic original milestone does not exist", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("the code did not panic")
+			}
+		}()
+
+		milestone1 := &Milestone{}
+		projectMilestones := map[int]*Milestone{
+			1: milestone1,
+		}
+
+		vr := &VisualRoadmap{}
+		_ = vr.applyProjectMilestone(projectMilestones)
+	})
 }

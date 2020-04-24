@@ -119,10 +119,7 @@ func (c Content) toProjects(indentation, dateFormat, baseUrl string) []Project {
 
 		indentation, title, extra := splitLine(line, indentation)
 
-		startAt, endAt, c, urls, percent, milestone, err := parseExtra(extra, dateFormat, baseUrl)
-		if err != nil {
-			continue
-		}
+		startAt, endAt, c, urls, percent, milestone := parseExtra(extra, dateFormat, baseUrl)
 
 		if startAt != nil && endAt != nil {
 			dates = &Dates{StartAt: *startAt, EndAt: *endAt}
@@ -276,11 +273,7 @@ func (c Content) toMilestones(dateFormat, baseUrl string) []Milestone {
 
 		_, title, extra := splitLine(line, "")
 
-		deadlineAt, endAt, c, urls, _, _, err := parseExtra(extra, dateFormat, baseUrl)
-		if err != nil {
-			continue
-		}
-
+		deadlineAt, endAt, c, urls, _, _ := parseExtra(extra, dateFormat, baseUrl)
 		if endAt != nil {
 			continue
 		}
@@ -301,9 +294,7 @@ func (c Content) toMilestones(dateFormat, baseUrl string) []Milestone {
 
 // splitLine splits a Content line into a title and extra information, plus returns the indentation level found
 func splitLine(line, indentation string) (uint8, string, string) {
-	var (
-		n uint8
-	)
+	var n uint8
 
 	for indentation != "" {
 		if len(line) < len(indentation) {
@@ -367,7 +358,7 @@ func isLineMilestone(line string) bool {
 }
 
 // parseExtra returns data found in extra parts of lines representing projects and milestones
-func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, *color.RGBA, []string, uint8, uint8, error) {
+func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, *color.RGBA, []string, uint8, uint8) {
 	parts := strings.Split(extra, ", ")
 
 	var (
@@ -386,7 +377,7 @@ func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, *col
 		startAt, endAt, urls, c, percent, milestone = parseExtraPart(parts[i], startAt, endAt, urls, c, percent, milestone, dateFormat, baseUrl)
 	}
 
-	return startAt, endAt, c, urls, percent, milestone, nil
+	return startAt, endAt, c, urls, percent, milestone
 }
 
 // parseExtraPart returns data found in one piece of extra information

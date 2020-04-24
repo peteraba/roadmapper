@@ -37,8 +37,6 @@ And probably so many others that came before them.
 
 ### Current TODO
 
-- [ ] Enable e2e
-- [ ] Backend validation
 - [ ] Fix displaying multiline project titles
 - [ ] Improve code coverage
 - [ ] Out of the box alerting

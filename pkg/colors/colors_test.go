@@ -298,7 +298,7 @@ func TestToHexa(t *testing.T) {
 		})
 	}
 
-	t.Run("panic on nil", func(t *testing.T) {
+	t.Run("empty on nil", func(t *testing.T) {
 		got := ToHexa(nil)
 		assert.Equal(t, "", got)
 	})

@@ -5,8 +5,6 @@ package roadmap
 import (
 	"bytes"
 	"fmt"
-	"image/gif"
-	"image/jpeg"
 	"net/http"
 	"strconv"
 	"time"
@@ -246,25 +244,14 @@ type FileFormat string
 const (
 	SvgFormat FileFormat = "svg"
 	PngFormat FileFormat = "png"
-	PdfFormat FileFormat = "pdf"
-	JpgFormat FileFormat = "jpg"
-	GifFormat FileFormat = "gif"
 )
 
 func NewFormatType(t string) (FileFormat, error) {
 	switch t {
 	case "svg":
 		return SvgFormat, nil
-	case "pdf":
-		return PdfFormat, nil
 	case "png":
 		return PngFormat, nil
-	case "jpg":
-		return JpgFormat, nil
-	case "jpeg":
-		return JpgFormat, nil
-	case "gif":
-		return GifFormat, nil
 	}
 
 	return "", fmt.Errorf("unsupported image format: %s", t)
@@ -274,14 +261,8 @@ func setHeaderContentType(header http.Header, fileFormat FileFormat) {
 	switch fileFormat {
 	case SvgFormat:
 		header.Set(echo.HeaderContentType, "image/svg+xml")
-	case PdfFormat:
-		header.Set(echo.HeaderContentType, "application/pdf")
 	case PngFormat:
 		header.Set(echo.HeaderContentType, "image/png")
-	case GifFormat:
-		header.Set(echo.HeaderContentType, "image/gif")
-	case JpgFormat:
-		header.Set(echo.HeaderContentType, "image/jpeg")
 	}
 }
 
@@ -295,34 +276,8 @@ func RenderImg(cvs *canvas.Canvas, fileFormat FileFormat) []byte {
 		cvs.Render(img)
 
 		img.Close()
-	case PdfFormat:
-		img := canvas.NewPDF(&buf, cvs.W, cvs.H)
-
-		cvs.Render(img)
-
-		img.Close()
 	case PngFormat:
 		w := rasterizer.PNGWriter(3.2)
-
-		err := w(&buf, cvs)
-		if err != nil {
-			return nil
-		}
-	case GifFormat:
-		options := &gif.Options{
-			NumColors: 256,
-		}
-		w := rasterizer.GIFWriter(3.2, options)
-
-		err := w(&buf, cvs)
-		if err != nil {
-			return nil
-		}
-	case JpgFormat:
-		options := &jpeg.Options{
-			Quality: 90,
-		}
-		w := rasterizer.JPGWriter(3.2, options)
 
 		err := w(&buf, cvs)
 		if err != nil {

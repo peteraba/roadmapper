@@ -70,7 +70,7 @@ func main() {
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "input", Usage: "input file", Aliases: []string{"i"}},
 					&cli.StringFlag{Name: "output", Usage: "output file", Aliases: []string{"o"}},
-					&cli.StringFlag{Name: "formatFile", Usage: "image format to be used (supported: svg, png, pdf", Aliases: []string{"f"}, Value: "svg", EnvVars: []string{"IMAGE_FORMAT"}},
+					&cli.StringFlag{Name: "formatFile", Usage: "image format to be used (supported: svg, png)", Aliases: []string{"f"}, Value: "svg", EnvVars: []string{"IMAGE_FORMAT"}},
 					&cli.Uint64Flag{Name: "width", Usage: "width of output file", Aliases: []string{"w"}},
 					&cli.Uint64Flag{Name: "lineHeight", Usage: "width of output file", Aliases: []string{"lh"}},
 					&cli.StringFlag{Name: "dateFormat", Usage: "date format to use", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
