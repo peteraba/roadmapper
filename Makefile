@@ -1,14 +1,11 @@
 VERSION			:= snapshot
 NAME			:= roadmapper
 
-GIT_REV			:= $(shell git rev-parse HEAD | cut -c1-8)
-#GIT_TAG			:= $(shell git describe --exact-match --tags $(git log -n1 --pretty='%h'))
 PACKAGES		:= $(shell find -name "*.go" 2>&1 | grep -v "Permission denied" | grep -v -e bindata | xargs -n1 dirname | sort -u)
 MAIN_DIR		:= ./cmd/$(NAME)
 BUILD_OUTPUT	:= ./build/$(NAME)
 DOCKER_OUTPUT	:= ./docker/$(NAME)
 DOCKER_DIR		:= ./docker
-LINK_FLAGS		:= -X main.AppVersion=$(GIT_REV) -X main.GitTag=$(GIT_TAG)
 DOCKER_IMAGE	:= peteraba/$(NAME)
 
 default: build
@@ -47,8 +44,10 @@ update:
 	go get -u ./...
 
 release: e2e
-	go build -o ./build/roadmapper -ldflags="$(LINK_FLAGS)" $(MAIN_DIR)
-	GOOS=linux GOARCH=386 CGO_ENABLED=0 go build -o $(DOCKER_IMAGE) -ldflags="$(LINK_FLAGS)" $(MAIN_DIR)
+	$(eval GIT_REV=$(shell git rev-parse HEAD | cut -c1-8))
+	$(eval GIT_TAG=$(shell git describe --exact-match --tags $(git log -n1 --pretty='%h')))
+	go build -o ./build/roadmapper -ldflags="-X main.AppVersion=${GIT_REV} -X main.GitTag=${GIT_TAG}" $(MAIN_DIR)
+	GOOS=linux GOARCH=386 CGO_ENABLED=0 go build -o $(DOCKER_OUTPUT) -ldflags="-X main.AppVersion=${GIT_REV} -X main.GitTag=${GIT_TAG}" $(MAIN_DIR)
 	docker build -t "${DOCKER_IMAGE}:latest" -t "${DOCKER_IMAGE}:${GIT_TAG}" $(DOCKER_DIR)
 	docker push "${DOCKER_IMAGE}:latest"
 	docker push "${DOCKER_IMAGE}:${GIT_TAG}"
