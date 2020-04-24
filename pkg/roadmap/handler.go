@@ -8,7 +8,6 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -52,7 +51,11 @@ func (h *Handler) GetRoadmapHTML(ctx echo.Context) error {
 		return h.displayHTML(ctx, r, err)
 	}
 
-	return h.displayHTML(ctx, r, nil)
+	err = h.displayHTML(ctx, r, nil)
+
+	_ = h.Logger.Sync()
+
+	return err
 }
 
 func (h *Handler) displayHTML(ctx echo.Context, r *Roadmap, origErr error) error {
@@ -71,14 +74,14 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 	if err != nil {
 		h.Logger.Info("failed to parse the identifier parameter", zap.Error(err))
 
-		return ctx.Redirect(http.StatusSeeOther, "/?error="+url.QueryEscape(err.Error()))
+		return h.displayHTML(ctx, nil, err)
 	}
 
 	err = h.isValidRoadmapRequest(ctx)
 	if err != nil {
 		h.Logger.Info("not a valid roadmap request", zap.Error(err))
 
-		return ctx.Redirect(http.StatusSeeOther, "/?error="+url.QueryEscape(err.Error()))
+		return h.displayHTML(ctx, nil, err)
 	}
 
 	title := ctx.FormValue("title")
@@ -89,23 +92,34 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 
 	roadmap := Content(content).ToRoadmap(code.NewCode64().ID(), prevID, title, dateFormat, baseURL, now)
 
+	err = h.isValidRoadmap(roadmap, dateFormat)
+	if err != nil {
+		h.Logger.Info("not a valid roadmap", zap.Error(err))
+
+		return h.displayHTML(ctx, nil, err)
+	}
+
 	err = h.rw.Write(roadmap)
 	if err != nil {
 		h.Logger.Info("failed to write the new roadmap", zap.Error(err))
 
-		return ctx.HTML(http.StatusMethodNotAllowed, err.Error())
+		return h.displayHTML(ctx, &roadmap, err)
 	}
 
 	c, err := h.cb.NewFromID(roadmap.ID)
 	if err != nil {
 		h.Logger.Info("failed to generate the new  url", zap.Error(err))
 
-		return ctx.HTML(http.StatusInternalServerError, err.Error())
+		return h.displayHTML(ctx, &roadmap, err)
 	}
 
 	newURL := fmt.Sprintf("/%s", c.String())
 
-	return ctx.Redirect(http.StatusSeeOther, newURL)
+	err = ctx.Redirect(http.StatusSeeOther, newURL)
+
+	_ = h.Logger.Sync()
+
+	return err
 }
 
 func (h *Handler) getPrevID(identifier string) (*uint64, error) {
@@ -150,6 +164,20 @@ func (h *Handler) isValidRoadmapRequest(ctx echo.Context) error {
 	return nil
 }
 
+func (h *Handler) isValidRoadmap(r Roadmap, dateFormat string) error {
+	for _, r := range r.Projects {
+		if r.Dates != nil && r.Dates.EndAt.Before(r.Dates.StartAt) {
+			return fmt.Errorf(
+				"end at before start at. start at: %s, end at: %s",
+				r.Dates.StartAt.Format(dateFormat),
+				r.Dates.EndAt.Format(dateFormat),
+			)
+		}
+	}
+
+	return nil
+}
+
 func (h *Handler) GetRoadmapImage(ctx echo.Context) error {
 	format, err := NewFormatType(ctx.Param("format"))
 	if err != nil {
@@ -183,7 +211,11 @@ func (h *Handler) GetRoadmapImage(ctx echo.Context) error {
 
 	setHeaderContentType(ctx.Response().Header(), format)
 
-	return ctx.String(http.StatusOK, string(img))
+	err = ctx.String(http.StatusOK, string(img))
+
+	_ = h.Logger.Sync()
+
+	return err
 }
 
 func load(rw DbReadWriter, b code.Builder, identifier string) (*Roadmap, error) {

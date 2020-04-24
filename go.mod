@@ -19,6 +19,7 @@ require (
 	github.com/jung-kurt/gofpdf v1.16.2 // indirect
 	github.com/kevinburke/go-bindata v3.19.0+incompatible // indirect
 	github.com/labstack/echo v3.3.10+incompatible
+	github.com/labstack/echo/v4 v4.1.16
 	github.com/labstack/gommon v0.3.0
 	github.com/lib/pq v1.3.0
 	github.com/mattn/go-colorable v0.1.6 // indirect
@@ -33,7 +34,7 @@ require (
 	github.com/tdewolff/canvas v0.0.0-20200405143149-4ba3ed64cbd5
 	github.com/tdewolff/minify/v2 v2.7.3 // indirect
 	github.com/urfave/cli/v2 v2.2.0
-	github.com/valyala/fasttemplate v1.1.0 // indirect
+	github.com/valyala/fasttemplate v1.1.0
 	go.uber.org/zap v1.14.1
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	golang.org/x/image v0.0.0-20200119044424-58c23975cae1 // indirect

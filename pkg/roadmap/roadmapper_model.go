@@ -124,7 +124,7 @@ func (c Content) toProjects(indentation, dateFormat, baseUrl string) []Project {
 			continue
 		}
 
-		if startAt != nil && endAt != nil && startAt.Before(*endAt) {
+		if startAt != nil && endAt != nil {
 			dates = &Dates{StartAt: *startAt, EndAt: *endAt}
 		}
 

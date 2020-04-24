@@ -8,18 +8,22 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+	"github.com/peteraba/roadmapper/pkg/middleware"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"go.uber.org/zap"
 )
 
 // Serve sets up a Roadmapper HTTP service using echo
-func Serve(quit chan os.Signal, port uint, certFile, keyFile string, h *roadmap.Handler) {
+func Serve(quit chan os.Signal, port uint, certFile, keyFile, assetsDir string, h *roadmap.Handler) {
 	// Setup
 	e := echo.New()
 
-	e.File("/favicon.ico", "static/favicon.ico")
-	e.Static("/static", "static")
-	e.Static("/static", "static")
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Logger: h.Logger,
+	}))
+
+	e.File("/favicon.ico", fmt.Sprintf("%s/static/favicon.ico", assetsDir))
+	e.Static("/static", fmt.Sprintf("%s/static", assetsDir))
 
 	e.GET("/", h.GetRoadmapHTML)
 	e.POST("/", h.CreateRoadmapHTML)

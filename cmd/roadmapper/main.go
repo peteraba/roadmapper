@@ -42,6 +42,7 @@ func main() {
 					&cli.StringFlag{Name: "dbUser", Usage: "database user", Value: "rdmp", EnvVars: []string{"DB_USER"}},
 					&cli.StringFlag{Name: "dbPass", Usage: "database password", Value: "", EnvVars: []string{"DB_PASS"}},
 					&cli.StringFlag{Name: "matomoDomain", Usage: "matomo domain", EnvVars: []string{"MATOMO_DOMAIN"}},
+					&cli.StringFlag{Name: "assetsDir", Usage: "asserts directory", EnvVars: []string{"ASSETS_DIR"}},
 					&cli.StringFlag{Name: "docBaseUrl", Usage: "documentation base URL", EnvVars: []string{"DOC_BASE_URL"}, Value: "https://docs.rdmp.app"},
 					&cli.BoolFlag{Name: "selfHosted", Usage: "self hosted", EnvVars: []string{"SELF_HOSTED"}, Value: false},
 					&cli.BoolFlag{Name: "logDbQueries", Usage: "log DB queries", EnvVars: []string{"LOG_DB_QUERIES"}, Value: false},
@@ -57,7 +58,7 @@ func main() {
 						c.Bool("logDbQueries"),
 					)
 					h := roadmap.NewHandler(logger, rw, b, AppVersion, c.String("matomoDomain"), c.String("docBaseUrl"), c.Bool("selfHosted"))
-					Serve(quit, c.Uint("port"), c.String("cert"), c.String("key"), h)
+					Serve(quit, c.Uint("port"), c.String("cert"), c.String("key"), c.String("assetsDir"), h)
 
 					return nil
 				},

@@ -3,12 +3,19 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/chromedp/chromedp"
+	"github.com/ory/dockertest"
+	"github.com/peteraba/roadmapper/pkg/code"
 
 	_ "github.com/lib/pq"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
@@ -18,16 +25,16 @@ import (
 )
 
 const (
-	// e2eAppPort      uint = 9876
-	// e2eDbHost            = "localhost"
-	// e2eDbName            = "rdmp"
-	// e2eDbUser            = "rdmp"
-	// e2eDbPass            = "secret"
-	// e2eBaseUrl           = "http://localhost:9876/"
-	// e2eMatomoDomain      = "https://example.com/matomo"
-	// e2eDocBaseURL        = "https://docs.rdmp.app/"
-	// e2eTitle             = "Example Roadmap"
-	e2eTxt = `Monocle ipsum dolor sit amet
+	e2eAppPort      uint = 9876
+	e2eDbHost            = "localhost"
+	e2eDbName            = "rdmp"
+	e2eDbUser            = "rdmp"
+	e2eDbPass            = "secret"
+	e2eBaseUrl           = "http://localhost:9876/"
+	e2eMatomoDomain      = "https://example.com/matomo"
+	e2eDocBaseURL        = "https://docs.rdmp.app/"
+	e2eTitle             = "Example Roadmap"
+	e2eTxt               = `Monocle ipsum dolor sit amet
 Ettinger punctual izakaya concierge [2020-02-02, 2020-02-20, 60%]
 	Zürich Baggu bureaux [/issues/1]
 		Toto Comme des Garçons liveable [2020-02-04, 2020-02-25, 100%, /issues/2]
@@ -61,66 +68,67 @@ Muji enim
 	e2eBaseURL = "https://example.com/foo"
 )
 
-// func setupDb(t *testing.T) (*dockertest.Pool, *dockertest.Resource) {
-// 	var db *sql.DB
-// 	var err error
-//
-// 	dbPool, err := dockertest.NewPool("")
-// 	if err != nil {
-// 		t.Fatalf("Could not connect to docker: %s", err)
-// 	}
-//
-// 	dbResource, err := dbPool.Run("postgres", "alpine", []string{"POSTGRES_USER=" + e2eDbUser, "POSTGRES_PASSWORD=" + e2eDbPass, "POSTGRES_DB=" + e2eDbName})
-// 	if err != nil {
-// 		t.Fatalf("Could not start resource: %s", err)
-// 	}
-//
-// 	if err = dbPool.Retry(func() error {
-// 		var err error
-// 		db, err = sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@localhost:%s/%s?sslmode=disable", e2eDbUser, e2eDbPass, dbResource.GetPort("5432/tcp"), e2eDbName))
-// 		if err != nil {
-// 			return err
-// 		}
-//
-// 		return db.Ping()
-// 	}); err != nil {
-// 		t.Fatalf("Could not connect to docker: %s", err)
-// 	}
-//
-// 	return dbPool, dbResource
-// }
+func setupDb(t *testing.T) (*dockertest.Pool, *dockertest.Resource) {
+	var db *sql.DB
+	var err error
 
-// func teardownDb(t *testing.T, dbPool *dockertest.Pool, dbResource *dockertest.Resource) {
-// 	if err := dbPool.Purge(dbResource); err != nil {
-// 		t.Fatalf("Could not tear down the database: %s", err)
-// 	}
-// }
-//
-// func teardownApp(t *testing.T, quit chan os.Signal) {
-// 	quit <- os.Interrupt
-// }
-//
-// func setupApp(t *testing.T, dbResource *dockertest.Resource) chan os.Signal {
-// 	dbPort := dbResource.GetPort("5432/tcp")
-//
-// 	quit := make(chan os.Signal, 1)
-//
-// 	logger := zap.NewNop()
-// 	cb := code.Builder{}
-// 	rw := roadmap.NewRepository(AppName, e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass, true)
-//
-// 	h := roadmap.NewHandler(logger, rw, cb, AppVersion, e2eMatomoDomain, e2eDocBaseURL, false)
-//
-// 	go Serve(quit, e2eAppPort, "", "", h)
-//
-// 	migrations := newMigrations(e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass)
-// 	_, err := migrations.Up(0)
-// 	if err != nil {
-// 		t.Fatalf("failed to run migrations: %v", err)
-// 	}
-//
-// 	return quit
-// }
+	dbPool, err := dockertest.NewPool("")
+	if err != nil {
+		t.Fatalf("Could not connect to docker: %s", err)
+	}
+
+	dbResource, err := dbPool.Run("postgres", "alpine", []string{"POSTGRES_USER=" + e2eDbUser, "POSTGRES_PASSWORD=" + e2eDbPass, "POSTGRES_DB=" + e2eDbName})
+	if err != nil {
+		t.Fatalf("Could not start resource: %s", err)
+	}
+
+	if err = dbPool.Retry(func() error {
+		var err error
+		db, err = sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@localhost:%s/%s?sslmode=disable", e2eDbUser, e2eDbPass, dbResource.GetPort("5432/tcp"), e2eDbName))
+		if err != nil {
+			return err
+		}
+
+		return db.Ping()
+	}); err != nil {
+		t.Fatalf("Could not connect to docker: %s", err)
+	}
+
+	return dbPool, dbResource
+}
+
+func teardownDb(t *testing.T, dbPool *dockertest.Pool, dbResource *dockertest.Resource) {
+	if err := dbPool.Purge(dbResource); err != nil {
+		t.Fatalf("Could not tear down the database: %s", err)
+	}
+}
+
+func teardownApp(t *testing.T, quit chan os.Signal) {
+	quit <- os.Interrupt
+}
+
+func setupApp(t *testing.T, dbResource *dockertest.Resource) chan os.Signal {
+	dbPort := dbResource.GetPort("5432/tcp")
+
+	quit := make(chan os.Signal, 1)
+
+	logger, _ := zap.NewProduction()
+	defer logger.Sync() // flushes buffer, if any
+	cb := code.Builder{}
+	rw := roadmap.NewRepository(AppName, e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass, true)
+
+	h := roadmap.NewHandler(logger, rw, cb, AppVersion, e2eMatomoDomain, e2eDocBaseURL, false)
+
+	go Serve(quit, e2eAppPort, "", "", "../../", h)
+
+	migrations := newMigrations(e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass)
+	_, err := migrations.Up(0)
+	if err != nil {
+		t.Fatalf("failed to run migrations: %v", err)
+	}
+
+	return quit
+}
 
 func TestApp_Commandline(t *testing.T) {
 	var (
@@ -227,81 +235,81 @@ func getTimeout(t *testing.T) time.Duration {
 	return timeout
 }
 
-// func TestE2E_Server(t *testing.T) {
-// 	// create chrome instance
-// 	ctx, cancel := chromedp.NewContext(
-// 		context.Background(),
-// 		chromedp.WithLogf(log.Printf),
-// 	)
-// 	defer cancel()
-//
-// 	// create a timeout
-// 	ctx, cancel = context.WithTimeout(ctx, getTimeout(t))
-// 	defer cancel()
-//
-// 	// create a new database
-// 	dbPool, dbResource := setupDb(t)
-// 	defer teardownDb(t, dbPool, dbResource)
-//
-// 	// start up a new app
-// 	quit := setupApp(t, dbResource)
-// 	defer teardownApp(t, quit)
-//
-// 	tests := []struct {
-// 		name     string
-// 		txt      string
-// 		title    string
-// 		baseURL  string
-// 		svgMatch string
-// 		want     string
-// 	}{
-// 		{
-// 			name:     "all filled",
-// 			txt:      e2eTxt,
-// 			title:    e2eTitle,
-// 			baseURL:  e2eBaseURL,
-// 			svgMatch: "Monocle ipsum dolor sit",
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			var txtFound, baseUrlFound, titleFound, svgFound string
-// 			_, _, _ = txtFound, baseUrlFound, svgFound
-//
-// 			err := chromedp.Run(ctx,
-// 				chromedp.Navigate(e2eBaseUrl),
-// 				// wait for form element to become visible (ie, page is loaded)
-// 				chromedp.WaitVisible(`#roadmap-form`),
-// 				// set the value of the textarea
-// 				chromedp.SetValue(`#txt`, tt.txt),
-// 				// set the value of the base url
-// 				chromedp.SetValue(`#base-url`, tt.baseURL),
-// 				// set the value of the title
-// 				chromedp.SetValue(`#title`, tt.title),
-// 				// set the value of the time spent hidden field
-// 				chromedp.SetValue(`#ts`, "10"),
-// 				// submit the form
-// 				chromedp.Submit(`#form-submit`),
-// 				// wait for redirect
-// 				chromedp.WaitVisible(`#roadmap-svg`),
-// 				// retrieve relevant values
-// 				chromedp.Value(`#txt`, &txtFound),
-// 				chromedp.Value(`#base-url`, &baseUrlFound),
-// 				chromedp.Value(`#title`, &titleFound),
-// 				chromedp.WaitVisible(`#roadmap-svg svg`),
-// 				chromedp.OuterHTML(`#roadmap-svg svg`, &svgFound),
-// 			)
-//
-// 			if err != nil {
-// 				t.Fatalf("chromedp run: error = %v", err)
-// 			}
-//
-// 			assert.Equal(t, tt.txt, txtFound)
-// 			assert.Equal(t, tt.baseURL, baseUrlFound)
-// 			assert.Equal(t, tt.title, titleFound)
-// 			if tt.svgMatch != "" {
-// 				assert.Contains(t, svgFound, tt.svgMatch)
-// 			}
-// 		})
-// 	}
-// }
+func TestE2E_Server(t *testing.T) {
+	// create chrome instance
+	ctx, cancel := chromedp.NewContext(
+		context.Background(),
+		chromedp.WithLogf(log.Printf),
+	)
+	defer cancel()
+
+	// create a timeout
+	ctx, cancel = context.WithTimeout(ctx, getTimeout(t))
+	defer cancel()
+
+	// create a new database
+	dbPool, dbResource := setupDb(t)
+	defer teardownDb(t, dbPool, dbResource)
+
+	// start up a new app
+	quit := setupApp(t, dbResource)
+	defer teardownApp(t, quit)
+
+	tests := []struct {
+		name     string
+		txt      string
+		title    string
+		baseURL  string
+		svgMatch string
+		want     string
+	}{
+		{
+			name:     "all filled",
+			txt:      e2eTxt,
+			title:    e2eTitle,
+			baseURL:  e2eBaseURL,
+			svgMatch: "Monocle ipsum dolor sit",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var txtFound, baseUrlFound, titleFound, svgFound string
+			_, _, _ = txtFound, baseUrlFound, svgFound
+
+			err := chromedp.Run(ctx,
+				chromedp.Navigate(e2eBaseUrl),
+				// wait for form element to become visible (ie, page is loaded)
+				chromedp.WaitVisible(`#roadmap-form`),
+				// set the value of the title
+				chromedp.SetValue(`#title`, tt.title),
+				// set the value of the textarea
+				chromedp.SetValue(`#txt`, tt.txt),
+				// set the value of the base url
+				chromedp.SetValue(`#base-url`, tt.baseURL),
+				// set the value of the time spent hidden field
+				chromedp.SetValue(`#ts`, "10"),
+				// submit the form
+				chromedp.Submit(`#form-submit`),
+				// wait for redirect
+				chromedp.WaitVisible(`#roadmap-svg`),
+				// retrieve relevant values
+				chromedp.Value(`#txt`, &txtFound),
+				chromedp.Value(`#base-url`, &baseUrlFound),
+				chromedp.Value(`#title`, &titleFound),
+				chromedp.WaitVisible(`#roadmap-svg svg`),
+				chromedp.OuterHTML(`#roadmap-svg svg`, &svgFound),
+			)
+
+			if err != nil {
+				t.Fatalf("chromedp run: error = %v", err)
+			}
+
+			assert.Equal(t, tt.txt, txtFound)
+			assert.Equal(t, tt.baseURL, baseUrlFound)
+			assert.Equal(t, tt.title, titleFound)
+			if tt.svgMatch != "" {
+				assert.Contains(t, svgFound, tt.svgMatch)
+			}
+		})
+	}
+}
