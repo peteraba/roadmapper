@@ -11,7 +11,7 @@
 
 Roadmapper is a CLI tool and webservice designed to help maintaining and tracking roadmaps. Learn more in the [official documentation](https://docs.rdmp.app/).
 
-### Thanks to
+### Roadmapper uses the following technologies
 
 - [Bootstrap](https://getbootstrap.com/) - The world’s most popular front-end component library
 - [cli](https://github.com/urfave/cli) - A simple, fast, and fun package for building command line apps in Go
@@ -19,20 +19,34 @@ Roadmapper is a CLI tool and webservice designed to help maintaining and trackin
 - [Canvas](https://github.com/tdewolff/canvas) - Cairo in Go: vector to SVG, PDF, EPS, raster, HTML Canvas, etc.
 - [pq](https://github.com/lib/pq) - A pure Go postgres driver for Go's database/sql package
 - [pg](https://github.com/go-pg/pg) - Golang ORM with focus on PostgreSQL features and performance
+- [zap](https://github.com/uber-go/zap) - Blazing fast, structured, leveled logging in Go
 - [uitable](https://github.com/gosuri/uitable) - A go library for representing data as tables for terminal applications.
 - [Testify](https://github.com/stretchr/testify) - A set of packages that provide many tools for testifying that your code will behave as you intend
-- [dockertest](https://github.com/ory/dockertest) - Integration tests against third party services
+- [Dockertest](https://github.com/ory/dockertest) - Integration tests against third party services
 - [chromedp](https://github.com/chromedp/chromedp) - A faster, simpler way to drive browsers supporting the Chrome DevTools Protocol
 - [bindata](https://github.com/kevinburke/go-bindata) - A small utility for embedding binary data in a Go program
 
-### Current TODO:
+#### Furthermore, Roadmapper would not exist as it is without the following giants
 
-- [ ] backend validation + errors displayed in frontend
-- [ ] fix displaying multiline project titles
-- [ ] improve code coverage
+- [go](https://github.com/golang/go) - The Go programming language
+- [docker](https://www.docker.com/) - Docker provides a simple and powerful developer experience, workflows and collaboration for creating applications.
+- [JavaScript](https://en.wikipedia.org/wiki/JavaScript) - a programming language that conforms to the ECMAScript specification
+- [linux](https://en.wikipedia.org/wiki/Linux) - a family of open source Unix-like operating systems based on the Linux kernel.
 
-### Long term plans
+And probably so many others that came before them.
 
+### Current TODO
+
+- [ ] Enable e2e
+- [ ] Backend validation
+- [ ] Fix displaying multiline project titles
+- [ ] Improve code coverage
+- [ ] Out of the box alerting
+- [ ] Rest API
+
+### Long term ideas
+
+- gRPC API
 - Visual roadmap designer
 - Some level of JIRA integration
 - Some level of Trello integration
