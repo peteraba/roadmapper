@@ -13,17 +13,36 @@ default: build
 debug:
 	echo $(PACKAGES)
 
+generate:
+	go generate $(PACKAGES)
+	find pkg -name "mocks" -type d -exec rm -rf {} +
+
+goldenfiles:
+	go test -mod=readonly ./pkg/roadmap -update
+
 test:
 	golangci-lint --version
 	golangci-lint run $(PACKAGES)
 	go test -race -bench=. $(PACKAGES)
 
-generate:
-	go generate $(PACKAGES)
-	find pkg -name "mocks" -type d -exec rm -rf {} +
-
 e2e:
 	go test -race -tags=e2e $(PACKAGES)
+
+codecov:
+	# Check if CODECOV_TOKEN is set
+ifndef CODECOV_TOKEN
+	$(error CODECOV_TOKEN is not set)
+endif
+	# Download codecov
+	curl -o b.sh https://codecov.io/bash
+	chmod +x b.sh
+	# Code coverage for Go unit tests
+	go test -race -coverprofile=coverage.txt -covermode=atomic $(PACKAGES)
+	./b.sh -c -F go_unittests
+	# Code coverage for All tests
+	go test -race -coverprofile=coverage.txt -covermode=atomic -tags=e2e $(PACKAGES)
+	./b.sh -c -F alltests
+	rm -f b.sh
 
 build: test
 	mkdir -p ./airtmp
@@ -60,4 +79,4 @@ deploy:
 	docker-compose up -d $(NAME)
 	docker-compose exec $(NAME) "/${NAME}" mu
 
-.PHONY: default debug test generate e2e build docker install update release deploy
+.PHONY: default debug generate goldenfiles test e2e codecov build docker install update release deploy
