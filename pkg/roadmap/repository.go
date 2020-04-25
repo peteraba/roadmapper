@@ -84,16 +84,16 @@ func (drw Repository) Get(code code.Code) (*Roadmap, error) {
 	err := db.Select(roadmap)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, herr.NewHttpError(err, http.StatusNotFound)
+			return nil, herr.NewFromError(err, http.StatusNotFound)
 		}
 
-		return nil, herr.NewHttpError(err, http.StatusInternalServerError)
+		return nil, herr.NewFromError(err, http.StatusInternalServerError)
 	}
 
 	roadmap.UpdatedAt = time.Now()
 	_, err = db.Exec("UPDATE roadmaps SET accessed_at = NOW() WHERE id = ?", roadmap.ID)
 	if err != nil {
-		return nil, herr.NewHttpError(err, http.StatusInternalServerError)
+		return nil, herr.NewFromError(err, http.StatusInternalServerError)
 	}
 
 	return roadmap, nil
@@ -106,7 +106,7 @@ func (drw Repository) Write(roadmap Roadmap) error {
 
 	_, err := db.Model(&roadmap).Insert()
 	if err != nil {
-		return herr.NewHttpError(err, http.StatusInternalServerError)
+		return herr.NewFromError(err, http.StatusInternalServerError)
 	}
 
 	return err

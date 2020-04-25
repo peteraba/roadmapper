@@ -3,19 +3,18 @@ package roadmap
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/peteraba/roadmapper/pkg/testutils"
-
-	"github.com/peteraba/roadmapper/pkg/herr"
-
-	"github.com/stretchr/testify/mock"
-
 	"github.com/labstack/echo"
 	"github.com/peteraba/roadmapper/pkg/code"
+	"github.com/peteraba/roadmapper/pkg/herr"
+	"github.com/peteraba/roadmapper/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -35,7 +34,7 @@ func Test_handler_getRoadmapHTML(t *testing.T) {
 		h, drwMock := setupHandler()
 		drwMock.
 			On("Get", mock.AnythingOfType("code.Code64")).
-			Return(nil, herr.NewHttpError(assert.AnError, http.StatusNotFound))
+			Return(nil, herr.NewFromError(assert.AnError, http.StatusNotFound))
 
 		// Run
 		err := h.GetRoadmapHTML(ctx)
@@ -117,23 +116,97 @@ func Test_handler_getRoadmapHTML(t *testing.T) {
 	})
 }
 
-// func Test_handler_createRoadmapHTML(t *testing.T) {
-// 	logger := zap.NewNop()
-//
-// 	// Setup
-// 	e := echo.New()
-// 	req := httptest.NewRequest(http.MethodPost, "/", nil)
-// 	req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
-// 	rec := httptest.NewRecorder()
-// 	c := e.NewContext(req, rec)
-// 	h := &Handler{Logger: logger}
-//
-// 	// Assertions
-// 	require.NoError(t, h.CreateRoadmapHTML(c))
-//
-// 	assert.Equal(t, http.StatusCreated, rec.Code)
-// 	assert.Equal(t, userJSON, rec.Body.String())
-// }
+func Test_handler_createRoadmapHTML(t *testing.T) {
+	t.Run("error - only humans are allowed", func(t *testing.T) {
+		// Setup
+		rdmp := createStubRoadmap()
+
+		f := make(url.Values)
+		f.Set("title", rdmp.Title)
+		f.Set("txt", rdmp.String())
+		f.Set("dateFormat", rdmp.DateFormat)
+		f.Set("baseUrl", rdmp.BaseURL)
+
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(f.Encode()))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/")
+
+		h, _ := setupHandler()
+
+		// Run
+		err := h.CreateRoadmapHTML(ctx)
+		require.NoError(t, err)
+
+		// Assertions
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.NotEmpty(t, rec.Body.String())
+	})
+
+	t.Run("error - missing title", func(t *testing.T) {
+		// Setup
+		rdmp := createStubRoadmap()
+
+		f := make(url.Values)
+		f.Set("title", "")
+		f.Set("txt", rdmp.String())
+		f.Set("dateFormat", rdmp.DateFormat)
+		f.Set("baseUrl", rdmp.BaseURL)
+		f.Set("ts", "20")
+
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(f.Encode()))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/")
+
+		h, _ := setupHandler()
+
+		// Run
+		err := h.CreateRoadmapHTML(ctx)
+		require.NoError(t, err)
+
+		// Assertions
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.NotEmpty(t, rec.Body.String())
+	})
+
+	t.Run("success - create from scratch", func(t *testing.T) {
+		// Setup
+		rdmp := createStubRoadmap()
+
+		f := make(url.Values)
+		f.Set("title", rdmp.Title)
+		f.Set("txt", rdmp.String())
+		f.Set("dateFormat", rdmp.DateFormat)
+		f.Set("baseUrl", rdmp.BaseURL)
+		f.Set("ts", "20")
+
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(f.Encode()))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/")
+
+		h, drwMock := setupHandler()
+		drwMock.
+			On("Write", mock.AnythingOfType("Roadmap")).
+			Return(nil)
+
+		// Run
+		err := h.CreateRoadmapHTML(ctx)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusSeeOther, rec.Code)
+		assert.Empty(t, rec.Body.String())
+		drwMock.AssertExpectations(t)
+	})
+}
 
 func Test_handler_getPrevID(t *testing.T) {
 	var ui64 uint64 = 63*64*64 + 63*64 + 36
@@ -288,7 +361,7 @@ func Test_handler_getRoadmapImage(t *testing.T) {
 		h, drwMock := setupHandler()
 		drwMock.
 			On("Get", mock.AnythingOfType("code.Code64")).
-			Return(nil, herr.NewHttpError(assert.AnError, http.StatusNotFound))
+			Return(nil, herr.NewFromError(assert.AnError, http.StatusNotFound))
 
 		// Run
 		err := h.GetRoadmapImage(ctx)

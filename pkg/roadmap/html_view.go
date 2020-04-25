@@ -107,7 +107,7 @@ func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL stri
 
 	err = t.Execute(writer, data)
 	if err != nil {
-		return "", herr.NewHttpError(err, http.StatusInternalServerError)
+		return "", herr.NewFromError(err, http.StatusInternalServerError)
 	}
 
 	return writer.String(), nil

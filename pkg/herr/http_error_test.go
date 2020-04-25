@@ -1,6 +1,7 @@
 package herr
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
@@ -31,8 +32,8 @@ func TestNewHttpError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewHttpError(tt.args.err, tt.args.status); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewHttpError() = %v, want %v", got, tt.want)
+			if got := NewFromError(tt.args.err, tt.args.status); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewFromError() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -45,7 +46,7 @@ func TestNewHttpError(t *testing.T) {
 		}()
 
 		var err error
-		_ = NewHttpError(err, 302)
+		_ = NewFromError(err, 302)
 	})
 }
 
@@ -79,6 +80,31 @@ func TestToHttpCode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ToHttpCode(tt.args.err, tt.args.defaultStatus); got != tt.want {
 				t.Errorf("ToHttpCode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewFromString(t *testing.T) {
+	type args struct {
+		msg    string
+		status int
+	}
+	tests := []struct {
+		name string
+		args args
+		want HttpError
+	}{
+		{
+			"default",
+			args{"foo", 322},
+			HttpError{fmt.Errorf("foo"), 322},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewFromString(tt.args.msg, tt.args.status); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewFromString() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -8,7 +8,7 @@ type HttpError struct {
 	status int
 }
 
-func NewHttpError(err error, status int) HttpError {
+func NewFromError(err error, status int) HttpError {
 	switch e := err.(type) {
 	case nil:
 		panic(fmt.Errorf("new HTTP error from nil"))
@@ -19,6 +19,13 @@ func NewHttpError(err error, status int) HttpError {
 			error:  err,
 			status: status,
 		}
+	}
+}
+
+func NewFromString(msg string, status int) HttpError {
+	return HttpError{
+		error:  fmt.Errorf(msg),
+		status: status,
 	}
 }
 

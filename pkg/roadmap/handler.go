@@ -79,7 +79,7 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 	if err != nil {
 		h.Logger.Info("not a valid roadmap request", zap.Error(err))
 
-		return h.displayHTML(ctx, nil, err)
+		return h.displayHTML(ctx, nil, herr.NewFromError(err, http.StatusBadRequest))
 	}
 
 	title := ctx.FormValue("title")
@@ -94,7 +94,7 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 	if err != nil {
 		h.Logger.Info("not a valid roadmap", zap.Error(err))
 
-		return h.displayHTML(ctx, nil, err)
+		return h.displayHTML(ctx, nil, herr.NewFromError(err, http.StatusBadRequest))
 	}
 
 	err = h.rw.Write(roadmap)
@@ -123,7 +123,7 @@ func (h *Handler) getPrevID(identifier string) (*uint64, error) {
 
 	c, err := h.cb.NewFromString(identifier)
 	if err != nil {
-		return nil, herr.NewHttpError(err, http.StatusNotFound)
+		return nil, herr.NewFromError(err, http.StatusNotFound)
 	}
 
 	n := c.ID()
@@ -159,6 +159,10 @@ func (h *Handler) isValidRoadmapRequest(ctx echo.Context) error {
 }
 
 func (h *Handler) isValidRoadmap(r Roadmap, dateFormat string) error {
+	if len(r.Title) == 0 || len(r.DateFormat) == 0 || len(r.Projects) == 0 {
+		return fmt.Errorf("title, baseUrl and txt are mandatory fields")
+	}
+
 	for _, r := range r.Projects {
 		if r.Dates != nil && r.Dates.EndAt.Before(r.Dates.StartAt) {
 			return fmt.Errorf(
@@ -211,12 +215,12 @@ func load(rw DbReadWriter, b code.Builder, identifier string) (*Roadmap, error) 
 
 	c, err := b.NewFromString(identifier)
 	if err != nil {
-		return nil, herr.NewHttpError(err, http.StatusBadRequest)
+		return nil, herr.NewFromError(err, http.StatusBadRequest)
 	}
 
 	roadmap, err := rw.Get(c)
 	if err != nil {
-		return nil, herr.NewHttpError(err, http.StatusInternalServerError)
+		return nil, herr.NewFromError(err, http.StatusInternalServerError)
 	}
 
 	return roadmap, nil
