@@ -41,6 +41,7 @@ And probably so many others that came before them.
 - [ ] Improve code coverage
 - [ ] Out of the box alerting
 - [ ] Rest API
+- [ ] JS Unit tests
 
 ### Long term ideas
 
@@ -48,3 +49,4 @@ And probably so many others that came before them.
 - Visual roadmap designer
 - Some level of JIRA integration
 - Some level of Trello integration
+- Serverless support

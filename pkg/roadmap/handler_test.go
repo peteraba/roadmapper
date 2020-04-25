@@ -117,6 +117,36 @@ func Test_handler_getRoadmapHTML(t *testing.T) {
 }
 
 func Test_handler_createRoadmapHTML(t *testing.T) {
+	t.Run("error - getPrevID failure", func(t *testing.T) {
+		// Setup
+		rdmp := createStubRoadmap()
+
+		f := make(url.Values)
+		f.Set("title", rdmp.Title)
+		f.Set("txt", rdmp.String())
+		f.Set("dateFormat", rdmp.DateFormat)
+		f.Set("baseUrl", rdmp.BaseURL)
+
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodPost, "/üüü", strings.NewReader(f.Encode()))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/:identifier")
+		ctx.SetParamNames("identifier")
+		ctx.SetParamValues("üüü")
+
+		h, _ := setupHandler()
+
+		// Run
+		err := h.CreateRoadmapHTML(ctx)
+		require.NoError(t, err)
+
+		// Assertions
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		assert.NotEmpty(t, rec.Body.String())
+	})
+
 	t.Run("error - only humans are allowed", func(t *testing.T) {
 		// Setup
 		rdmp := createStubRoadmap()
@@ -174,6 +204,39 @@ func Test_handler_createRoadmapHTML(t *testing.T) {
 		assert.NotEmpty(t, rec.Body.String())
 	})
 
+	t.Run("error - writing database", func(t *testing.T) {
+		// Setup
+		rdmp := createStubRoadmap()
+
+		f := make(url.Values)
+		f.Set("title", rdmp.Title)
+		f.Set("txt", rdmp.String())
+		f.Set("dateFormat", rdmp.DateFormat)
+		f.Set("baseUrl", rdmp.BaseURL)
+		f.Set("ts", "20")
+
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(f.Encode()))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/")
+
+		h, drwMock := setupHandler()
+		drwMock.
+			On("Write", mock.AnythingOfType("Roadmap")).
+			Return(assert.AnError)
+
+		// Run
+		err := h.CreateRoadmapHTML(ctx)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		assert.NotEmpty(t, rec.Body.String())
+		drwMock.AssertExpectations(t)
+	})
+
 	t.Run("success - create from scratch", func(t *testing.T) {
 		// Setup
 		rdmp := createStubRoadmap()
@@ -211,44 +274,31 @@ func Test_handler_createRoadmapHTML(t *testing.T) {
 func Test_handler_getPrevID(t *testing.T) {
 	var ui64 uint64 = 63*64*64 + 63*64 + 36
 
-	type fields struct {
-		rw           DbReadWriter
-		cb           code.Builder
-		appVersion   string
-		matomoDomain string
-		docBaseURL   string
-		selfHosted   bool
-		logger       *zap.Logger
-	}
 	type args struct {
 		identifier string
 	}
 	tests := []struct {
 		name    string
-		fields  fields
 		args    args
 		want    *uint64
 		wantErr bool
 	}{
 		{
 			"foo",
-			fields{},
 			args{"~~A"},
 			&ui64,
 			false,
 		},
+		{
+			"invalid identifier",
+			args{"ü"},
+			nil,
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewHandler(
-				tt.fields.logger,
-				tt.fields.rw,
-				tt.fields.cb,
-				tt.fields.appVersion,
-				tt.fields.matomoDomain,
-				tt.fields.docBaseURL,
-				tt.fields.selfHosted,
-			)
+			h := &Handler{}
 
 			got, err := h.getPrevID(tt.args.identifier)
 			if (err != nil) != tt.wantErr {
@@ -262,41 +312,133 @@ func Test_handler_getPrevID(t *testing.T) {
 	}
 }
 
-func Test_handler_isValidRoadmapRequest(t *testing.T) {
-	type fields struct {
-		rw           Repository
-		cb           code.Builder
-		appVersion   string
-		matomoDomain string
-		docBaseURL   string
-		selfHosted   bool
-		logger       *zap.Logger
-	}
+func TestHandler_isValidRoadmapRequest(t *testing.T) {
 	type args struct {
-		ctx echo.Context
+		areYouAHuman string
+		timeSpent    string
 	}
 	tests := []struct {
 		name    string
-		fields  fields
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			"error - no areYouAHuman, no timeSpent",
+			args{},
+			true,
+		},
+		{
+			"error - invalid areYouAHuman, no timeSpent",
+			args{"foo", ""},
+			true,
+		},
+		{
+			"success - valid areYouAHuman, no timeSpent",
+			args{iAmHuman, ""},
+			false,
+		},
+		{
+			"success - no areYouAHuman, valid timeSpent",
+			args{"", "10"},
+			false,
+		},
+		{
+			"error - invalid areYouAHuman, valid timeSpent",
+			args{"foo", "10"},
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := NewHandler(
-				tt.fields.logger,
-				tt.fields.rw,
-				tt.fields.cb,
-				tt.fields.appVersion,
-				tt.fields.matomoDomain,
-				tt.fields.docBaseURL,
-				tt.fields.selfHosted,
-			)
-
-			if err := h.isValidRoadmapRequest(tt.args.ctx); (err != nil) != tt.wantErr {
+			h := &Handler{}
+			if err := h.isValidRoadmapRequest(tt.args.areYouAHuman, tt.args.timeSpent); (err != nil) != tt.wantErr {
 				t.Errorf("isValidRoadmapRequest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestHandler_isValidRoadmap(t *testing.T) {
+	startAt0 := time.Date(2020, 1, 20, 0, 0, 0, 0, time.UTC)
+	endAt0 := time.Date(2020, 1, 30, 0, 0, 0, 0, time.UTC)
+
+	type args struct {
+		r Roadmap
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			"error - no title",
+			args{
+				r: Roadmap{
+					Title:      "",
+					DateFormat: "2006-01-02",
+					Projects: []Project{
+						{},
+					},
+				},
+			},
+			true,
+		},
+		{
+			"error - no dateFormat",
+			args{
+				r: Roadmap{
+					Title:      "foo",
+					DateFormat: "",
+					Projects: []Project{
+						{},
+					},
+				},
+			},
+			true,
+		},
+		{
+			"error - no txt",
+			args{
+				r: Roadmap{
+					Title:      "foo",
+					DateFormat: "2006-01-02",
+					Projects:   []Project{},
+				},
+			},
+			true,
+		},
+		{
+			"error - end date before start date",
+			args{
+				r: Roadmap{
+					Title:      "foo",
+					DateFormat: "2006-01-02",
+					Projects: []Project{
+						{Dates: &Dates{StartAt: endAt0, EndAt: startAt0}},
+					},
+				},
+			},
+			true,
+		},
+		{
+			"success - end date before start date",
+			args{
+				r: Roadmap{
+					Title:      "foo",
+					DateFormat: "2006-01-02",
+					Projects: []Project{
+						{Dates: &Dates{StartAt: startAt0, EndAt: endAt0}},
+					},
+				},
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := &Handler{}
+			if err := h.isValidRoadmap(tt.args.r); (err != nil) != tt.wantErr {
+				t.Errorf("isValidRoadmap() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

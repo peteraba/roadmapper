@@ -75,9 +75,11 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 		return h.displayHTML(ctx, nil, err)
 	}
 
-	err = h.isValidRoadmapRequest(ctx)
+	areYouAHuman := ctx.FormValue("areYouAHuman")
+	timeSpent := ctx.FormValue("ts")
+	err = h.isValidRoadmapRequest(areYouAHuman, timeSpent)
 	if err != nil {
-		h.Logger.Info("not a valid roadmap request", zap.Error(err))
+		h.Logger.Info("not timeSpent valid roadmap request", zap.Error(err))
 
 		return h.displayHTML(ctx, nil, herr.NewFromError(err, http.StatusBadRequest))
 	}
@@ -90,9 +92,9 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 
 	roadmap := Content(content).ToRoadmap(code.NewCode64().ID(), prevID, title, dateFormat, baseURL, now)
 
-	err = h.isValidRoadmap(roadmap, dateFormat)
+	err = h.isValidRoadmap(roadmap)
 	if err != nil {
-		h.Logger.Info("not a valid roadmap", zap.Error(err))
+		h.Logger.Info("not timeSpent valid roadmap", zap.Error(err))
 
 		return h.displayHTML(ctx, nil, herr.NewFromError(err, http.StatusBadRequest))
 	}
@@ -104,12 +106,7 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 		return h.displayHTML(ctx, &roadmap, err)
 	}
 
-	c, err := h.cb.NewFromID(roadmap.ID)
-	if err != nil {
-		h.Logger.Info("failed to generate the new  url", zap.Error(err))
-
-		return h.displayHTML(ctx, &roadmap, err)
-	}
+	c, _ := h.cb.NewFromID(roadmap.ID)
 
 	newURL := fmt.Sprintf("/%s", c.String())
 
@@ -134,41 +131,31 @@ func (h *Handler) getPrevID(identifier string) (*uint64, error) {
 const iAmHuman = "Yes, I am indeed."
 const onlyHumansAreAllowed = "only humans are allowed"
 
-func (h *Handler) isValidRoadmapRequest(ctx echo.Context) error {
-	areYouAHuman := ctx.FormValue("areYouAHuman")
+func (h *Handler) isValidRoadmapRequest(areYouAHuman, timeSpent string) error {
+	ts, _ := strconv.ParseUint(timeSpent, 10, 64)
 
-	if areYouAHuman == iAmHuman {
+	if areYouAHuman == iAmHuman && ts == 0 {
 		return nil
 	}
 
-	if areYouAHuman != "" {
-		return fmt.Errorf(onlyHumansAreAllowed)
+	if areYouAHuman == "" && ts > 0 {
+		return nil
 	}
 
-	timeSpent := ctx.FormValue("ts")
-	ts, err := strconv.ParseUint(timeSpent, 10, 64)
-	if err != nil {
-		return fmt.Errorf(onlyHumansAreAllowed)
-	}
-
-	if ts < 5 {
-		return fmt.Errorf(onlyHumansAreAllowed)
-	}
-
-	return nil
+	return fmt.Errorf(onlyHumansAreAllowed)
 }
 
-func (h *Handler) isValidRoadmap(r Roadmap, dateFormat string) error {
+func (h *Handler) isValidRoadmap(r Roadmap) error {
 	if len(r.Title) == 0 || len(r.DateFormat) == 0 || len(r.Projects) == 0 {
-		return fmt.Errorf("title, baseUrl and txt are mandatory fields")
+		return fmt.Errorf("title, dateFormat and txt are mandatory fields")
 	}
 
-	for _, r := range r.Projects {
-		if r.Dates != nil && r.Dates.EndAt.Before(r.Dates.StartAt) {
+	for _, p := range r.Projects {
+		if p.Dates != nil && p.Dates.EndAt.Before(p.Dates.StartAt) {
 			return fmt.Errorf(
 				"end at before start at. start at: %s, end at: %s",
-				r.Dates.StartAt.Format(dateFormat),
-				r.Dates.EndAt.Format(dateFormat),
+				p.Dates.StartAt.Format(r.DateFormat),
+				p.Dates.EndAt.Format(r.DateFormat),
 			)
 		}
 	}
