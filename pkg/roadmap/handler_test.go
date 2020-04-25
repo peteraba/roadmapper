@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/peteraba/roadmapper/pkg/testutils"
+
 	"github.com/peteraba/roadmapper/pkg/herr"
 
 	"github.com/stretchr/testify/mock"
@@ -228,6 +230,75 @@ func Test_handler_isValidRoadmapRequest(t *testing.T) {
 }
 
 func Test_handler_getRoadmapImage(t *testing.T) {
+	t.Run("error - format not supported", func(t *testing.T) {
+		// Setup
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/abc/ico", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/:identifier/:format")
+		ctx.SetParamNames("identifier", "format")
+		ctx.SetParamValues("abc", "ico")
+
+		h, _ := setupHandler()
+
+		// Run
+		err := h.GetRoadmapImage(ctx)
+		require.NoError(t, err)
+
+		// Assertions
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.NotEmpty(t, rec.Body.String())
+	})
+
+	t.Run("error - bad request", func(t *testing.T) {
+		// Setup
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/abc/ü", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/:identifier/:format")
+		ctx.SetParamNames("identifier", "format")
+		ctx.SetParamValues("ü", "svg")
+
+		h, _ := setupHandler()
+
+		// Run
+		err := h.GetRoadmapImage(ctx)
+		require.NoError(t, err)
+
+		// Assertions
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.NotEmpty(t, rec.Body.String())
+	})
+
+	t.Run("error - roadmap not found", func(t *testing.T) {
+		// Setup
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/abc/svg", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/:identifier/:format")
+		ctx.SetParamNames("identifier", "format")
+		ctx.SetParamValues("abc", "svg")
+
+		h, drwMock := setupHandler()
+		drwMock.
+			On("Get", mock.AnythingOfType("code.Code64")).
+			Return(nil, herr.NewHttpError(assert.AnError, http.StatusNotFound))
+
+		// Run
+		err := h.GetRoadmapImage(ctx)
+		require.NoError(t, err)
+
+		// Assertions
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		assert.NotEmpty(t, rec.Body.String())
+	})
+
 	t.Run("success - empty roadmap", func(t *testing.T) {
 		// Setup
 		rdmp := &Roadmap{}
@@ -247,15 +318,14 @@ func Test_handler_getRoadmapImage(t *testing.T) {
 
 		// Run
 		err := h.GetRoadmapImage(ctx)
-
-		// Assertions
 		require.NoError(t, err)
 
+		// Assertions
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Contains(t, rec.Body.String(), "</svg>")
 	})
 
-	t.Run("success - non-empty roadmap", func(t *testing.T) {
+	t.Run("success - non-empty roadmap SVG", func(t *testing.T) {
 		// Setup
 		rdmp := createStubRoadmap()
 		e := echo.New()
@@ -274,21 +344,57 @@ func Test_handler_getRoadmapImage(t *testing.T) {
 
 		// Run
 		err := h.GetRoadmapImage(ctx)
+		require.NoError(t, err)
+
+		// Update golden files
+		if testutils.ShouldUpdateGoldenFiles() {
+			testutils.SaveFile(t, rec.Body.Bytes(), "golden_files", "nonempty.svg")
+		}
+
+		// Assertions
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, rec.Body.Bytes(), testutils.LoadFile(t, "golden_files", "nonempty.svg"))
+	})
+
+	t.Run("success - non-empty roadmap PNG", func(t *testing.T) {
+		// Setup
+		rdmp := createStubRoadmap()
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/abc/png", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/:identifier/:format")
+		ctx.SetParamNames("identifier", "format")
+		ctx.SetParamValues("abc", "png")
+
+		h, drwMock := setupHandler()
+		drwMock.
+			On("Get", mock.AnythingOfType("code.Code64")).
+			Return(rdmp, nil)
+
+		// Run
+		err := h.GetRoadmapImage(ctx)
+
+		// Update golden files
+		if testutils.ShouldUpdateGoldenFiles() {
+			testutils.SaveFile(t, rec.Body.Bytes(), "golden_files", "nonempty.png")
+		}
 
 		// Assertions
 		require.NoError(t, err)
 
 		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Contains(t, rec.Body.String(), "</svg>")
+		assert.Equal(t, rec.Body.Bytes(), testutils.LoadFile(t, "golden_files", "nonempty.png"))
 	})
 }
 
 func createStubRoadmap() *Roadmap {
-	createdAt := time.Date(2020, 4, 19, 0, 0, 0, 0, time.UTC)
-	startAt0 := time.Date(2020, 4, 20, 0, 0, 0, 0, time.UTC)
-	startAt1 := time.Date(2020, 4, 22, 0, 0, 0, 0, time.UTC)
-	endAt0 := time.Date(2020, 4, 30, 0, 0, 0, 0, time.UTC)
-	endAt1 := time.Date(2020, 5, 5, 0, 0, 0, 0, time.UTC)
+	createdAt := time.Date(2020, 1, 19, 0, 0, 0, 0, time.UTC)
+	startAt0 := time.Date(2020, 1, 20, 0, 0, 0, 0, time.UTC)
+	startAt1 := time.Date(2020, 1, 22, 0, 0, 0, 0, time.UTC)
+	endAt0 := time.Date(2020, 1, 30, 0, 0, 0, 0, time.UTC)
+	endAt1 := time.Date(2020, 2, 5, 0, 0, 0, 0, time.UTC)
 
 	return &Roadmap{
 		ID:         123,

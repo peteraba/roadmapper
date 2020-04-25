@@ -194,7 +194,7 @@ func TestApp_Commandline(t *testing.T) {
 
 			require.NoError(t, err)
 
-			expectedData, err := ioutil.ReadFile(fmt.Sprintf("../../res/goldenfiles/%s", tt.args.output))
+			expectedData, err := ioutil.ReadFile(fmt.Sprintf("../../res/golden_files/%s", tt.args.output))
 			require.NoError(t, err)
 			actualData, err := ioutil.ReadFile(tt.args.output)
 			require.NoError(t, err)

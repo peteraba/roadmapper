@@ -20,7 +20,6 @@ func NewHttpError(err error, status int) HttpError {
 			status: status,
 		}
 	}
-
 }
 
 // ToHttpCode returns a status code indicated by an HttpError or a default status if the error is not an HttpError instance

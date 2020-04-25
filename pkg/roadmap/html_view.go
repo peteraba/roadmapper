@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"net/http"
+
+	"github.com/peteraba/roadmapper/pkg/herr"
 
 	"github.com/peteraba/roadmapper/pkg/bindata"
 )
@@ -42,10 +45,7 @@ var dateFormatMap = map[string]string{
 func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL string, selfHosted bool, origErr error) (string, error) {
 	writer := bytes.NewBufferString("")
 
-	layoutTemplate, err := bindata.Asset("../../res/templates/index.html")
-	if err != nil {
-		return "", fmt.Errorf("failed to load template: %w", err)
-	}
+	layoutTemplate := bindata.MustAsset("../../res/templates/index.html")
 
 	t, err := template.New("layout").Parse(string(layoutTemplate))
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL stri
 		baseURL      string
 		raw          string
 		hasRoadmap   bool
-		projectURLs  = map[string][]string{}
+		projectURLs  = r.getProjectURLs()
 	)
 
 	if r != nil {
@@ -69,13 +69,6 @@ func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL stri
 		hasRoadmap = true
 		pageTitle = r.Title
 		roadmapTitle = r.Title
-
-		for _, p := range r.Projects {
-			if len(p.URLs) < 1 {
-				continue
-			}
-			projectURLs[p.Title] = p.URLs
-		}
 	}
 
 	data := struct {
@@ -114,8 +107,25 @@ func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL stri
 
 	err = t.Execute(writer, data)
 	if err != nil {
-		return "", err
+		return "", herr.NewHttpError(err, http.StatusInternalServerError)
 	}
 
 	return writer.String(), nil
+}
+
+func (r *Roadmap) getProjectURLs() map[string][]string {
+	projectURLs := map[string][]string{}
+
+	if r == nil || r.Projects == nil {
+		return projectURLs
+	}
+
+	for _, p := range r.Projects {
+		if len(p.URLs) < 1 {
+			continue
+		}
+		projectURLs[p.Title] = p.URLs
+	}
+
+	return projectURLs
 }

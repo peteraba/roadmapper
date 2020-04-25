@@ -49,22 +49,22 @@ func (h *Handler) GetRoadmapHTML(ctx echo.Context) error {
 		return h.displayHTML(ctx, r, err)
 	}
 
-	err = h.displayHTML(ctx, r, nil)
-
-	_ = h.Logger.Sync()
-
-	return err
+	return h.displayHTML(ctx, r, nil)
 }
 
 func (h *Handler) displayHTML(ctx echo.Context, r *Roadmap, origErr error) error {
 	output, err := r.viewHtml(h.appVersion, h.matomoDomain, h.docBaseURL, ctx.Request().RequestURI, h.selfHosted, origErr)
+	if origErr == nil && err == nil {
+		return ctx.HTML(http.StatusOK, output)
+	}
+
 	if err != nil {
 		h.Logger.Info("failed to create HTML response", zap.Error(err))
 
-		return ctx.HTML(herr.ToHttpCode(err, http.StatusInternalServerError), err.Error())
+		return ctx.String(herr.ToHttpCode(err, http.StatusInternalServerError), err.Error())
 	}
 
-	return ctx.HTML(herr.ToHttpCode(origErr, http.StatusOK), output)
+	return ctx.HTML(herr.ToHttpCode(origErr, http.StatusInternalServerError), output)
 }
 
 func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
@@ -113,11 +113,7 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 
 	newURL := fmt.Sprintf("/%s", c.String())
 
-	err = ctx.Redirect(http.StatusSeeOther, newURL)
-
-	_ = h.Logger.Sync()
-
-	return err
+	return ctx.Redirect(http.StatusSeeOther, newURL)
 }
 
 func (h *Handler) getPrevID(identifier string) (*uint64, error) {
@@ -181,26 +177,20 @@ func (h *Handler) GetRoadmapImage(ctx echo.Context) error {
 	if err != nil {
 		h.Logger.Info("format is not supported", zap.Error(err))
 
-		return err
+		return ctx.String(herr.ToHttpCode(err, http.StatusBadRequest), "format is not supported")
 	}
 
-	fw, err := strconv.ParseUint(ctx.QueryParam("width"), 10, 64)
-	if err != nil {
-		fw = defaultSvgWidth
-	}
+	fw, _ := strconv.ParseUint(ctx.QueryParam("width"), 10, 64)
 
-	lh, err := strconv.ParseUint(ctx.QueryParam("lineHeight"), 10, 64)
-	if err != nil {
-		lh = defaultSvgLineHeight
-	}
+	lh, _ := strconv.ParseUint(ctx.QueryParam("lineHeight"), 10, 64)
 
 	fw, lh = GetCanvasSizes(fw, lh)
 
 	roadmap, err := load(h.rw, h.cb, ctx.Param("identifier"))
 	if err != nil {
-		h.Logger.Info("failed to load roadmap", zap.Error(err))
+		h.Logger.Info("roadmap not found", zap.Error(err))
 
-		return ctx.HTML(herr.ToHttpCode(err, http.StatusInternalServerError), fmt.Sprintf("%v", err))
+		return ctx.String(herr.ToHttpCode(err, http.StatusNotFound), "roadmap not found")
 	}
 
 	cvs := roadmap.ToVisual().Draw(float64(fw), float64(lh))
@@ -210,8 +200,6 @@ func (h *Handler) GetRoadmapImage(ctx echo.Context) error {
 	setHeaderContentType(ctx.Response().Header(), format)
 
 	err = ctx.String(http.StatusOK, string(img))
-
-	_ = h.Logger.Sync()
 
 	return err
 }
@@ -275,7 +263,7 @@ func RenderImg(cvs *canvas.Canvas, fileFormat FileFormat) []byte {
 
 		cvs.Render(img)
 
-		img.Close()
+		_ = img.Close()
 	case PngFormat:
 		w := rasterizer.PNGWriter(3.2)
 

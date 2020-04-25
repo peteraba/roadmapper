@@ -273,10 +273,7 @@ func (c Content) toMilestones(dateFormat, baseUrl string) []Milestone {
 
 		_, title, extra := splitLine(line, "")
 
-		deadlineAt, endAt, c, urls, _, _ := parseExtra(extra, dateFormat, baseUrl)
-		if endAt != nil {
-			continue
-		}
+		deadlineAt, _, c, urls, _, _ := parseExtra(extra, dateFormat, baseUrl)
 
 		milestones = append(
 			milestones,

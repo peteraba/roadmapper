@@ -282,19 +282,11 @@ func (vr *VisualRoadmap) collectProjectMilestones() map[int]*Milestone {
 			continue
 		}
 
-		if milestone.Color == nil && p.Color != nil {
-			milestone.Color = p.Color
-		}
-
 		if endAt == nil {
 			continue
 		}
 
-		if milestone.DeadlineAt == nil {
-			milestone.DeadlineAt = endAt
-		}
-
-		if milestone.DeadlineAt.Before(*endAt) {
+		if milestone.DeadlineAt == nil || milestone.DeadlineAt.Before(*endAt) {
 			milestone.DeadlineAt = endAt
 		}
 	}

@@ -504,6 +504,17 @@ func TestRoadmap_ToDates(t *testing.T) {
 			},
 			&dates1mix2,
 		},
+		{
+			"both start and end dates can be overwritten",
+			fields{
+				Projects: []Project{
+					{Dates: &dates3},
+					{Dates: &dates2},
+					{Dates: &dates1},
+				},
+			},
+			&dates1mix2,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

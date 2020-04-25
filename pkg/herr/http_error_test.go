@@ -23,6 +23,11 @@ func TestNewHttpError(t *testing.T) {
 			args{assert.AnError, 300},
 			HttpError{assert.AnError, 300},
 		},
+		{
+			"HttpError",
+			args{HttpError{assert.AnError, 300}, 333},
+			HttpError{assert.AnError, 300},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

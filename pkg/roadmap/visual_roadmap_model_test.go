@@ -809,7 +809,19 @@ func TestVisualRoadmap_collectProjectMilestones(t *testing.T) {
 			"project with milestones are found",
 			fields{
 				Projects: []Project{
-					{Milestone: 1},
+					{Milestone: 1, Dates: &Dates{StartAt: dates0402, EndAt: dates0418}},
+					{Milestone: 1, Dates: &Dates{StartAt: dates0402, EndAt: dates0405}},
+				},
+			},
+			map[int]*Milestone{
+				0: {DeadlineAt: &dates0418},
+			},
+		},
+		{
+			"project sets deadline of milestone if later",
+			fields{
+				Projects: []Project{
+					{Milestone: 1, Dates: &Dates{StartAt: dates0402, EndAt: dates0405}},
 					{Milestone: 1, Dates: &Dates{StartAt: dates0402, EndAt: dates0418}},
 				},
 			},
