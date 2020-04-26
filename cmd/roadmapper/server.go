@@ -23,7 +23,7 @@ func Serve(quit chan os.Signal, port uint, certFile, keyFile, assetsDir string, 
 	}))
 
 	e.File("/favicon.ico", fmt.Sprintf("%s/static/favicon.ico", assetsDir))
-	e.Static("/static", fmt.Sprintf("%s/static", assetsDir))
+	e.Static("/static", assetsDir)
 
 	e.GET("/", h.GetRoadmapHTML)
 	e.POST("/", h.CreateRoadmapHTML)

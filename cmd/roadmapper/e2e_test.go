@@ -262,7 +262,7 @@ func setupApp(t *testing.T, baseRepo repository.PgRepository) chan os.Signal {
 
 	h := roadmap.NewHandler(baseRepo.Logger, rw, cb, AppVersion, e2eMatomoDomain, e2eDocBaseURL, false)
 
-	go Serve(quit, e2eAppPort, "", "", "../../", h)
+	go Serve(quit, e2eAppPort, "", "", "../../static", h)
 
 	return quit
 }

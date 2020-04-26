@@ -42,7 +42,7 @@ endif
 	go test -race -coverprofile=coverage.txt -covermode=atomic $(PACKAGES)
 	./b.sh -c -F go_unittests
 	# Code coverage for All tests
-	go test -race -coverprofile=coverage.txt -covermode=atomic -tags=e2e $(PACKAGES)
+	go test -race -coverprofile=coverage.txt -covermode=atomic -tags=e2e,integration ./...
 	./b.sh -c -F alltests
 	rm -f b.sh
 
