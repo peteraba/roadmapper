@@ -3,8 +3,9 @@ package main
 import (
 	"time"
 
-	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"go.uber.org/zap"
+
+	"github.com/peteraba/roadmapper/pkg/roadmap"
 )
 
 // Render renders a roadmap

@@ -14,13 +14,14 @@ import (
 
 	"github.com/chromedp/chromedp"
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
+
 	"github.com/peteraba/roadmapper/pkg/code"
 	"github.com/peteraba/roadmapper/pkg/repository"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"github.com/peteraba/roadmapper/pkg/testutils"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 const (
@@ -66,7 +67,7 @@ Muji enim
 	e2eBaseURL = "https://example.com/foo"
 )
 
-func TestApp_Commandline(t *testing.T) {
+func TestE2E_Commandline(t *testing.T) {
 	var (
 		dateFormat        = "2006-01-02"
 		fw, lh     uint64 = 800, 30

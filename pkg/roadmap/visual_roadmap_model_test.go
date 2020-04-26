@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/peteraba/roadmapper/pkg/colors"
 	"github.com/tdewolff/canvas"
+
+	"github.com/peteraba/roadmapper/pkg/colors"
 )
 
 func TestRoadmap_ToVisual(t *testing.T) {

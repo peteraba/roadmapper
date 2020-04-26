@@ -1,11 +1,12 @@
 package main
 
 import (
+	"go.uber.org/zap"
+
 	"github.com/peteraba/roadmapper/pkg/code"
 	"github.com/peteraba/roadmapper/pkg/migrations"
 	"github.com/peteraba/roadmapper/pkg/repository"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
-	"go.uber.org/zap"
 )
 
 // newLogger DON'T FORGET TO CALL logger.Sync() !!!!

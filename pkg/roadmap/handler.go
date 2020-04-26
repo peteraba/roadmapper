@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
-	"github.com/peteraba/roadmapper/pkg/code"
-	"github.com/peteraba/roadmapper/pkg/herr"
 	"github.com/tdewolff/canvas"
 	"github.com/tdewolff/canvas/rasterizer"
 	"go.uber.org/zap"
+
+	"github.com/peteraba/roadmapper/pkg/code"
+	"github.com/peteraba/roadmapper/pkg/herr"
 )
 
 type (

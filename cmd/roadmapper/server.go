@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+	"go.uber.org/zap"
+
 	"github.com/peteraba/roadmapper/pkg/middleware"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
-	"go.uber.org/zap"
 )
 
 // Serve sets up a Roadmapper HTTP service using echo

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-pg/pg"
+
 	"github.com/peteraba/roadmapper/pkg/code"
 	"github.com/peteraba/roadmapper/pkg/testutils"
 )

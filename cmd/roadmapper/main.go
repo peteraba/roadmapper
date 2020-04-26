@@ -9,10 +9,11 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/peteraba/roadmapper/pkg/code"
-	"github.com/peteraba/roadmapper/pkg/roadmap"
 	cli "github.com/urfave/cli/v2"
 	"go.uber.org/zap"
+
+	"github.com/peteraba/roadmapper/pkg/code"
+	"github.com/peteraba/roadmapper/pkg/roadmap"
 )
 
 var AppName = "roadmapper"

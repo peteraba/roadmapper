@@ -5,8 +5,9 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/peteraba/roadmapper/pkg/roadmap"
 )
 
 const (

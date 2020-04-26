@@ -10,13 +10,14 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
-	"github.com/peteraba/roadmapper/pkg/code"
-	"github.com/peteraba/roadmapper/pkg/herr"
-	"github.com/peteraba/roadmapper/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+
+	"github.com/peteraba/roadmapper/pkg/code"
+	"github.com/peteraba/roadmapper/pkg/herr"
+	"github.com/peteraba/roadmapper/pkg/testutils"
 )
 
 func Test_handler_getRoadmapHTML(t *testing.T) {

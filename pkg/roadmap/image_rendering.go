@@ -5,9 +5,10 @@ import (
 	"image/color"
 	"time"
 
+	"github.com/tdewolff/canvas"
+
 	"github.com/peteraba/roadmapper/pkg/bindata"
 	"github.com/peteraba/roadmapper/pkg/colors"
-	"github.com/tdewolff/canvas"
 )
 
 var fontFamily *canvas.FontFamily

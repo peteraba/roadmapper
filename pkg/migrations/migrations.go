@@ -5,8 +5,9 @@ import (
 	"fmt"
 
 	_ "github.com/lib/pq"
-	"github.com/peteraba/roadmapper/pkg/bindata"
 	migrate "github.com/rubenv/sql-migrate"
+
+	"github.com/peteraba/roadmapper/pkg/bindata"
 )
 
 type Migrations struct {
