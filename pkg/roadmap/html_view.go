@@ -6,9 +6,8 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/peteraba/roadmapper/pkg/herr"
-
 	"github.com/peteraba/roadmapper/pkg/bindata"
+	"github.com/peteraba/roadmapper/pkg/herr"
 )
 
 var dateFormats = []string{

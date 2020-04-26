@@ -11,18 +11,15 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/peteraba/roadmapper/pkg/migrations"
-
-	"github.com/peteraba/roadmapper/pkg/repository"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/ory/dockertest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
+
+	"github.com/peteraba/roadmapper/pkg/migrations"
+	"github.com/peteraba/roadmapper/pkg/repository"
 )
 
 // if shouldUpdateGoldenFiles = true, golden files should be updated

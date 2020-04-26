@@ -12,11 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/peteraba/roadmapper/pkg/repository"
-
 	"github.com/chromedp/chromedp"
 	_ "github.com/lib/pq"
 	"github.com/peteraba/roadmapper/pkg/code"
+	"github.com/peteraba/roadmapper/pkg/repository"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"github.com/peteraba/roadmapper/pkg/testutils"
 	"github.com/stretchr/testify/assert"
