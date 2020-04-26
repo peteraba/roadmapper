@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +10,14 @@ import (
 	"path"
 	"runtime"
 	"testing"
+
+	"github.com/peteraba/roadmapper/pkg/migrations"
+
+	"github.com/peteraba/roadmapper/pkg/repository"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ory/dockertest"
 	"go.uber.org/zap"
@@ -50,7 +59,32 @@ func SaveFile(t *testing.T, content []byte, pathParts ...string) {
 	}
 }
 
-func SetupDb(t *testing.T, dbUser, dbPass, dbName string) (*dockertest.Pool, *dockertest.Resource, string) {
+func SetupRepository(t *testing.T, appName, dbUser, dbPass, dbName string, logger *zap.Logger, fixture ...interface{}) (repository.PgRepository, func()) {
+	pool, resource, port := setupDb(t, dbUser, dbPass, dbName)
+
+	repo := repository.NewPgRepository(appName, "localhost", port, dbName, dbUser, dbPass, logger)
+
+	m := migrations.New(dbUser, dbPass, "localhost", port, dbName)
+	_, err := m.Up(0)
+	if err != nil {
+		t.Fatalf("failed to run migrations: %v", err)
+	}
+
+	conn := repo.ConnectNoHook()
+	for i := range fixture {
+		res, err := conn.Model(fixture[i]).Insert()
+		require.NoError(t, err)
+		require.Equal(t, 1, res.RowsAffected())
+	}
+
+	return repo, func() {
+		if err := pool.Purge(resource); err != nil {
+			t.Fatalf("could not tear down the database: %v", err)
+		}
+	}
+}
+
+func setupDb(t *testing.T, dbUser, dbPass, dbName string) (*dockertest.Pool, *dockertest.Resource, string) {
 	var db *sql.DB
 	var err error
 
@@ -66,7 +100,8 @@ func SetupDb(t *testing.T, dbUser, dbPass, dbName string) (*dockertest.Pool, *do
 
 	if err = dbPool.Retry(func() error {
 		var err error
-		db, err = sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@localhost:%s/%s?sslmode=disable", dbUser, dbPass, dbResource.GetPort("5432/tcp"), dbName))
+		dataSource := fmt.Sprintf("postgres://%s:%s@localhost:%s/%s?sslmode=disable", dbUser, dbPass, dbResource.GetPort("5432/tcp"), dbName)
+		db, err = sql.Open("postgres", dataSource)
 		if err != nil {
 			return err
 		}
@@ -81,13 +116,7 @@ func SetupDb(t *testing.T, dbUser, dbPass, dbName string) (*dockertest.Pool, *do
 	return dbPool, dbResource, dbPort
 }
 
-func TeardownDb(t *testing.T, dbPool *dockertest.Pool, dbResource *dockertest.Resource) {
-	if err := dbPool.Purge(dbResource); err != nil {
-		t.Fatalf("Could not tear down the database: %s", err)
-	}
-}
-
-func SetupLogger(t *testing.T) (*zap.Logger, *zaptest.Buffer) {
+func SetupLogger() (*zap.Logger, *zaptest.Buffer) {
 	buf := &zaptest.Buffer{}
 	logger := zap.New(zapcore.NewCore(
 		zapcore.NewJSONEncoder(zapcore.EncoderConfig{}),
@@ -96,4 +125,29 @@ func SetupLogger(t *testing.T) (*zap.Logger, *zaptest.Buffer) {
 	))
 
 	return logger, buf
+}
+
+type queryLog struct {
+	FormattedQuery string `json:"formattedQuery"`
+}
+
+func AssertQueries(t *testing.T, buf *zaptest.Buffer, lines []string) {
+	logs := buf.Lines()
+	if assert.Equal(t, len(lines), len(logs)) {
+		for i, l := range lines {
+			exp, err := json.Marshal(queryLog{l})
+			require.NoError(t, err)
+
+			assert.Equal(t, string(exp), logs[i])
+		}
+	}
+}
+
+func AssertQueriesRegexp(t *testing.T, buf *zaptest.Buffer, lines []string) {
+	logs := buf.Lines()
+	if assert.Equal(t, len(lines), len(logs)) {
+		for i, l := range lines {
+			assert.Regexp(t, l, logs[i])
+		}
+	}
 }

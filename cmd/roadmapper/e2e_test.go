@@ -12,9 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/peteraba/roadmapper/pkg/repository"
+
 	"github.com/chromedp/chromedp"
 	_ "github.com/lib/pq"
-	"github.com/ory/dockertest"
 	"github.com/peteraba/roadmapper/pkg/code"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"github.com/peteraba/roadmapper/pkg/testutils"
@@ -25,7 +26,6 @@ import (
 
 const (
 	e2eAppPort      uint = 9876
-	e2eDbHost            = "localhost"
 	e2eDbName            = "rdmp"
 	e2eDbUser            = "rdmp"
 	e2eDbPass            = "secret"
@@ -66,31 +66,6 @@ Muji enim
 |Muji enim finest [2020-02-12, https://example.com/abc, bcdef]`
 	e2eBaseURL = "https://example.com/foo"
 )
-
-func teardownApp(t *testing.T, quit chan os.Signal) {
-	quit <- os.Interrupt
-}
-
-func setupApp(t *testing.T, dbResource *dockertest.Resource, dbPort string) chan os.Signal {
-	quit := make(chan os.Signal, 1)
-
-	logger, _ := zap.NewProduction()
-	defer logger.Sync() // flushes buffer, if any
-	cb := code.Builder{}
-	rw := roadmap.NewRepository(AppName, e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass, nil)
-
-	h := roadmap.NewHandler(logger, rw, cb, AppVersion, e2eMatomoDomain, e2eDocBaseURL, false)
-
-	go Serve(quit, e2eAppPort, "", "", "../../", h)
-
-	migrations := newMigrations(e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass)
-	_, err := migrations.Up(0)
-	if err != nil {
-		t.Fatalf("failed to run migrations: %v", err)
-	}
-
-	return quit
-}
 
 func TestApp_Commandline(t *testing.T) {
 	var (
@@ -210,12 +185,13 @@ func TestE2E_Server(t *testing.T) {
 	defer cancel()
 
 	// create a new database
-	dbPool, dbResource, dbPort := testutils.SetupDb(t, e2eDbUser, e2eDbPass, e2eDbName)
-	defer testutils.TeardownDb(t, dbPool, dbResource)
+	logger := zap.NewNop()
+	baseRepo, teardown := testutils.SetupRepository(t, "TestIntegration_Repository_Get", e2eDbUser, e2eDbPass, e2eDbName, logger)
+	defer teardown()
 
 	// start up a new app
-	quit := setupApp(t, dbResource, dbPort)
-	defer teardownApp(t, quit)
+	quit := setupApp(t, baseRepo)
+	defer teardownApp(quit)
 
 	tests := []struct {
 		name     string
@@ -274,4 +250,23 @@ func TestE2E_Server(t *testing.T) {
 			}
 		})
 	}
+}
+
+func setupApp(t *testing.T, baseRepo repository.PgRepository) chan os.Signal {
+	quit := make(chan os.Signal, 1)
+
+	_ = t
+
+	rw := roadmap.Repository{PgRepository: baseRepo}
+	cb := code.Builder{}
+
+	h := roadmap.NewHandler(baseRepo.Logger, rw, cb, AppVersion, e2eMatomoDomain, e2eDocBaseURL, false)
+
+	go Serve(quit, e2eAppPort, "", "", "../../", h)
+
+	return quit
+}
+
+func teardownApp(quit chan os.Signal) {
+	quit <- os.Interrupt
 }

@@ -29,7 +29,7 @@ integration:
 	go test -race -tags=integration $(PACKAGES)
 
 e2e:
-	go test -race -tags=e2e -tags=integration ./...
+	go test -race -tags=e2e,integration ./...
 
 codecov:
 ifndef CODECOV_TOKEN

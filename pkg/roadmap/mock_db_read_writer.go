@@ -35,8 +35,8 @@ func (_m *MockDbReadWriter) Get(c code.Code) (*Roadmap, error) {
 	return r0, r1
 }
 
-// Upsert provides a mock function with given fields: roadmap
-func (_m *MockDbReadWriter) Upsert(roadmap Roadmap) error {
+// Create provides a mock function with given fields: roadmap
+func (_m *MockDbReadWriter) Create(roadmap Roadmap) error {
 	ret := _m.Called(roadmap)
 
 	var r0 error

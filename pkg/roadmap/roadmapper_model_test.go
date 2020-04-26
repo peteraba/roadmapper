@@ -19,7 +19,7 @@ func TestContent_ToLines(t *testing.T) {
 			nil,
 		},
 		{
-			"2 lines",
+			"2 queries",
 			"one\ntwo",
 			[]string{"one", "two"},
 		},
@@ -69,7 +69,7 @@ Command line tool
 	Create documentation page
 Marketing
 	Create Facebook page
-	Upsert blog posts
+	Create blog posts
 	Share blog post on social media
 	Talk about the tool in relevant meetups
 
@@ -99,7 +99,7 @@ Marketing
 					{Title: "Create documentation page", Percentage: 0, Indentation: 1},
 					{Title: "Marketing", Percentage: 0},
 					{Title: "Create Facebook page", Percentage: 0, Indentation: 1},
-					{Title: "Upsert blog posts", Percentage: 0, Indentation: 1},
+					{Title: "Create blog posts", Percentage: 0, Indentation: 1},
 					{Title: "Share blog post on social media", Percentage: 0, Indentation: 1},
 					{Title: "Talk about the tool in relevant meetups", Percentage: 0, Indentation: 1},
 				},

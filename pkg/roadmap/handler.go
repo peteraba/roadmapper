@@ -99,7 +99,7 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 		return h.displayHTML(ctx, nil, herr.NewFromError(err, http.StatusBadRequest))
 	}
 
-	err = h.rw.Upsert(roadmap)
+	err = h.rw.Create(roadmap)
 	if err != nil {
 		h.Logger.Info("failed to write the new roadmap", zap.Error(err))
 

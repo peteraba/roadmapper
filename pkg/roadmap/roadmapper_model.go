@@ -54,7 +54,7 @@ type Milestone struct {
 // Content represents a raw string version of a roadmap
 type Content string
 
-// ToLines splits a Content into lines, a slice of strings
+// ToLines splits a Content into queries, a slice of strings
 func (c Content) ToLines() []string {
 	if len(c) == 0 {
 		return nil
@@ -85,7 +85,7 @@ func (c Content) ToRoadmap(id uint64, prevID *uint64, title, dateFormat, baseUrl
 	return r
 }
 
-// findIndentation looks at the beginning of the lines of Content and return the first string of spaces and tabs found
+// findIndentation looks at the beginning of the queries of Content and return the first string of spaces and tabs found
 func (c Content) findIndentation() string {
 	lines := c.ToLines()
 
@@ -354,7 +354,7 @@ func isLineMilestone(line string) bool {
 	return true
 }
 
-// parseExtra returns data found in extra parts of lines representing projects and milestones
+// parseExtra returns data found in extra parts of queries representing projects and milestones
 func parseExtra(extra, dateFormat, baseUrl string) (*time.Time, *time.Time, *color.RGBA, []string, uint8, uint8) {
 	parts := strings.Split(extra, ", ")
 

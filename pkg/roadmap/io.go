@@ -43,7 +43,7 @@ func (frw IO) Read(input string) ([]string, error) {
 	return lines, nil
 }
 
-// Upsert writes a roadmap to the file system (or standard i/o)
+// Create writes a roadmap to the file system (or standard i/o)
 func (frw IO) Write(output string, content string) error {
 	if output == "" {
 		_, err := fmt.Print(content)
