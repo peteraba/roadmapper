@@ -11,7 +11,6 @@ import (
 	"github.com/peteraba/roadmapper/pkg/code"
 	"github.com/peteraba/roadmapper/pkg/herr"
 	"github.com/peteraba/roadmapper/pkg/repository"
-	"go.uber.org/zap"
 )
 
 type DbReadWriter interface {
@@ -22,13 +21,6 @@ type DbReadWriter interface {
 // Repository represents a persistence layer using a database (Postgres)
 type Repository struct {
 	repository.PgRepository
-}
-
-// NewPgRepository creates a Repository instance
-func NewRepository(applicationName, dbHost, dbPort, dbName, dbUser, dbPass string, logger *zap.Logger) Repository {
-	return Repository{
-		PgRepository: repository.NewPgRepository(applicationName, dbHost, dbPort, dbName, dbUser, dbPass, logger),
-	}
 }
 
 // Get retrieves a Roadmap from the database

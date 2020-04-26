@@ -59,6 +59,7 @@ func SaveFile(t *testing.T, content []byte, pathParts ...string) {
 	}
 }
 
+// SetupRepository returns a new repository and a tear down function
 func SetupRepository(t *testing.T, appName, dbUser, dbPass, dbName string, logger *zap.Logger, fixture ...interface{}) (repository.PgRepository, func()) {
 	pool, resource, port := setupDb(t, dbUser, dbPass, dbName)
 

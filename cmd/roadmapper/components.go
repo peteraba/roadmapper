@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/peteraba/roadmapper/pkg/code"
 	"github.com/peteraba/roadmapper/pkg/migrations"
+	"github.com/peteraba/roadmapper/pkg/repository"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"go.uber.org/zap"
 )
@@ -18,7 +19,8 @@ func newLogger() *zap.Logger {
 }
 
 func newRoadmapRepo(dbHost, dbPort, dbName, dbUser, dbPass string, logger *zap.Logger) roadmap.Repository {
-	return roadmap.NewRepository(AppName, dbHost, dbPort, dbName, dbUser, dbPass, logger)
+	baseRepo := repository.NewPgRepository(AppName, dbHost, dbPort, dbName, dbUser, dbPass, logger)
+	return roadmap.Repository{PgRepository: baseRepo}
 }
 
 func newCodeBuilder() code.Builder {
