@@ -25,11 +25,13 @@ test:
 	golangci-lint run $(PACKAGES)
 	go test -race -bench=. $(PACKAGES)
 
+integration:
+	go test -race -tags=integration $(PACKAGES)
+
 e2e:
-	go test -race -tags=e2e $(PACKAGES)
+	go test -race -tags=e2e -tags=integration ./...
 
 codecov:
-	# Check if CODECOV_TOKEN is set
 ifndef CODECOV_TOKEN
 	$(error CODECOV_TOKEN is not set)
 endif

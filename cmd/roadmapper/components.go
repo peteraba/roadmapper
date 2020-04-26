@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// newLogger DON"T FORGET TO CALL logger.Sync() !!!!
+// newLogger DON'T FORGET TO CALL logger.Sync() !!!!
 func newLogger() *zap.Logger {
 	logger, err := zap.NewProduction()
 	if err != nil {
@@ -17,8 +17,8 @@ func newLogger() *zap.Logger {
 	return logger
 }
 
-func newRoadmapRepo(dbHost, dbPort, dbName, dbUser, dbPass string, logDbQueries bool) roadmap.Repository {
-	return roadmap.NewRepository(AppName, dbHost, dbPort, dbName, dbUser, dbPass, logDbQueries)
+func newRoadmapRepo(dbHost, dbPort, dbName, dbUser, dbPass string, logger *zap.Logger) roadmap.Repository {
+	return roadmap.NewRepository(AppName, dbHost, dbPort, dbName, dbUser, dbPass, logger)
 }
 
 func newCodeBuilder() code.Builder {

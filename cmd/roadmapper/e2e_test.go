@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,11 +13,11 @@ import (
 	"time"
 
 	"github.com/chromedp/chromedp"
+	_ "github.com/lib/pq"
 	"github.com/ory/dockertest"
 	"github.com/peteraba/roadmapper/pkg/code"
-
-	_ "github.com/lib/pq"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
+	"github.com/peteraba/roadmapper/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -68,54 +67,17 @@ Muji enim
 	e2eBaseURL = "https://example.com/foo"
 )
 
-func setupDb(t *testing.T) (*dockertest.Pool, *dockertest.Resource) {
-	var db *sql.DB
-	var err error
-
-	dbPool, err := dockertest.NewPool("")
-	if err != nil {
-		t.Fatalf("Could not connect to docker: %s", err)
-	}
-
-	dbResource, err := dbPool.Run("postgres", "alpine", []string{"POSTGRES_USER=" + e2eDbUser, "POSTGRES_PASSWORD=" + e2eDbPass, "POSTGRES_DB=" + e2eDbName})
-	if err != nil {
-		t.Fatalf("Could not start resource: %s", err)
-	}
-
-	if err = dbPool.Retry(func() error {
-		var err error
-		db, err = sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@localhost:%s/%s?sslmode=disable", e2eDbUser, e2eDbPass, dbResource.GetPort("5432/tcp"), e2eDbName))
-		if err != nil {
-			return err
-		}
-
-		return db.Ping()
-	}); err != nil {
-		t.Fatalf("Could not connect to docker: %s", err)
-	}
-
-	return dbPool, dbResource
-}
-
-func teardownDb(t *testing.T, dbPool *dockertest.Pool, dbResource *dockertest.Resource) {
-	if err := dbPool.Purge(dbResource); err != nil {
-		t.Fatalf("Could not tear down the database: %s", err)
-	}
-}
-
 func teardownApp(t *testing.T, quit chan os.Signal) {
 	quit <- os.Interrupt
 }
 
-func setupApp(t *testing.T, dbResource *dockertest.Resource) chan os.Signal {
-	dbPort := dbResource.GetPort("5432/tcp")
-
+func setupApp(t *testing.T, dbResource *dockertest.Resource, dbPort string) chan os.Signal {
 	quit := make(chan os.Signal, 1)
 
 	logger, _ := zap.NewProduction()
 	defer logger.Sync() // flushes buffer, if any
 	cb := code.Builder{}
-	rw := roadmap.NewRepository(AppName, e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass, true)
+	rw := roadmap.NewRepository(AppName, e2eDbHost, dbPort, e2eDbName, e2eDbUser, e2eDbPass, nil)
 
 	h := roadmap.NewHandler(logger, rw, cb, AppVersion, e2eMatomoDomain, e2eDocBaseURL, false)
 
@@ -248,11 +210,11 @@ func TestE2E_Server(t *testing.T) {
 	defer cancel()
 
 	// create a new database
-	dbPool, dbResource := setupDb(t)
-	defer teardownDb(t, dbPool, dbResource)
+	dbPool, dbResource, dbPort := testutils.SetupDb(t, e2eDbUser, e2eDbPass, e2eDbName)
+	defer testutils.TeardownDb(t, dbPool, dbResource)
 
 	// start up a new app
-	quit := setupApp(t, dbResource)
+	quit := setupApp(t, dbResource, dbPort)
 	defer teardownApp(t, quit)
 
 	tests := []struct {

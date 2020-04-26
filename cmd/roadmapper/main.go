@@ -48,6 +48,11 @@ func main() {
 					&cli.BoolFlag{Name: "logDbQueries", Usage: "log DB queries", EnvVars: []string{"LOG_DB_QUERIES"}, Value: false},
 				},
 				Action: func(c *cli.Context) error {
+					repoLogger := logger
+					if !c.Bool("logDbQueries") {
+						repoLogger = nil
+					}
+
 					quit := make(chan os.Signal, 1)
 					rw := newRoadmapRepo(
 						c.String("dbHost"),
@@ -55,7 +60,7 @@ func main() {
 						c.String("dbName"),
 						c.String("dbUser"),
 						c.String("dbPass"),
-						c.Bool("logDbQueries"),
+						repoLogger,
 					)
 					h := roadmap.NewHandler(logger, rw, b, AppVersion, c.String("matomoDomain"), c.String("docBaseUrl"), c.Bool("selfHosted"))
 					Serve(quit, c.Uint("port"), c.String("cert"), c.String("key"), c.String("assetsDir"), h)

@@ -224,7 +224,7 @@ func Test_handler_createRoadmapHTML(t *testing.T) {
 
 		h, drwMock := setupHandler()
 		drwMock.
-			On("Write", mock.AnythingOfType("Roadmap")).
+			On("Upsert", mock.AnythingOfType("Roadmap")).
 			Return(assert.AnError)
 
 		// Run
@@ -257,7 +257,7 @@ func Test_handler_createRoadmapHTML(t *testing.T) {
 
 		h, drwMock := setupHandler()
 		drwMock.
-			On("Write", mock.AnythingOfType("Roadmap")).
+			On("Upsert", mock.AnythingOfType("Roadmap")).
 			Return(nil)
 
 		// Run
