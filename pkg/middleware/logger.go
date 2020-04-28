@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"strconv"
 	"time"
 
@@ -32,18 +33,20 @@ func Logger() echo.MiddlewareFunc {
 
 // LoggerWithConfig returns a Logger middleware with config.
 // See: `Logger()`.
-func LoggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
+func LoggerWithConfig(lc LoggerConfig) echo.MiddlewareFunc {
 	// Defaults
-	if config.Skipper == nil {
-		config.Skipper = DefaultLoggerConfig.Skipper
+	if lc.Skipper == nil {
+		lc.Skipper = DefaultLoggerConfig.Skipper
 	}
-	if config.Logger == nil {
-		config.Logger, _ = zap.NewProduction()
+	if lc.Logger == nil {
+		lc.Logger, _ = zap.NewProduction()
 	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) (err error) {
-			if config.Skipper(c) {
+		return func(c echo.Context) error {
+			var err error
+
+			if lc.Skipper(c) {
 				return next(c)
 			}
 
@@ -54,40 +57,67 @@ func LoggerWithConfig(config LoggerConfig) echo.MiddlewareFunc {
 				c.Error(err)
 			}
 			stop := time.Now()
+			ip := c.RealIP()
 
-			id := req.Header.Get(echo.HeaderXRequestID)
-			if id == "" {
-				id = res.Header().Get(echo.HeaderXRequestID)
-			}
+			err = lc.log(req, res, start, stop, ip)
 
-			l := stop.Sub(start)
-			latency := strconv.FormatInt(int64(l), 10)
-
-			requestSize := req.Header.Get(echo.HeaderContentLength)
-			if requestSize == "" {
-				requestSize = "0"
-			}
-
-			responseSize := strconv.FormatInt(res.Size, 10)
-
-			config.Logger.Info("echo request",
-				zap.String("time", time.Now().Format(time.RFC3339Nano)),
-				zap.String("id", id),
-				zap.String("remote_ip", c.RealIP()),
-				zap.String("host", req.Host),
-				zap.String("method", req.Method),
-				zap.String("uri", req.RequestURI),
-				zap.String("user_agent", req.UserAgent()),
-				zap.Int("status", res.Status),
-				zap.String("latency", latency),
-				zap.String("latency_human", stop.Sub(start).String()),
-				zap.String("bytes_in", requestSize),
-				zap.String("bytes_out", responseSize),
-			)
-
-			err = config.Logger.Sync()
-
-			return
+			return err
 		}
 	}
+}
+
+func (lc LoggerConfig) log(req *http.Request, res *echo.Response, start, stop time.Time, ip string) error {
+	lc.Logger.Info("echo request",
+		zap.String("time", getTime(stop)),
+		zap.String("id", getID(req, res)),
+		zap.String("remote_ip", ip),
+		zap.String("host", req.Host),
+		zap.String("method", req.Method),
+		zap.String("uri", req.RequestURI),
+		zap.String("user_agent", req.UserAgent()),
+		zap.Int("status", res.Status),
+		zap.String("latency", getLatency(start, stop)),
+		zap.String("latency_human", getLatencyHuman(start, stop)),
+		zap.String("bytes_in", getRequestSize(req)),
+		zap.String("bytes_out", getResponseSize(res)),
+	)
+
+	err := lc.Logger.Sync()
+
+	return err
+}
+
+func getTime(stop time.Time) string {
+	return stop.Format(time.RFC3339Nano)
+}
+
+func getID(req *http.Request, res *echo.Response) string {
+	id := req.Header.Get(echo.HeaderXRequestID)
+	if id == "" {
+		id = res.Header().Get(echo.HeaderXRequestID)
+	}
+
+	return id
+}
+
+func getLatency(start, stop time.Time) string {
+	l := stop.Sub(start)
+	return strconv.FormatInt(int64(l), 10)
+}
+
+func getLatencyHuman(start, stop time.Time) string {
+	return stop.Sub(start).String()
+}
+
+func getRequestSize(req *http.Request) string {
+	requestSize := req.Header.Get(echo.HeaderContentLength)
+	if requestSize == "" {
+		requestSize = "0"
+	}
+
+	return requestSize
+}
+
+func getResponseSize(res *echo.Response) string {
+	return strconv.FormatInt(res.Size, 10)
 }

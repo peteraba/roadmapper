@@ -28,7 +28,16 @@ func main() {
 
 	b := newCodeBuilder()
 
-	app := &cli.App{
+	app := createApp(logger, b)
+
+	err := app.Run(os.Args)
+	if err != nil {
+		logger.Fatal("app run error", zap.Error(err))
+	}
+}
+
+func createApp(logger *zap.Logger, b code.Builder) *cli.App {
+	return &cli.App{
 		Commands: []*cli.Command{
 			createServerCommand(logger, b),
 			createCLICommand(logger),
@@ -36,11 +45,6 @@ func main() {
 			createMigrateDownCommand(logger),
 			createMigrateUpCommand(logger),
 		},
-	}
-
-	err := app.Run(os.Args)
-	if err != nil {
-		logger.Fatal("app run error", zap.Error(err))
 	}
 }
 
