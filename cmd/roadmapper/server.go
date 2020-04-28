@@ -32,6 +32,10 @@ func Serve(quit chan os.Signal, port uint, certFile, keyFile, assetsDir string, 
 	e.GET("/:identifier", h.GetRoadmapHTML)
 	e.POST("/:identifier", h.CreateRoadmapHTML)
 
+	apiGroup := e.Group("/api")
+	apiGroup.GET("/:identifier", h.GetRoadmapJSON)
+	apiGroup.POST("/", h.CreateRoadmapJSON)
+
 	// Start server
 	go func() {
 		if err := startServer(e, h.Logger, port, certFile, keyFile); err != nil {

@@ -20,16 +20,16 @@ type Dates struct {
 
 // Roadmap represents a roadmap, the main entity of Roadmapper
 type Roadmap struct {
-	ID         uint64
-	PrevID     *uint64
-	Title      string
-	DateFormat string
-	BaseURL    string
-	Projects   []Project
-	Milestones []Milestone
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-	AccessedAt time.Time
+	ID         uint64      `json:"-"`
+	PrevID     *uint64     `json:",omitempty"`
+	Title      string      `json:"title"`
+	DateFormat string      `json:"date_format"`
+	BaseURL    string      `json:"base_url"`
+	Projects   []Project   `json:"projects"`
+	Milestones []Milestone `json:"milestones"`
+	CreatedAt  time.Time   `json:"-"`
+	UpdatedAt  time.Time   `json:"-"`
+	AccessedAt time.Time   `json:"-"`
 }
 
 // Project represents a project that belongs to a Roadmap
