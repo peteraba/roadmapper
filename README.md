@@ -5,8 +5,6 @@
 [![codecov](https://codecov.io/gh/peteraba/roadmapper/branch/master/graph/badge.svg)](https://codecov.io/gh/peteraba/roadmapper)
 [![Go Report Card](https://goreportcard.com/badge/github.com/peteraba/roadmapper)](https://goreportcard.com/report/github.com/peteraba/roadmapper)
 [![GitHub release](https://img.shields.io/github/tag/peteraba/roadmapper.svg?label=release)](https://github.com/peteraba/roadmapper/releases)
-[![](https://images.microbadger.com/badges/version/peteraba/roadmapper.svg)](https://microbadger.com/images/peteraba/roadmapper)
-[![](https://images.microbadger.com/badges/image/peteraba/roadmapper.svg)](https://microbadger.com/images/peteraba/roadmapper)
 [![License](https://img.shields.io/badge/license-ISC-blue.svg)](https://github.com/peteraba/roadmapper/blob/master/LICENSE)
 
 Roadmapper is a CLI tool and webservice designed to help maintaining and tracking roadmaps. Learn more in the [official documentation](https://docs.rdmp.app/).
@@ -38,7 +36,6 @@ And probably so many others that came before them.
 ### Current TODO
 
 - [ ] Fix displaying multiline project titles
-- [ ] Improve code coverage
 - [ ] Out of the box alerting
 - [ ] Rest API
 - [ ] JS Unit tests
