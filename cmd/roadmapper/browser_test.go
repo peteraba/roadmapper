@@ -1,4 +1,4 @@
-// +build browser
+// +build e2e
 
 package main
 

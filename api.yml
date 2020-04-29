@@ -15,7 +15,7 @@ info:
 
 servers:
   - url: https://rdmp.app/api
-  - url: http://localhost:1323/api
+  - url: http://localhost:9876/api
 
 paths:
   /:

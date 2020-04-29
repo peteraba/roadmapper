@@ -1,4 +1,4 @@
-// +build api
+// +build e2e
 
 package main
 
@@ -18,12 +18,13 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"github.com/peteraba/roadmapper/pkg/roadmap"
+	"github.com/peteraba/roadmapper/pkg/testutils"
 )
 
 const (
-	baseUrl      = "http://localhost:1323/api"
 	yamlFilePath = "../../api.yml"
 	jsonFilePath = "../../api.json"
 )
@@ -218,7 +219,7 @@ func newCreateRoadmapRequest(t *testing.T, re roadmap.RoadmapExchange) *http.Req
 	marshaled, err := json.Marshal(re)
 	require.NoError(t, err)
 
-	url := fmt.Sprintf("%s/", baseUrl)
+	url := fmt.Sprintf("%s/api/", strings.TrimRight(e2eBaseUrl, "/"))
 	req, err := http.NewRequest("POST", url, bytes.NewReader(marshaled))
 	require.NoError(t, err)
 
@@ -228,6 +229,15 @@ func newCreateRoadmapRequest(t *testing.T, re roadmap.RoadmapExchange) *http.Req
 }
 
 func TestApi_CreateRoadmap(t *testing.T) {
+	// create a new database
+	logger := zap.NewNop()
+	baseRepo, teardown := testutils.SetupRepository(t, "TestIntegration_Repository_Get", e2eDbUser, e2eDbPass, e2eDbName, logger)
+	defer teardown()
+
+	// start up a new app
+	quit := setupApp(t, baseRepo)
+	defer teardownApp(quit)
+
 	t.Run("success", func(t *testing.T) {
 		// Create request
 		roadmapRequestData := newRoadmapPayload()
