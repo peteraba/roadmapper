@@ -15,9 +15,10 @@ info:
 
 servers:
   - url: https://rdmp.app/api
+  - url: http://localhost:1323/api
 
 paths:
-  /roadmaps:
+  /:
     post:
       description: Creates a new roadmap
       operationId: createRoadmap
@@ -29,7 +30,7 @@ paths:
             schema:
               $ref: '#/components/schemas/RoadmapRequest'
       responses:
-        '204':
+        '201':
           description: Roadmap create success response
           content:
             application/json:
@@ -42,7 +43,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
 
-  /roadmaps/{roadmap_id}:
+  /{roadmap_id}:
     get:
       description: Retrieves a roadmap
       operationId: getRoadmap
@@ -86,9 +87,6 @@ components:
       required:
         - title
         - date_format
-        - base_url
-        - projects
-        - milestones
       properties:
         prev_id:
           type: string

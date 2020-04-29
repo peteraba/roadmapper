@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/ajstarks/svgo v0.0.0-20200320125537-f189e35d30ca // indirect
+	github.com/brianvoe/gofakeit/v5 v5.4.3
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/chromedp/chromedp v0.5.3
 	github.com/containerd/continuity v0.0.0-20200228182428-0f16d7a0959c // indirect
@@ -13,6 +14,8 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fatih/color v1.9.0 // indirect
+	github.com/getkin/kin-openapi v0.8.0
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-pg/pg v8.0.6+incompatible
 	github.com/go-pg/pg/v9 v9.1.3 // indirect
 	github.com/gosuri/uitable v0.0.4
