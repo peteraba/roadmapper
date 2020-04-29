@@ -50,7 +50,16 @@ func (h *Handler) GetRoadmapJSON(ctx echo.Context) error {
 	r, err := load(h.rw, h.cb, identifier)
 	if err != nil {
 		err = fmt.Errorf("unable to load roadmap: %w", err)
-		return ctx.JSON(herr.ToHttpCode(err, http.StatusInternalServerError), r)
+		h.Logger.Error("failed retrieving request", zap.Error(err))
+		status := herr.ToHttpCode(err, http.StatusInternalServerError)
+
+		p := problem.Problem{
+			Type:   "https://docs.rdmp.app/problem/roadmap-payload-loading-error",
+			Title:  "Roadmap Payload Loading Error",
+			Status: status,
+		}
+
+		return ctx.JSON(status, p)
 	}
 
 	re := r.ToExchange()
@@ -63,7 +72,7 @@ func (h *Handler) CreateRoadmapJSON(ctx echo.Context) error {
 	err := json.NewDecoder(ctx.Request().Body).Decode(&re)
 	if err != nil {
 		err = fmt.Errorf("unable to decode the given roadmap: %w", err)
-		h.Logger.Error("invalid request", zap.Error(err))
+		h.Logger.Error("failed creating request", zap.Error(err))
 		status := herr.ToHttpCode(err, http.StatusBadRequest)
 
 		p := problem.Problem{
@@ -81,7 +90,7 @@ func (h *Handler) CreateRoadmapJSON(ctx echo.Context) error {
 	err = h.isValidRoadmap(r)
 	if err != nil {
 		err = fmt.Errorf("roadmap validation error: %w", err)
-		h.Logger.Error("invalid request", zap.Error(err))
+		h.Logger.Error("failed creating request", zap.Error(err))
 		status := herr.ToHttpCode(err, http.StatusBadRequest)
 
 		p := problem.Problem{
@@ -96,7 +105,7 @@ func (h *Handler) CreateRoadmapJSON(ctx echo.Context) error {
 	err = h.rw.Create(r)
 	if err != nil {
 		err = fmt.Errorf("failed to write the new roadmap: %w", err)
-		h.Logger.Error("invalid request", zap.Error(err))
+		h.Logger.Error("failed creating request", zap.Error(err))
 		status := herr.ToHttpCode(err, http.StatusInternalServerError)
 
 		p := problem.Problem{
