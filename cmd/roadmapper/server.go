@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"go.uber.org/zap"
 
-	"github.com/peteraba/roadmapper/pkg/middleware"
+	rmid "github.com/peteraba/roadmapper/pkg/middleware"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
 )
 
@@ -19,9 +20,11 @@ func Serve(quit chan os.Signal, port uint, certFile, keyFile, assetsDir string, 
 	// Setup
 	e := echo.New()
 
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+	e.Use(rmid.LoggerWithConfig(rmid.LoggerConfig{
 		Logger: h.Logger,
 	}))
+	e.Use(middleware.SecureWithConfig(middleware.DefaultSecureConfig))
+	e.Pre(middleware.RemoveTrailingSlash())
 
 	e.File("/favicon.ico", fmt.Sprintf("%s/static/favicon.ico", assetsDir))
 	e.Static("/static", assetsDir)
