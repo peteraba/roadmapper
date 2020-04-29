@@ -37,7 +37,6 @@ And probably so many others that came before them.
 
 - [ ] Fix displaying multiline project titles
 - [ ] Out of the box alerting
-- [ ] Rest API
 - [ ] JS Unit tests
 
 ### Long term ideas

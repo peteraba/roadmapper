@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/peteraba/roadmapper/pkg/code"
 	"github.com/peteraba/roadmapper/pkg/colors"
 )
 
@@ -19,17 +20,77 @@ type Dates struct {
 }
 
 // Roadmap represents a roadmap, the main entity of Roadmapper
-type Roadmap struct {
-	ID         uint64      `json:"-"`
-	PrevID     *uint64     `json:",omitempty"`
+type RoadmapExchange struct {
+	ID         string      `json:"id,omitempty"`
+	PrevID     *string     `json:"prev_id,omitempty"`
 	Title      string      `json:"title"`
 	DateFormat string      `json:"date_format"`
-	BaseURL    string      `json:"base_url"`
+	BaseURL    string      `json:"base_url,omitempty"`
 	Projects   []Project   `json:"projects"`
-	Milestones []Milestone `json:"milestones"`
-	CreatedAt  time.Time   `json:"-"`
-	UpdatedAt  time.Time   `json:"-"`
-	AccessedAt time.Time   `json:"-"`
+	Milestones []Milestone `json:"milestones,omitempty"`
+}
+
+func (re RoadmapExchange) ToRoadmap() Roadmap {
+	var (
+		prevID *uint64
+		now    = time.Now()
+	)
+
+	if re.PrevID != nil {
+		c, err := code.NewCode64FromString(*re.PrevID)
+		if err == nil {
+			*prevID = c.ID()
+		}
+	}
+
+	return Roadmap{
+		PrevID:     prevID,
+		Title:      re.Title,
+		DateFormat: re.DateFormat,
+		BaseURL:    re.BaseURL,
+		Projects:   re.Projects,
+		Milestones: re.Milestones,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+		AccessedAt: now,
+	}
+}
+
+// Roadmap represents a roadmap, the main entity of Roadmapper
+type Roadmap struct {
+	ID         uint64
+	PrevID     *uint64
+	Title      string
+	DateFormat string
+	BaseURL    string
+	Projects   []Project
+	Milestones []Milestone
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	AccessedAt time.Time
+}
+
+func (r Roadmap) ToExchange() RoadmapExchange {
+	var (
+		id     string
+		prevID *string
+	)
+
+	id = code.Uint64ToString(r.ID)
+
+	if r.PrevID != nil {
+		*prevID = code.Uint64ToString(*r.PrevID)
+	}
+
+	return RoadmapExchange{
+		ID:         id,
+		PrevID:     prevID,
+		Title:      r.Title,
+		DateFormat: r.DateFormat,
+		BaseURL:    r.BaseURL,
+		Projects:   r.Projects,
+		Milestones: r.Milestones,
+	}
 }
 
 // Project represents a project that belongs to a Roadmap

@@ -76,6 +76,11 @@ components:
     RoadmapResponse:
       allOf:
         - $ref: '#/components/schemas/Roadmap'
+      required:
+        - id
+      properties:
+        id:
+          type: string
 
     Roadmap:
       required:

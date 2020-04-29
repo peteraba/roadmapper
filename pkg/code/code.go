@@ -26,7 +26,7 @@ func (c Code64) String() string {
 		panic("code out of bound")
 	}
 
-	return toCode64(uint64(c))
+	return Uint64ToString(uint64(c))
 }
 
 // ID returns a numeric representation of a 64-bit Code
@@ -39,8 +39,8 @@ func NewCode64() Code64 {
 	return Code64(rand.Int63n(maxCode64))
 }
 
-// newCode64FromString creates a new Code64 from a string representation
-func newCode64FromString(s string) (Code64, error) {
+// NewCode64FromString creates a new Code64 from a string representation
+func NewCode64FromString(s string) (Code64, error) {
 	var (
 		n   uint64
 		m   = getAllowedMap()
@@ -64,8 +64,8 @@ func newCode64FromString(s string) (Code64, error) {
 	return Code64(n), nil
 }
 
-// toCode64 converts a number into a string representation
-func toCode64(n uint64) string {
+// Uint64ToString converts a number into a string representation
+func Uint64ToString(n uint64) string {
 	// mask the first two bits, we'll only use 30
 	n &= maxCode64
 

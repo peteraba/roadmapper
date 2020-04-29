@@ -53,40 +53,64 @@ func (h *Handler) GetRoadmapJSON(ctx echo.Context) error {
 		return ctx.JSON(herr.ToHttpCode(err, http.StatusInternalServerError), r)
 	}
 
-	return ctx.JSON(http.StatusOK, r)
+	re := r.ToExchange()
+
+	return ctx.JSON(http.StatusOK, re)
 }
 
 func (h *Handler) CreateRoadmapJSON(ctx echo.Context) error {
-	r := Roadmap{}
-	err := json.NewDecoder(ctx.Request().Body).Decode(&r)
+	re := RoadmapExchange{}
+	err := json.NewDecoder(ctx.Request().Body).Decode(&re)
 	if err != nil {
 		err = fmt.Errorf("unable to decode the given roadmap: %w", err)
 		h.Logger.Error("invalid request", zap.Error(err))
+		status := herr.ToHttpCode(err, http.StatusBadRequest)
 
 		p := problem.Problem{
 			Type:   "https://docs.rdmp.app/problem/roadmap-payload-parsing-error",
 			Title:  "Roadmap Payload Parsing Error",
-			Status: http.StatusBadRequest,
+			Status: status,
 		}
 
-		return ctx.JSON(http.StatusBadRequest, p)
+		return ctx.JSON(status, p)
 	}
+
+	r := re.ToRoadmap()
+	r.ID = code.NewCode64().ID()
 
 	err = h.isValidRoadmap(r)
 	if err != nil {
 		err = fmt.Errorf("roadmap validation error: %w", err)
 		h.Logger.Error("invalid request", zap.Error(err))
+		status := herr.ToHttpCode(err, http.StatusBadRequest)
 
 		p := problem.Problem{
 			Type:   "https://docs.rdmp.app/problem/roadmap-payload-validation-error",
 			Title:  "Roadmap Payload Validation Error",
-			Status: http.StatusBadRequest,
+			Status: status,
 		}
 
-		return ctx.JSON(http.StatusBadRequest, p)
+		return ctx.JSON(status, p)
 	}
 
-	return ctx.JSON(http.StatusCreated, r)
+	err = h.rw.Create(r)
+	if err != nil {
+		err = fmt.Errorf("failed to write the new roadmap: %w", err)
+		h.Logger.Error("invalid request", zap.Error(err))
+		status := herr.ToHttpCode(err, http.StatusInternalServerError)
+
+		p := problem.Problem{
+			Type:   "https://docs.rdmp.app/problem/roadmap-write-error",
+			Title:  "Roadmap Write Error",
+			Status: status,
+		}
+
+		return ctx.JSON(status, p)
+	}
+
+	re = r.ToExchange()
+
+	return ctx.JSON(http.StatusCreated, re)
 }
 
 func (h *Handler) GetRoadmapHTML(ctx echo.Context) error {
