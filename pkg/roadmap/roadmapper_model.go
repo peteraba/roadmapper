@@ -26,7 +26,7 @@ type RoadmapExchange struct {
 	Title      string      `json:"title"`
 	DateFormat string      `json:"date_format"`
 	BaseURL    string      `json:"base_url,omitempty"`
-	Projects   []Project   `json:"projects"`
+	Projects   []Project   `json:"projects,omitempty"`
 	Milestones []Milestone `json:"milestones,omitempty"`
 }
 

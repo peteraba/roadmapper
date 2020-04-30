@@ -24,7 +24,10 @@ func Serve(quit chan os.Signal, port uint, certFile, keyFile, assetsDir string, 
 		Logger: h.Logger,
 	}))
 	e.Use(middleware.SecureWithConfig(middleware.DefaultSecureConfig))
-	e.Pre(middleware.RemoveTrailingSlash())
+	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
+		DisableStackAll:   true,
+		DisablePrintStack: true,
+	}))
 
 	e.File("/favicon.ico", fmt.Sprintf("%s/static/favicon.ico", assetsDir))
 	e.Static("/static", assetsDir)
