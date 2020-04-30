@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 
 	"github.com/peteraba/roadmapper/pkg/bindata"
 	"github.com/peteraba/roadmapper/pkg/herr"
@@ -127,4 +128,11 @@ func (r *Roadmap) getProjectURLs() map[string][]string {
 	}
 
 	return projectURLs
+}
+
+func (r *Roadmap) pushAssets(pusher http.Pusher, version string) {
+	_ = pusher.Push(strings.Join([]string{"/static/roadmapper.css?", version}, ""), nil)
+	_ = pusher.Push(strings.Join([]string{"/static/roadmapper.mjs?", version}, ""), nil)
+	_ = pusher.Push("/static/roadmap-form.mjs", nil)
+	_ = pusher.Push("/static/roadmap-svg.mjs", nil)
 }

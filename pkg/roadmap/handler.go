@@ -145,6 +145,11 @@ func (h *Handler) displayHTML(ctx echo.Context, r *Roadmap, origErr error) error
 		return ctx.String(herr.ToHttpCode(err, http.StatusInternalServerError), err.Error())
 	}
 
+	pusher, ok := ctx.Response().Writer.(http.Pusher)
+	if ok {
+		r.pushAssets(pusher, h.appVersion)
+	}
+
 	return ctx.HTML(herr.ToHttpCode(origErr, http.StatusInternalServerError), output)
 }
 
