@@ -23,13 +23,16 @@ Roadmapper is a CLI tool and webservice designed to help maintaining and trackin
 - [Dockertest](https://github.com/ory/dockertest) - Integration tests against third party services
 - [chromedp](https://github.com/chromedp/chromedp) - A faster, simpler way to drive browsers supporting the Chrome DevTools Protocol
 - [bindata](https://github.com/kevinburke/go-bindata) - A small utility for embedding binary data in a Go program
+- [kin-openapi](https://github.com/getkin/kin-openapi/tree/master/openapi3) - A Go project for handling OpenAPI file
+- [gofakeit](https://github.com/brianvoe/gofakeit) - A random fake data generator written in go
+- [yaml](https://github.com/ghodss/yaml) - YAML marshaling and unmarshaling support for Go
 
 #### Furthermore, Roadmapper would not exist as it is without the following giants
 
 - [go](https://github.com/golang/go) - The Go programming language
 - [docker](https://www.docker.com/) - Docker provides a simple and powerful developer experience, workflows and collaboration for creating applications.
 - [JavaScript](https://en.wikipedia.org/wiki/JavaScript) - a programming language that conforms to the ECMAScript specification
-- [linux](https://en.wikipedia.org/wiki/Linux) - a family of open source Unix-like operating systems based on the Linux kernel.
+- [linux](https://en.wikipedia.org/wiki/Linux) - a family of open source Unix-like operating systems based on th~~~~e Linux kernel.
 
 And probably so many others that came before them.
 
@@ -38,6 +41,7 @@ And probably so many others that came before them.
 - [ ] Fix displaying multiline project titles
 - [ ] Out of the box alerting
 - [ ] JS Unit tests
+- [ ] Static files from bindata
 
 ### Long term ideas
 

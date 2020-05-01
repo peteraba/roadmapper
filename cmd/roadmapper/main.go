@@ -1,4 +1,4 @@
-//go:generate go-bindata -pkg bindata -o ../../pkg/bindata/bindata.go ../../res/migrations/ ../../res/templates/ ../../res/fonts/...
+//go:generate go-bindata -pkg bindata -o ../../pkg/bindata/bindata.go ../../res/migrations/ ../../res/templates/ ../../res/fonts/... ../../api.json ../../api.yml
 
 package main
 

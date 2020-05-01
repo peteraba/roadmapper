@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/ajstarks/svgo v0.0.0-20200320125537-f189e35d30ca // indirect
+	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/brianvoe/gofakeit/v5 v5.4.3
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/chromedp/chromedp v0.5.3

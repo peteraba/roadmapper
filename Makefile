@@ -29,7 +29,7 @@ integration:
 	go test -race -tags=integration $(PACKAGES)
 
 e2e:
-	go test -race -tags=e2e,integration ./...
+	go test -race -test.count=1 -tags=e2e,integration ./...
 
 codecov:
 ifndef CODECOV_TOKEN
@@ -42,7 +42,7 @@ endif
 	go test -race -coverprofile=coverage.txt -covermode=atomic $(PACKAGES)
 	./b.sh -c -F go_unittests
 	# Code coverage for All tests
-	go test -race -coverprofile=coverage.txt -covermode=atomic -tags=e2e,integration ./...
+	go test -race -count=1 -coverprofile=coverage.txt -covermode=atomic -tags=e2e,integration ./...
 	./b.sh -c -F alltests
 	rm -f b.sh
 

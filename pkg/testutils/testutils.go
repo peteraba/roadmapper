@@ -2,28 +2,40 @@ package testutils
 
 import (
 	"database/sql"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"runtime"
+	"strconv"
 	"testing"
+	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/ory/dockertest"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 
+	"github.com/peteraba/roadmapper/pkg/bindata"
 	"github.com/peteraba/roadmapper/pkg/migrations"
 	"github.com/peteraba/roadmapper/pkg/repository"
 )
 
-// if shouldUpdateGoldenFiles = true, golden files should be updated
-var shouldUpdateGoldenFiles = flag.Bool("update", false, "update golden files")
+var (
+	// if shouldUpdateGoldenFiles = true, golden files should be updated
+	shouldUpdateGoldenFiles = flag.Bool("update", false, "update golden files")
+
+	testRouter     *openapi3filter.Router
+	testHttpClient *http.Client
+
+	yamlFilePath = "../../api.yml"
+	jsonFilePath = "../../api.json"
+)
 
 // ShouldUpdateGoldenFiles return true if golden files should be updated
 func ShouldUpdateGoldenFiles() bool {
@@ -129,23 +141,54 @@ type queryLog struct {
 	FormattedQuery string `json:"formattedQuery"`
 }
 
-func AssertQueries(t *testing.T, buf *zaptest.Buffer, lines []string) {
-	logs := buf.Lines()
-	if assert.Equal(t, len(lines), len(logs)) {
-		for i, l := range lines {
-			exp, err := json.Marshal(queryLog{l})
-			require.NoError(t, err)
-
-			assert.Equal(t, string(exp), logs[i])
-		}
+func GetRouter(t *testing.T) *openapi3filter.Router {
+	if testRouter != nil {
+		return testRouter
 	}
+
+	yamlContent, err := bindata.Asset(yamlFilePath)
+	require.NoErrorf(t, err, "unable to load YAML API content")
+
+	jsonContent, err := bindata.Asset(jsonFilePath)
+	require.NoErrorf(t, err, "unable to load JSON API content")
+
+	AssertAPI(t, yamlContent, jsonContent)
+
+	tr := openapi3filter.NewRouter()
+	sl := openapi3.NewSwaggerLoader()
+	s, err := sl.LoadSwaggerFromData(jsonContent)
+	require.NoErrorf(t, err, "invalid JSON API content")
+
+	err = tr.AddSwagger(s)
+	require.NoErrorf(t, err, "can't add swagger to router")
+
+	testRouter = tr
+
+	return testRouter
 }
 
-func AssertQueriesRegexp(t *testing.T, buf *zaptest.Buffer, lines []string) {
-	logs := buf.Lines()
-	if assert.Equal(t, len(lines), len(logs)) {
-		for i, l := range lines {
-			assert.Regexp(t, l, logs[i])
-		}
+func GetHttpClient() *http.Client {
+	if testHttpClient == nil {
+		testHttpClient = &http.Client{}
 	}
+
+	return testHttpClient
+}
+
+func GetTimeout(t *testing.T) time.Duration {
+	if timeout != 0 {
+		return timeout
+	}
+
+	timeout = 15 * time.Second
+	timeoutEnv := os.Getenv("TIMEOUT")
+	if timeoutEnv != "" {
+		timeoutParsed, err := strconv.ParseInt(timeoutEnv, 10, 32)
+		if err != nil {
+			t.Errorf("failed parsing TIMEOUT environment variable '%s': %w", timeoutEnv, err)
+		}
+		timeout = time.Duration(timeoutParsed) * time.Second
+	}
+
+	return timeout
 }
