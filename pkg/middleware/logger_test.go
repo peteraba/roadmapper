@@ -9,15 +9,27 @@ import (
 
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/peteraba/roadmapper/pkg/testutils"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
 )
+
+func setupLogger() (*zap.Logger, *zaptest.Buffer) {
+	buf := &zaptest.Buffer{}
+	logger := zap.New(zapcore.NewCore(
+		zapcore.NewJSONEncoder(zapcore.EncoderConfig{}),
+		buf,
+		zap.DebugLevel,
+	))
+
+	return logger, buf
+}
 
 func TestLoggerConfig_log(t *testing.T) {
 	var (
 		foo         = "foo"
 		h0          = http.Header{}
-		logger, buf = testutils.SetupLogger()
+		logger, buf = setupLogger()
 		lc          = DefaultLoggerConfig
 	)
 

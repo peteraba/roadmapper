@@ -15,7 +15,7 @@ import (
 	"github.com/peteraba/roadmapper/pkg/roadmap"
 )
 
-func TestE2E_Commandline(t *testing.T) {
+func TestE2E_CLI(t *testing.T) {
 	var (
 		dateFormat        = "2006-01-02"
 		fw, lh     uint64 = 800, 30

@@ -5,21 +5,59 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"testing"
 
 	"github.com/chromedp/chromedp"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
-	"github.com/peteraba/roadmapper/pkg/code"
-	"github.com/peteraba/roadmapper/pkg/repository"
-	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"github.com/peteraba/roadmapper/pkg/testutils"
 )
 
-func TestE2E_Server(t *testing.T) {
+const (
+	e2eAppPort uint = 9876
+	e2eDbName       = "rdmp"
+	e2eDbUser       = "rdmp"
+	e2eDbPass       = "secret"
+	e2eBaseUrl      = "http://localhost:9876/"
+	e2eTitle        = "Example Roadmap"
+	e2eTxt          = `Monocle ipsum dolor sit amet
+Ettinger punctual izakaya concierge [2020-02-02, 2020-02-20, 60%]
+	Zürich Baggu bureaux [/issues/1]
+		Toto Comme des Garçons liveable [2020-02-04, 2020-02-25, 100%, /issues/2]
+		Winkreative boutique St Moritz [2020-02-06, 2020-02-22, 55%, /issues/3]
+	Toto joy perfect Porter [2020-02-25, 2020-03-01, 100%, |1]
+Craftsmanship artisanal
+	Marylebone exclusive [2020-03-03, 2020-03-10, 100%]
+	Beams elegant destination [2020-03-08, 2020-03-12, 100%, |1]
+	Winkreative ryokan hand-crafted [2020-03-13, 2020-03-31, 20%]
+Nordic Toto first-class Singap
+	Concierge cutting-edge Zürich global bureaux
+		Sunspel sophisticated lovely uniforms [2020-03-17, 2020-03-31]
+		Share blog post on social media [2020-03-17, 2020-03-31, 80%]
+	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 20%]
+Melbourne handsome boutique
+	Boutique magna iconic
+		Carefully curated laborum destination [2020-03-28, 2020-05-01, 60%]
+	Qui incididunt sleepy
+		Scandinavian occaecat culpa [2020-03-26, 2020-04-01, 90%]
+Hand-crafted K-pop boulevard
+	Charming sed quality [2020-03-18, 2020-05-31, 20%]
+	Sunspel alluring ut dolore [2020-04-15, 2020-04-30, 30%]
+Business class Shinkansen [2020-04-01, 2020-05-31, 45%]
+	Nisi excepteur hand-crafted hub
+	Ettinger Airbus A380
+Essential conversation bespoke
+Muji enim
+
+|Laboris ullamco
+|Muji enim finest [2020-02-12, https://example.com/abc, bcdef]`
+	e2eBaseURL = "https://example.com/foo"
+)
+
+func TestE2E_Browser(t *testing.T) {
 	// create chrome instance
 	ctx, cancel := chromedp.NewContext(
 		context.Background(),
@@ -31,14 +69,17 @@ func TestE2E_Server(t *testing.T) {
 	ctx, cancel = context.WithTimeout(ctx, testutils.GetTimeout(t))
 	defer cancel()
 
+	// create a new logger
+	logger, err := zap.NewDevelopment()
+	require.NoError(t, err)
+
 	// create a new database
-	logger := zap.NewNop()
-	baseRepo, teardown := testutils.SetupRepository(t, "TestIntegration_Repository_Get", e2eDbUser, e2eDbPass, e2eDbName, logger)
-	defer teardown()
+	baseRepo, reset, dbTeardown := testutils.SetupRepository(t, "TestE2E_Browser", e2eDbUser, e2eDbPass, e2eDbName, logger)
+	defer dbTeardown()
 
 	// start up a new app
-	quit := setupApp(t, baseRepo)
-	defer teardownApp(quit)
+	appTeardown := testApp(baseRepo, logger, e2eAppPort, "../../static")
+	defer appTeardown()
 
 	tests := []struct {
 		name     string
@@ -58,8 +99,11 @@ func TestE2E_Server(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var txtFound, baseUrlFound, titleFound, svgFound string
-			_, _, _ = txtFound, baseUrlFound, svgFound
+			defer reset()
+
+			var txtFound, baseUrlFound, bodyFound, titleFound, svgFound string
+
+			_, _, _, _, _ = txtFound, baseUrlFound, bodyFound, titleFound, svgFound
 
 			err := chromedp.Run(ctx,
 				chromedp.Navigate(e2eBaseUrl),
@@ -77,7 +121,7 @@ func TestE2E_Server(t *testing.T) {
 				chromedp.Submit(`#form-submit`),
 				// wait for redirect
 				chromedp.WaitVisible(`#roadmap-svg`),
-				// retrieve relevant values
+				// // retrieve relevant values
 				chromedp.Value(`#txt`, &txtFound),
 				chromedp.Value(`#base-url`, &baseUrlFound),
 				chromedp.Value(`#title`, &titleFound),
@@ -85,35 +129,14 @@ func TestE2E_Server(t *testing.T) {
 				chromedp.OuterHTML(`#roadmap-svg svg`, &svgFound),
 			)
 
-			if err != nil {
-				t.Fatalf("chromedp run: error = %v", err)
-			}
-
 			assert.Equal(t, tt.txt, txtFound)
 			assert.Equal(t, tt.baseURL, baseUrlFound)
 			assert.Equal(t, tt.title, titleFound)
 			if tt.svgMatch != "" {
-				assert.Contains(t, svgFound, tt.svgMatch)
+				assert.Containsf(t, svgFound, tt.svgMatch, bodyFound)
 			}
+
+			assert.NoErrorf(t, err, "chromedp run", bodyFound)
 		})
 	}
-}
-
-func setupApp(t *testing.T, baseRepo repository.PgRepository) chan os.Signal {
-	quit := make(chan os.Signal, 1)
-
-	_ = t
-
-	rw := roadmap.Repository{PgRepository: baseRepo}
-	cb := code.Builder{}
-
-	h := roadmap.NewHandler(baseRepo.Logger, rw, cb, AppVersion, e2eMatomoDomain, e2eDocBaseURL, false)
-
-	go Serve(quit, e2eAppPort, "", "", "../../static", h)
-
-	return quit
-}
-
-func teardownApp(quit chan os.Signal) {
-	quit <- os.Interrupt
 }

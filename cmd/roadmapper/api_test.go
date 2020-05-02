@@ -16,24 +16,44 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
+	"github.com/peteraba/roadmapper/pkg/code"
+	"github.com/peteraba/roadmapper/pkg/repository"
 	"github.com/peteraba/roadmapper/pkg/roadmap"
 	"github.com/peteraba/roadmapper/pkg/testutils"
 )
 
-func TestApi_CreateRoadmap(t *testing.T) {
+func testApp(baseRepo repository.PgRepository, logger *zap.Logger, port uint, assetsDir string) func() {
+	repo := roadmap.Repository{PgRepository: baseRepo}
+	codeBuilder := code.Builder{}
+	handler := newRoadmapHandler(logger, repo, codeBuilder, "", "", false)
+	server := newServer(handler, assetsDir, "", "")
+	teardown := server.StartWithTeardown(port)
+
+	return teardown
+}
+
+func TestE2E_API(t *testing.T) {
 	var (
-		minDate = time.Date(2020, 1, 10, 0, 0, 0, 0, time.UTC)
-		maxDate = time.Date(2020, 4, 25, 0, 0, 0, 0, time.UTC)
+		apiPort    uint = 9877
+		apiBaseUrl      = "http://localhost:9877/"
+		apiDbUser       = "rdmp"
+		apiDbPass       = "rdmp"
+		apiDbName       = "rdmp"
+		minDate         = time.Date(2020, 1, 10, 0, 0, 0, 0, time.UTC)
+		maxDate         = time.Date(2020, 4, 25, 0, 0, 0, 0, time.UTC)
 	)
 
+	// create a new logger
+	logger, err := zap.NewDevelopment()
+	require.NoError(t, err)
+
 	// create a new database
-	logger := zap.NewNop()
-	baseRepo, teardown := testutils.SetupRepository(t, "TestIntegration_Repository_Get", e2eDbUser, e2eDbPass, e2eDbName, logger)
+	baseRepo, _, teardown := testutils.SetupRepository(t, "TestE2E_API", apiDbUser, apiDbPass, apiDbName, logger)
 	defer teardown()
 
 	// start up a new app
-	quit := setupApp(t, baseRepo)
-	defer teardownApp(quit)
+	appTeardown := testApp(baseRepo, logger, apiPort, "")
+	defer appTeardown()
 
 	httpClient := testutils.GetHttpClient()
 	router := testutils.GetRouter(t)
@@ -41,7 +61,7 @@ func TestApi_CreateRoadmap(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// Create request
 		roadmapRequestData := roadmap.NewRoadmapExchangeStub(0, 0, minDate, maxDate)
-		req := newCreateRoadmapRequest(t, roadmapRequestData)
+		req := newCreateRoadmapRequest(t, roadmapRequestData, apiBaseUrl)
 
 		// Find route in the swagger file
 		route, pathParams, err := router.FindRoute(req.Method, req.URL)
@@ -75,11 +95,11 @@ func TestApi_CreateRoadmap(t *testing.T) {
 	})
 }
 
-func newCreateRoadmapRequest(t *testing.T, re roadmap.RoadmapExchange) *http.Request {
+func newCreateRoadmapRequest(t *testing.T, re roadmap.RoadmapExchange, baseUrl string) *http.Request {
 	marshaled, err := json.Marshal(re)
 	require.NoError(t, err)
 
-	url := fmt.Sprintf("%s/api/", strings.TrimRight(e2eBaseUrl, "/"))
+	url := fmt.Sprintf("%s/api/", strings.TrimRight(baseUrl, "/"))
 	req, err := http.NewRequest("POST", url, bytes.NewReader(marshaled))
 	require.NoError(t, err)
 

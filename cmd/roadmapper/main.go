@@ -1,4 +1,4 @@
-//go:generate go-bindata -pkg bindata -o ../../pkg/bindata/bindata.go ../../res/migrations/ ../../res/templates/ ../../res/fonts/... ../../api.json ../../api.yml
+//go:generate go-bindata -pkg bindata -o ../../pkg/bindata/bindata.go ../../res/migrations/ ../../res/templates/ ../../res/fonts/...
 
 package main
 
@@ -26,9 +26,9 @@ func main() {
 	logger := newLogger()
 	defer logger.Sync() // nolint
 
-	b := newCodeBuilder()
+	codeBuilder := newCodeBuilder()
 
-	app := createApp(logger, b)
+	app := createApp(logger, codeBuilder)
 
 	err := app.Run(os.Args)
 	if err != nil {
@@ -36,10 +36,10 @@ func main() {
 	}
 }
 
-func createApp(logger *zap.Logger, b code.Builder) *cli.App {
+func createApp(logger *zap.Logger, codeBuilder code.Builder) *cli.App {
 	return &cli.App{
 		Commands: []*cli.Command{
-			createServerCommand(logger, b),
+			createServerCommand(logger, codeBuilder),
 			createCLICommand(logger),
 			createVersionCommand(),
 			createMigrateDownCommand(logger),
@@ -48,7 +48,7 @@ func createApp(logger *zap.Logger, b code.Builder) *cli.App {
 	}
 }
 
-func createServerCommand(logger *zap.Logger, b code.Builder) *cli.Command {
+func createServerCommand(logger *zap.Logger, codeBuilder code.Builder) *cli.Command {
 	return &cli.Command{
 		Name:    "server",
 		Aliases: []string{"s"},
@@ -75,7 +75,7 @@ func createServerCommand(logger *zap.Logger, b code.Builder) *cli.Command {
 			}
 
 			quit := make(chan os.Signal, 1)
-			rw := newRoadmapRepo(
+			repo := newRoadmapRepo(
 				c.String("dbHost"),
 				c.String("dbPort"),
 				c.String("dbName"),
@@ -83,8 +83,10 @@ func createServerCommand(logger *zap.Logger, b code.Builder) *cli.Command {
 				c.String("dbPass"),
 				repoLogger,
 			)
-			h := roadmap.NewHandler(logger, rw, b, AppVersion, c.String("matomoDomain"), c.String("docBaseUrl"), c.Bool("selfHosted"))
-			Serve(quit, c.Uint("port"), c.String("cert"), c.String("key"), c.String("assetsDir"), h)
+			handler := newRoadmapHandler(logger, repo, codeBuilder, c.String("matomoDomain"), c.String("docBaseUrl"), c.Bool("selfHosted"))
+
+			server := newServer(handler, c.String("assetsDir"), c.String("cert"), c.String("key"))
+			server.Start(quit, c.Uint("port"))
 
 			return nil
 		},

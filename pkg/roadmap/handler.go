@@ -23,7 +23,7 @@ import (
 type (
 	Handler struct {
 		Logger       *zap.Logger
-		rw           DbReadWriter
+		repo         DbReadWriter
 		cb           code.Builder
 		appVersion   string
 		matomoDomain string
@@ -32,10 +32,10 @@ type (
 	}
 )
 
-func NewHandler(logger *zap.Logger, rw DbReadWriter, cb code.Builder, appVersion, matomoDomain, docBaseURL string, selfHosted bool) *Handler {
+func NewHandler(logger *zap.Logger, repo DbReadWriter, cb code.Builder, appVersion, matomoDomain, docBaseURL string, selfHosted bool) *Handler {
 	return &Handler{
 		Logger:       logger,
-		rw:           rw,
+		repo:         repo,
 		cb:           cb,
 		appVersion:   appVersion,
 		matomoDomain: matomoDomain,
@@ -47,7 +47,7 @@ func NewHandler(logger *zap.Logger, rw DbReadWriter, cb code.Builder, appVersion
 func (h *Handler) GetRoadmapJSON(ctx echo.Context) error {
 	identifier := ctx.Param("identifier")
 
-	r, err := load(h.rw, h.cb, identifier)
+	r, err := load(h.repo, h.cb, identifier)
 	if err != nil {
 		err = fmt.Errorf("unable to load roadmap: %w", err)
 		h.Logger.Error("failed retrieving request", zap.Error(err))
@@ -102,7 +102,7 @@ func (h *Handler) CreateRoadmapJSON(ctx echo.Context) error {
 		return ctx.JSON(status, p)
 	}
 
-	err = h.rw.Create(r)
+	err = h.repo.Create(r)
 	if err != nil {
 		err = fmt.Errorf("failed to write the new roadmap: %w", err)
 		h.Logger.Error("failed creating request", zap.Error(err))
@@ -125,7 +125,7 @@ func (h *Handler) CreateRoadmapJSON(ctx echo.Context) error {
 func (h *Handler) GetRoadmapHTML(ctx echo.Context) error {
 	identifier := ctx.Param("identifier")
 
-	r, err := load(h.rw, h.cb, identifier)
+	r, err := load(h.repo, h.cb, identifier)
 	if err != nil {
 		return h.displayHTML(ctx, r, err)
 	}
@@ -185,7 +185,7 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 		return h.displayHTML(ctx, nil, herr.NewFromError(err, http.StatusBadRequest))
 	}
 
-	err = h.rw.Create(roadmap)
+	err = h.repo.Create(roadmap)
 	if err != nil {
 		h.Logger.Error("failed to write the new roadmap", zap.Error(err))
 
@@ -263,7 +263,7 @@ func (h *Handler) GetRoadmapImage(ctx echo.Context) error {
 
 	fw, lh = GetCanvasSizes(fw, lh)
 
-	roadmap, err := load(h.rw, h.cb, ctx.Param("identifier"))
+	roadmap, err := load(h.repo, h.cb, ctx.Param("identifier"))
 	if err != nil {
 		h.Logger.Info("roadmap not found", zap.Error(err))
 

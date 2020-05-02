@@ -28,12 +28,12 @@ var (
 
 // Logger returns a middleware that logs HTTP requests.
 func Logger() echo.MiddlewareFunc {
-	return LoggerWithConfig(DefaultLoggerConfig)
+	return LoggerWithConfig(&DefaultLoggerConfig)
 }
 
 // LoggerWithConfig returns a Logger middleware with config.
 // See: `Logger()`.
-func LoggerWithConfig(lc LoggerConfig) echo.MiddlewareFunc {
+func LoggerWithConfig(lc *LoggerConfig) echo.MiddlewareFunc {
 	// Defaults
 	if lc.Skipper == nil {
 		lc.Skipper = DefaultLoggerConfig.Skipper
@@ -66,7 +66,7 @@ func LoggerWithConfig(lc LoggerConfig) echo.MiddlewareFunc {
 	}
 }
 
-func (lc LoggerConfig) log(req *http.Request, res *echo.Response, start, stop time.Time, ip string) error {
+func (lc *LoggerConfig) log(req *http.Request, res *echo.Response, start, stop time.Time, ip string) error {
 	lc.Logger.Info("echo request",
 		zap.String("time", getTime(stop)),
 		zap.String("id", getID(req, res)),

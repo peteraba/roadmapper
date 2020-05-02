@@ -13,15 +13,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
+	"github.com/ghodss/yaml"
 	"github.com/ory/dockertest"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 
-	"github.com/peteraba/roadmapper/pkg/bindata"
 	"github.com/peteraba/roadmapper/pkg/migrations"
 	"github.com/peteraba/roadmapper/pkg/repository"
 )
@@ -69,29 +68,43 @@ func SaveFile(t *testing.T, content []byte, pathParts ...string) {
 }
 
 // SetupRepository returns a new repository and a tear down function
-func SetupRepository(t *testing.T, appName, dbUser, dbPass, dbName string, logger *zap.Logger, fixture ...interface{}) (repository.PgRepository, func()) {
+func SetupRepository(t *testing.T, appName, dbUser, dbPass, dbName string, logger *zap.Logger, fixture ...interface{}) (repository.PgRepository, func(fixture ...interface{}), func()) {
 	pool, resource, port := setupDb(t, dbUser, dbPass, dbName)
 
 	repo := repository.NewPgRepository(appName, "localhost", port, dbName, dbUser, dbPass, logger)
 
-	m := migrations.New(dbUser, dbPass, "localhost", port, dbName)
-	_, err := m.Up(0)
-	if err != nil {
-		t.Fatalf("failed to run migrations: %v", err)
-	}
-
 	conn := repo.ConnectNoHook()
-	for i := range fixture {
-		res, err := conn.Model(fixture[i]).Insert()
-		require.NoError(t, err)
-		require.Equal(t, 1, res.RowsAffected())
+	m := migrations.New(dbUser, dbPass, "localhost", port, dbName)
+
+	down := func() {
+		_, err := m.Down(0)
+		require.NoErrorf(t, err, "failed to run down migrations")
 	}
 
-	return repo, func() {
+	up := func(fixture ...interface{}) {
+		_, err := m.Up(0)
+		require.NoErrorf(t, err, "failed to run migrations")
+
+		for i := range fixture {
+			res, err := conn.Model(fixture[i]).Insert()
+			require.NoErrorf(t, err, "failed to insert fixture", i)
+			require.Equalf(t, 1, res.RowsAffected(), "no rows affected")
+		}
+	}
+	up(fixture...)
+
+	reset := func(fixture ...interface{}) {
+		down()
+		up(fixture...)
+	}
+
+	teardown := func() {
 		if err := pool.Purge(resource); err != nil {
 			t.Fatalf("could not tear down the database: %v", err)
 		}
 	}
+
+	return repo, reset, teardown
 }
 
 func setupDb(t *testing.T, dbUser, dbPass, dbName string) (*dockertest.Pool, *dockertest.Resource, string) {
@@ -126,7 +139,7 @@ func setupDb(t *testing.T, dbUser, dbPass, dbName string) (*dockertest.Pool, *do
 	return dbPool, dbResource, dbPort
 }
 
-func SetupLogger() (*zap.Logger, *zaptest.Buffer) {
+func SetupTestLogger() (*zap.Logger, *zaptest.Buffer) {
 	buf := &zaptest.Buffer{}
 	logger := zap.New(zapcore.NewCore(
 		zapcore.NewJSONEncoder(zapcore.EncoderConfig{}),
@@ -146,25 +159,40 @@ func GetRouter(t *testing.T) *openapi3filter.Router {
 		return testRouter
 	}
 
-	yamlContent, err := bindata.Asset(yamlFilePath)
-	require.NoErrorf(t, err, "unable to load YAML API content")
+	yamlFile, err := os.Stat(yamlFilePath)
+	require.NoError(t, err, "can't stat .yml file: ", yamlFile)
 
-	jsonContent, err := bindata.Asset(jsonFilePath)
-	require.NoErrorf(t, err, "unable to load JSON API content")
+	jsonFile, err := os.Stat(jsonFilePath)
+	if err != nil || yamlFile.ModTime().After(jsonFile.ModTime()) {
+		updateJson(t)
+	} else {
+		verifyJson(t)
+	}
 
-	AssertAPI(t, yamlContent, jsonContent)
-
-	tr := openapi3filter.NewRouter()
-	sl := openapi3.NewSwaggerLoader()
-	s, err := sl.LoadSwaggerFromData(jsonContent)
-	require.NoErrorf(t, err, "invalid JSON API content")
-
-	err = tr.AddSwagger(s)
-	require.NoErrorf(t, err, "can't add swagger to router")
-
-	testRouter = tr
+	testRouter = openapi3filter.NewRouter().WithSwaggerFromFile(jsonFilePath)
 
 	return testRouter
+}
+
+func updateJson(t *testing.T) {
+	content, err := ioutil.ReadFile(yamlFilePath)
+	require.NoError(t, err, "could not read .yml file: ", yamlFilePath)
+
+	jsonContent, err := yaml.YAMLToJSON(content)
+	require.NoError(t, err, "could not parse .yml file: ", yamlFilePath)
+
+	err = ioutil.WriteFile(jsonFilePath, jsonContent, os.ModePerm)
+	require.NoError(t, err, "could not write .json file: ", jsonFilePath)
+}
+
+func verifyJson(t *testing.T) {
+	yamlContent, err := ioutil.ReadFile(yamlFilePath)
+	require.NoError(t, err, "could not read .yml file: ", yamlFilePath)
+
+	jsonContent, err := ioutil.ReadFile(jsonFilePath)
+	require.NoError(t, err, "could not read .json file: ", jsonFilePath)
+
+	AssertAPI(t, yamlContent, jsonContent)
 }
 
 func GetHttpClient() *http.Client {
@@ -180,7 +208,7 @@ func GetTimeout(t *testing.T) time.Duration {
 		return timeout
 	}
 
-	timeout = 15 * time.Second
+	timeout = 30 * time.Second
 	timeoutEnv := os.Getenv("TIMEOUT")
 	if timeoutEnv != "" {
 		timeoutParsed, err := strconv.ParseInt(timeoutEnv, 10, 32)
