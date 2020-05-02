@@ -47,11 +47,22 @@ func NewHandler(logger *zap.Logger, repo DbReadWriter, cb code.Builder, appVersi
 func (h *Handler) GetRoadmapJSON(ctx echo.Context) error {
 	identifier := ctx.Param("identifier")
 
+	if identifier == "" {
+		status := http.StatusNotImplemented
+		p := problem.Problem{
+			Type:   "https://docs.rdmp.app/problem/not-implemented",
+			Title:  "Endpoint Not Implemented",
+			Status: status,
+		}
+
+		return ctx.JSON(status, p)
+	}
+
 	r, err := load(h.repo, h.cb, identifier)
-	if err != nil {
+	if err != nil || r == nil {
+		status := herr.ToHttpCode(err, http.StatusInternalServerError)
 		err = fmt.Errorf("unable to load roadmap: %w", err)
 		h.Logger.Error("failed retrieving request", zap.Error(err))
-		status := herr.ToHttpCode(err, http.StatusInternalServerError)
 
 		p := problem.Problem{
 			Type:   "https://docs.rdmp.app/problem/roadmap-payload-loading-error",

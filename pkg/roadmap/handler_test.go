@@ -20,6 +20,129 @@ import (
 	"github.com/peteraba/roadmapper/pkg/testutils"
 )
 
+func Test_handler_getRoadmapJSON(t *testing.T) {
+	t.Run("fail - not found", func(t *testing.T) {
+		// Setup
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/api/abc", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/api/:identifier")
+		ctx.SetParamNames("identifier")
+		ctx.SetParamValues("abc")
+
+		h, drwMock := setupHandler()
+		drwMock.
+			On("Get", mock.AnythingOfType("code.Code64")).
+			Return(nil, herr.NewFromError(assert.AnError, http.StatusNotFound))
+
+		// Run
+		err := h.GetRoadmapJSON(ctx)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		assert.Contains(t, rec.Body.String(), "Roadmap Payload Loading Error")
+	})
+
+	t.Run("fail - loading", func(t *testing.T) {
+		// Setup
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/api/abc", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/api/:identifier")
+		ctx.SetParamNames("identifier")
+		ctx.SetParamValues("abc")
+
+		h, drwMock := setupHandler()
+		drwMock.
+			On("Get", mock.AnythingOfType("code.Code64")).
+			Return(nil, assert.AnError)
+
+		// Run
+		err := h.GetRoadmapJSON(ctx)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		assert.Contains(t, rec.Body.String(), "Roadmap Payload Loading Error")
+	})
+
+	t.Run("fail - no identifier = not implemented", func(t *testing.T) {
+		// Setup
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/api/", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+
+		h, _ := setupHandler()
+
+		// Run
+		err := h.GetRoadmapJSON(ctx)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusNotImplemented, rec.Code)
+		assert.Contains(t, rec.Body.String(), "Not Implemented")
+	})
+
+	t.Run("fail - no roadmap + no error = internal server error", func(t *testing.T) {
+		// Setup
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/api/", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/api/:identifier")
+		ctx.SetParamNames("identifier")
+		ctx.SetParamValues("abc")
+
+		h, drwMock := setupHandler()
+		drwMock.
+			On("Get", mock.AnythingOfType("code.Code64")).
+			Return(nil, nil)
+
+		// Run
+		err := h.GetRoadmapJSON(ctx)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		assert.Contains(t, rec.Body.String(), "Roadmap Payload Loading Error")
+	})
+
+	t.Run("success - existing", func(t *testing.T) {
+		// Setup
+		rdmp := createStubRoadmap()
+		e := echo.New()
+		req := httptest.NewRequest(http.MethodGet, "/api/abc", nil)
+		req.Header.Set(echo.HeaderContentType, echo.MIMETextHTML)
+		rec := httptest.NewRecorder()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/api/:identifier")
+		ctx.SetParamNames("identifier")
+		ctx.SetParamValues("abc")
+
+		h, drwMock := setupHandler()
+		drwMock.
+			On("Get", mock.AnythingOfType("code.Code64")).
+			Return(rdmp, nil)
+
+		// Run
+		err := h.GetRoadmapJSON(ctx)
+
+		// Assertions
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Contains(t, rec.Body.String(), rdmp.Title)
+		drwMock.AssertExpectations(t)
+	})
+}
+
 func Test_handler_getRoadmapHTML(t *testing.T) {
 	t.Run("fail - not found", func(t *testing.T) {
 		// Setup

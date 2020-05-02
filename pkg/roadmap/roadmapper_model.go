@@ -39,7 +39,8 @@ func (re RoadmapExchange) ToRoadmap() Roadmap {
 	if re.PrevID != nil {
 		c, err := code.NewCode64FromString(*re.PrevID)
 		if err == nil {
-			*prevID = c.ID()
+			cid := c.ID()
+			prevID = &cid
 		}
 	}
 
@@ -79,7 +80,8 @@ func (r Roadmap) ToExchange() RoadmapExchange {
 	id = code.Uint64ToString(r.ID)
 
 	if r.PrevID != nil {
-		*prevID = code.Uint64ToString(*r.PrevID)
+		cstr := code.Uint64ToString(*r.PrevID)
+		prevID = &cstr
 	}
 
 	return RoadmapExchange{
