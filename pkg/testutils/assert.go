@@ -27,6 +27,7 @@ var (
 	timeout time.Duration
 )
 
+// AssertQueries asserts that the buffer contains logs for the provided queries
 func AssertQueries(t *testing.T, buf *zaptest.Buffer, lines []string) {
 	logs := buf.Lines()
 	if assert.Equal(t, len(lines), len(logs)) {
@@ -39,6 +40,7 @@ func AssertQueries(t *testing.T, buf *zaptest.Buffer, lines []string) {
 	}
 }
 
+// AssertQueries asserts that the buffer contains logs that match for the provided regular expressions
 func AssertQueriesRegexp(t *testing.T, buf *zaptest.Buffer, lines []string) {
 	logs := buf.Lines()
 	if assert.Equal(t, len(lines), len(logs)) {
@@ -55,8 +57,8 @@ func AssertHttp(t *testing.T, httpClient *http.Client, req *http.Request, expect
 	require.Equal(t, expectedStatusCode, resp.StatusCode)
 
 	body, err := ioutil.ReadAll(resp.Body)
-
 	require.NoError(t, err)
+
 	resp.Body.Close()
 	resp.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 

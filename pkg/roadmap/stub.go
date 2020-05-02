@@ -11,7 +11,7 @@ func NewRoadmapExchangeStub(minProjects, minMilestones int, minDate, maxDate tim
 	var (
 		bu = newBaseURL()
 		p  = gofakeit.Number(minProjects, 20)
-		m  = gofakeit.Number(minMilestones, max(minMilestones, p))
+		m  = gofakeit.Number(minMilestones, p)
 
 		milestones []Milestone
 		projects   []Project
@@ -66,7 +66,7 @@ func NewProjectStub(milestoneCount, ind int, minDate, maxDate time.Time, hasBU b
 		Milestone:   uint8(m),
 		Dates:       d,
 		Percentage:  uint8(p),
-		URLs:        getURLs(hasBU),
+		URLs:        newURLs(hasBU),
 	}
 
 	return project
@@ -76,7 +76,7 @@ func NewMilestoneStub(minDate, maxDate time.Time, hasBU bool) Milestone {
 	return Milestone{
 		Title:      newWords(),
 		DeadlineAt: newDateOptional(minDate, maxDate),
-		URLs:       getURLs(hasBU),
+		URLs:       newURLs(hasBU),
 	}
 }
 
@@ -117,9 +117,9 @@ func newDates(minDate, maxDate time.Time) *Dates {
 	}
 }
 
-func getURLs(hasBU bool) []string {
+func newURLs(hasBU bool) []string {
 	var (
-		urls []string
+		urls = []string{}
 	)
 
 	for i := 0; i < gofakeit.Number(0, 2); i++ {
