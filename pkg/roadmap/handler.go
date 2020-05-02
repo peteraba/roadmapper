@@ -4,6 +4,7 @@ package roadmap
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -16,12 +17,13 @@ import (
 
 	"github.com/peteraba/roadmapper/pkg/code"
 	"github.com/peteraba/roadmapper/pkg/herr"
+	"github.com/peteraba/roadmapper/pkg/problem"
 )
 
 type (
 	Handler struct {
 		Logger       *zap.Logger
-		rw           DbReadWriter
+		repo         DbReadWriter
 		cb           code.Builder
 		appVersion   string
 		matomoDomain string
@@ -30,10 +32,10 @@ type (
 	}
 )
 
-func NewHandler(logger *zap.Logger, rw DbReadWriter, cb code.Builder, appVersion, matomoDomain, docBaseURL string, selfHosted bool) *Handler {
+func NewHandler(logger *zap.Logger, repo DbReadWriter, cb code.Builder, appVersion, matomoDomain, docBaseURL string, selfHosted bool) *Handler {
 	return &Handler{
 		Logger:       logger,
-		rw:           rw,
+		repo:         repo,
 		cb:           cb,
 		appVersion:   appVersion,
 		matomoDomain: matomoDomain,
@@ -42,10 +44,99 @@ func NewHandler(logger *zap.Logger, rw DbReadWriter, cb code.Builder, appVersion
 	}
 }
 
+func (h *Handler) GetRoadmapJSON(ctx echo.Context) error {
+	identifier := ctx.Param("identifier")
+
+	if identifier == "" {
+		status := http.StatusNotImplemented
+		p := problem.Problem{
+			Type:   "https://docs.rdmp.app/problem/not-implemented",
+			Title:  "Endpoint Not Implemented",
+			Status: status,
+		}
+
+		return ctx.JSON(status, p)
+	}
+
+	r, err := load(h.repo, h.cb, identifier)
+	if err != nil || r == nil {
+		status := herr.ToHttpCode(err, http.StatusInternalServerError)
+		err = fmt.Errorf("unable to load roadmap: %w", err)
+		h.Logger.Error("failed retrieving request", zap.Error(err))
+
+		p := problem.Problem{
+			Type:   "https://docs.rdmp.app/problem/roadmap-payload-loading-error",
+			Title:  "Roadmap Payload Loading Error",
+			Status: status,
+		}
+
+		return ctx.JSON(status, p)
+	}
+
+	re := r.ToExchange()
+
+	return ctx.JSON(http.StatusOK, re)
+}
+
+func (h *Handler) CreateRoadmapJSON(ctx echo.Context) error {
+	re := RoadmapExchange{}
+	err := json.NewDecoder(ctx.Request().Body).Decode(&re)
+	if err != nil {
+		err = fmt.Errorf("unable to decode the given roadmap: %w", err)
+		h.Logger.Error("failed creating request", zap.Error(err))
+		status := herr.ToHttpCode(err, http.StatusBadRequest)
+
+		p := problem.Problem{
+			Type:   "https://docs.rdmp.app/problem/roadmap-payload-parsing-error",
+			Title:  "Roadmap Payload Parsing Error",
+			Status: status,
+		}
+
+		return ctx.JSON(status, p)
+	}
+
+	r := re.ToRoadmap()
+	r.ID = code.NewCode64().ID()
+
+	err = h.isValidRoadmap(r)
+	if err != nil {
+		err = fmt.Errorf("roadmap validation error: %w", err)
+		h.Logger.Error("failed creating request", zap.Error(err))
+		status := herr.ToHttpCode(err, http.StatusBadRequest)
+
+		p := problem.Problem{
+			Type:   "https://docs.rdmp.app/problem/roadmap-payload-validation-error",
+			Title:  "Roadmap Payload Validation Error",
+			Status: status,
+		}
+
+		return ctx.JSON(status, p)
+	}
+
+	err = h.repo.Create(r)
+	if err != nil {
+		err = fmt.Errorf("failed to write the new roadmap: %w", err)
+		h.Logger.Error("failed creating request", zap.Error(err))
+		status := herr.ToHttpCode(err, http.StatusInternalServerError)
+
+		p := problem.Problem{
+			Type:   "https://docs.rdmp.app/problem/roadmap-write-error",
+			Title:  "Roadmap Write Error",
+			Status: status,
+		}
+
+		return ctx.JSON(status, p)
+	}
+
+	re = r.ToExchange()
+
+	return ctx.JSON(http.StatusCreated, re)
+}
+
 func (h *Handler) GetRoadmapHTML(ctx echo.Context) error {
 	identifier := ctx.Param("identifier")
 
-	r, err := load(h.rw, h.cb, identifier)
+	r, err := load(h.repo, h.cb, identifier)
 	if err != nil {
 		return h.displayHTML(ctx, r, err)
 	}
@@ -60,9 +151,14 @@ func (h *Handler) displayHTML(ctx echo.Context, r *Roadmap, origErr error) error
 	}
 
 	if err != nil {
-		h.Logger.Info("failed to create HTML response", zap.Error(err))
+		h.Logger.Error("failed to create HTML response", zap.Error(err))
 
 		return ctx.String(herr.ToHttpCode(err, http.StatusInternalServerError), err.Error())
+	}
+
+	pusher, ok := ctx.Response().Writer.(http.Pusher)
+	if ok {
+		r.pushAssets(pusher, h.appVersion)
 	}
 
 	return ctx.HTML(herr.ToHttpCode(origErr, http.StatusInternalServerError), output)
@@ -71,7 +167,7 @@ func (h *Handler) displayHTML(ctx echo.Context, r *Roadmap, origErr error) error
 func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 	prevID, err := h.getPrevID(ctx.Param("identifier"))
 	if err != nil {
-		h.Logger.Info("failed to parse the identifier parameter", zap.Error(err))
+		h.Logger.Error("failed to parse the identifier parameter", zap.Error(err))
 
 		return h.displayHTML(ctx, nil, err)
 	}
@@ -80,7 +176,7 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 	timeSpent := ctx.FormValue("ts")
 	err = h.isValidRoadmapRequest(areYouAHuman, timeSpent)
 	if err != nil {
-		h.Logger.Info("not timeSpent valid roadmap request", zap.Error(err))
+		h.Logger.Error("invalid roadmap request", zap.Error(err))
 
 		return h.displayHTML(ctx, nil, herr.NewFromError(err, http.StatusBadRequest))
 	}
@@ -95,14 +191,14 @@ func (h *Handler) CreateRoadmapHTML(ctx echo.Context) error {
 
 	err = h.isValidRoadmap(roadmap)
 	if err != nil {
-		h.Logger.Info("not timeSpent valid roadmap", zap.Error(err))
+		h.Logger.Error("invalid roadmap", zap.Error(err))
 
 		return h.displayHTML(ctx, nil, herr.NewFromError(err, http.StatusBadRequest))
 	}
 
-	err = h.rw.Create(roadmap)
+	err = h.repo.Create(roadmap)
 	if err != nil {
-		h.Logger.Info("failed to write the new roadmap", zap.Error(err))
+		h.Logger.Error("failed to write the new roadmap", zap.Error(err))
 
 		return h.displayHTML(ctx, &roadmap, err)
 	}
@@ -178,7 +274,7 @@ func (h *Handler) GetRoadmapImage(ctx echo.Context) error {
 
 	fw, lh = GetCanvasSizes(fw, lh)
 
-	roadmap, err := load(h.rw, h.cb, ctx.Param("identifier"))
+	roadmap, err := load(h.repo, h.cb, ctx.Param("identifier"))
 	if err != nil {
 		h.Logger.Info("roadmap not found", zap.Error(err))
 

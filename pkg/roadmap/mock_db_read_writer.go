@@ -12,6 +12,20 @@ type MockDbReadWriter struct {
 	mock.Mock
 }
 
+// Create provides a mock function with given fields: roadmap
+func (_m *MockDbReadWriter) Create(roadmap Roadmap) error {
+	ret := _m.Called(roadmap)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(Roadmap) error); ok {
+		r0 = rf(roadmap)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Get provides a mock function with given fields: c
 func (_m *MockDbReadWriter) Get(c code.Code) (*Roadmap, error) {
 	ret := _m.Called(c)
@@ -33,18 +47,4 @@ func (_m *MockDbReadWriter) Get(c code.Code) (*Roadmap, error) {
 	}
 
 	return r0, r1
-}
-
-// Create provides a mock function with given fields: roadmap
-func (_m *MockDbReadWriter) Create(roadmap Roadmap) error {
-	ret := _m.Called(roadmap)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(Roadmap) error); ok {
-		r0 = rf(roadmap)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }

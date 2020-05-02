@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/peteraba/roadmapper/pkg/code"
 	"github.com/peteraba/roadmapper/pkg/colors"
 )
 
@@ -16,6 +17,44 @@ import (
 type Dates struct {
 	StartAt time.Time `json:"start_at"`
 	EndAt   time.Time `json:"end_at"`
+}
+
+// Roadmap represents a roadmap, the main entity of Roadmapper
+type RoadmapExchange struct {
+	ID         string      `json:"id,omitempty"`
+	PrevID     *string     `json:"prev_id,omitempty"`
+	Title      string      `json:"title"`
+	DateFormat string      `json:"date_format"`
+	BaseURL    string      `json:"base_url,omitempty"`
+	Projects   []Project   `json:"projects,omitempty"`
+	Milestones []Milestone `json:"milestones,omitempty"`
+}
+
+func (re RoadmapExchange) ToRoadmap() Roadmap {
+	var (
+		prevID *uint64
+		now    = time.Now()
+	)
+
+	if re.PrevID != nil {
+		c, err := code.NewCode64FromString(*re.PrevID)
+		if err == nil {
+			cid := c.ID()
+			prevID = &cid
+		}
+	}
+
+	return Roadmap{
+		PrevID:     prevID,
+		Title:      re.Title,
+		DateFormat: re.DateFormat,
+		BaseURL:    re.BaseURL,
+		Projects:   re.Projects,
+		Milestones: re.Milestones,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+		AccessedAt: now,
+	}
 }
 
 // Roadmap represents a roadmap, the main entity of Roadmapper
@@ -30,6 +69,30 @@ type Roadmap struct {
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 	AccessedAt time.Time
+}
+
+func (r Roadmap) ToExchange() RoadmapExchange {
+	var (
+		id     string
+		prevID *string
+	)
+
+	id = code.Uint64ToString(r.ID)
+
+	if r.PrevID != nil {
+		cstr := code.Uint64ToString(*r.PrevID)
+		prevID = &cstr
+	}
+
+	return RoadmapExchange{
+		ID:         id,
+		PrevID:     prevID,
+		Title:      r.Title,
+		DateFormat: r.DateFormat,
+		BaseURL:    r.BaseURL,
+		Projects:   r.Projects,
+		Milestones: r.Milestones,
+	}
 }
 
 // Project represents a project that belongs to a Roadmap

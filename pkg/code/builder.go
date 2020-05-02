@@ -6,7 +6,7 @@ type Builder struct {
 
 // NewFromString creates a new code from a string representation (typically a URL path)
 func (b Builder) NewFromString(s string) (Code, error) {
-	return newCode64FromString(s)
+	return NewCode64FromString(s)
 }
 
 // NewFromID creates a new code from a number

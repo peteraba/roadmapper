@@ -5,8 +5,208 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
+func TestRoadmapExchange_ToRoadmap(t *testing.T) {
+	var (
+		prevIDStr        = "fasd"
+		prevIDInt uint64 = 3974925
+	)
+
+	type fields struct {
+		ID         string
+		PrevID     *string
+		Title      string
+		DateFormat string
+		BaseURL    string
+		Projects   []Project
+		Milestones []Milestone
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   Roadmap
+	}{
+		{
+			"without prevID",
+			fields{
+				Title:      "foo",
+				DateFormat: "2006/01/02",
+				BaseURL:    "https://example.com/",
+				Projects: []Project{
+					{Title: "foo-1"},
+				},
+				Milestones: []Milestone{
+					{Title: "foo-a"},
+				},
+			},
+			Roadmap{
+				Title:      "foo",
+				DateFormat: "2006/01/02",
+				BaseURL:    "https://example.com/",
+				Projects: []Project{
+					{Title: "foo-1"},
+				},
+				Milestones: []Milestone{
+					{Title: "foo-a"},
+				},
+			},
+		},
+		{
+			"with prevID",
+			fields{
+				PrevID:     &prevIDStr,
+				Title:      "foo",
+				DateFormat: "2006/01/02",
+				BaseURL:    "https://example.com/",
+				Projects: []Project{
+					{Title: "foo-1"},
+				},
+				Milestones: []Milestone{
+					{Title: "foo-a"},
+				},
+			},
+			Roadmap{
+				PrevID:     &prevIDInt,
+				Title:      "foo",
+				DateFormat: "2006/01/02",
+				BaseURL:    "https://example.com/",
+				Projects: []Project{
+					{Title: "foo-1"},
+				},
+				Milestones: []Milestone{
+					{Title: "foo-a"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			re := RoadmapExchange{
+				ID:         tt.fields.ID,
+				PrevID:     tt.fields.PrevID,
+				Title:      tt.fields.Title,
+				DateFormat: tt.fields.DateFormat,
+				BaseURL:    tt.fields.BaseURL,
+				Projects:   tt.fields.Projects,
+				Milestones: tt.fields.Milestones,
+			}
+			got := re.ToRoadmap()
+			assert.NotEmpty(t, got.CreatedAt)
+			assert.NotEmpty(t, got.UpdatedAt)
+			assert.NotEmpty(t, got.AccessedAt)
+			assert.Equal(t, got.CreatedAt, got.UpdatedAt)
+			assert.Equal(t, got.CreatedAt, got.AccessedAt)
+
+			got.CreatedAt = time.Time{}
+			got.UpdatedAt = time.Time{}
+			got.AccessedAt = time.Time{}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ToRoadmap() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRoadmap_ToExchange(t *testing.T) {
+	var (
+		prevIDStr        = "fasd"
+		prevIDInt uint64 = 3974925
+	)
+
+	type fields struct {
+		ID         uint64
+		PrevID     *uint64
+		Title      string
+		DateFormat string
+		BaseURL    string
+		Projects   []Project
+		Milestones []Milestone
+		CreatedAt  time.Time
+		UpdatedAt  time.Time
+		AccessedAt time.Time
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   RoadmapExchange
+	}{
+		{
+			"without prevID",
+			fields{
+				Title:      "foo",
+				DateFormat: "2006/01/02",
+				BaseURL:    "https://example.com/",
+				Projects: []Project{
+					{Title: "foo-1"},
+				},
+				Milestones: []Milestone{
+					{Title: "foo-a"},
+				},
+			},
+			RoadmapExchange{
+				Title:      "foo",
+				DateFormat: "2006/01/02",
+				BaseURL:    "https://example.com/",
+				Projects: []Project{
+					{Title: "foo-1"},
+				},
+				Milestones: []Milestone{
+					{Title: "foo-a"},
+				},
+			},
+		},
+		{
+			"with prevID",
+			fields{
+				PrevID:     &prevIDInt,
+				Title:      "foo",
+				DateFormat: "2006/01/02",
+				BaseURL:    "https://example.com/",
+				Projects: []Project{
+					{Title: "foo-1"},
+				},
+				Milestones: []Milestone{
+					{Title: "foo-a"},
+				},
+			},
+			RoadmapExchange{
+				PrevID:     &prevIDStr,
+				Title:      "foo",
+				DateFormat: "2006/01/02",
+				BaseURL:    "https://example.com/",
+				Projects: []Project{
+					{Title: "foo-1"},
+				},
+				Milestones: []Milestone{
+					{Title: "foo-a"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := Roadmap{
+				ID:         tt.fields.ID,
+				PrevID:     tt.fields.PrevID,
+				Title:      tt.fields.Title,
+				DateFormat: tt.fields.DateFormat,
+				BaseURL:    tt.fields.BaseURL,
+				Projects:   tt.fields.Projects,
+				Milestones: tt.fields.Milestones,
+				CreatedAt:  tt.fields.CreatedAt,
+				UpdatedAt:  tt.fields.UpdatedAt,
+				AccessedAt: tt.fields.AccessedAt,
+			}
+			if got := r.ToExchange(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ToExchange() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 func TestContent_ToLines(t *testing.T) {
 	tests := []struct {
 		name string

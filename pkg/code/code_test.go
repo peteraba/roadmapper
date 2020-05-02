@@ -147,8 +147,8 @@ func Test_toCode64(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := toCode64(tt.args.n); got != tt.want {
-				t.Errorf("toCode64() = %v, want %v", got, tt.want)
+			if got := Uint64ToString(tt.args.n); got != tt.want {
+				t.Errorf("Uint64ToString() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -196,7 +196,7 @@ func TestNewCode64FromString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := newCode64FromString(tt.args.s)
+			got, err := NewCode64FromString(tt.args.s)
 			if err != nil {
 				t.Errorf("NewCode64FromString() error = %v, wantErr %v", err, false)
 				return
@@ -208,7 +208,7 @@ func TestNewCode64FromString(t *testing.T) {
 	}
 
 	t.Run("error on out of bound", func(t *testing.T) {
-		got, err := newCode64FromString("abcdefghijklmnopq")
+		got, err := NewCode64FromString("abcdefghijklmnopq")
 		if err == nil {
 			t.Errorf("NewCode64FromString() error = %v, wantErr %v", err, true)
 			return
@@ -219,7 +219,7 @@ func TestNewCode64FromString(t *testing.T) {
 	})
 
 	t.Run("error on invalid character", func(t *testing.T) {
-		got, err := newCode64FromString("世界")
+		got, err := NewCode64FromString("世界")
 		if err == nil {
 			t.Errorf("NewCode64FromString() error = %v, wantErr %v", err, true)
 			return

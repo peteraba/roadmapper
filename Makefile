@@ -1,7 +1,7 @@
 VERSION			:= snapshot
 NAME			:= roadmapper
 
-PACKAGES		:= $(shell find -name "*.go" 2>&1 | grep -v "Permission denied" | grep -v -e bindata | xargs -n1 dirname | sort -u)
+PACKAGES		:= $(shell find -name "*.go" 2>&1 | grep -v "Permission denied" | grep -v -e bindata | grep -v -e server | xargs -n1 dirname | uniq | sort -u)
 MAIN_DIR		:= ./cmd/$(NAME)
 BUILD_OUTPUT	:= ./build/$(NAME)
 DOCKER_OUTPUT	:= ./docker/$(NAME)
@@ -11,7 +11,7 @@ DOCKER_IMAGE	:= peteraba/$(NAME)
 default: build
 
 debug:
-	echo $(PACKAGES)
+	@ echo $(PACKAGES)
 
 generate:
 	go generate $(PACKAGES)
@@ -29,7 +29,7 @@ integration:
 	go test -race -tags=integration $(PACKAGES)
 
 e2e:
-	go test -race -tags=e2e,integration ./...
+	go test -race -v -tags=e2e,integration $(PACKAGES)
 
 codecov:
 ifndef CODECOV_TOKEN
@@ -42,7 +42,7 @@ endif
 	go test -race -coverprofile=coverage.txt -covermode=atomic $(PACKAGES)
 	./b.sh -c -F go_unittests
 	# Code coverage for All tests
-	go test -race -coverprofile=coverage.txt -covermode=atomic -tags=e2e,integration ./...
+	go test -race -count=1 -coverprofile=coverage.txt -covermode=atomic -tags=e2e,integration ./...
 	./b.sh -c -F alltests
 	rm -f b.sh
 
@@ -81,4 +81,7 @@ deploy:
 	docker-compose up -d $(NAME)
 	docker-compose exec $(NAME) "/${NAME}" mu
 
-.PHONY: default debug generate goldenfiles test e2e codecov build docker install update release deploy
+clean:
+	rm -rvf coverfileprofile.txt
+
+.PHONY: default debug generate goldenfiles test e2e codecov build docker install update release deploy clean

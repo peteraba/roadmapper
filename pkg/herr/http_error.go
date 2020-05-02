@@ -1,11 +1,18 @@
 package herr
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // HttpError represents an error that indicates an HTTP status
 type HttpError struct {
 	error
 	status int
+}
+
+func (he *HttpError) Unwrap() error {
+	return he.error
 }
 
 func NewFromError(err error, status int) HttpError {
@@ -31,10 +38,10 @@ func NewFromString(msg string, status int) HttpError {
 
 // ToHttpCode returns a status code indicated by an HttpError or a default status if the error is not an HttpError instance
 func ToHttpCode(err error, defaultStatus int) int {
-	switch e := err.(type) {
-	case HttpError:
-		return e.status
-	default:
-		return defaultStatus
+	he := &HttpError{}
+	if errors.As(err, he) {
+		return he.status
 	}
+
+	return defaultStatus
 }
