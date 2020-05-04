@@ -26,6 +26,7 @@ Roadmapper is a CLI tool and webservice designed to help maintaining and trackin
 - [kin-openapi](https://github.com/getkin/kin-openapi/tree/master/openapi3) - A Go project for handling OpenAPI file
 - [gofakeit](https://github.com/brianvoe/gofakeit) - A random fake data generator written in go
 - [yaml](https://github.com/ghodss/yaml) - YAML marshaling and unmarshaling support for Go
+- [Jasmine](https://jasmine.github.io/) - Behavior-Driven JavaScript
 
 #### Furthermore, Roadmapper would not exist as it is without the following giants
 
