@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"testing"
 
@@ -139,4 +140,18 @@ func TestE2E_Browser(t *testing.T) {
 			assert.NoErrorf(t, err, "chromedp run", bodyFound)
 		})
 	}
+
+	t.Run("Jasmine", func(t *testing.T) {
+		var jasmineOverallResult string
+
+		err := chromedp.Run(ctx,
+			chromedp.Navigate(fmt.Sprintf("%s%s", e2eBaseUrl, "static/test.html")),
+			chromedp.WaitVisible(`.jasmine-alert .jasmine-duration`),
+			// // retrieve relevant values
+			chromedp.Text(`.jasmine-alert .jasmine-overall-result`, &jasmineOverallResult),
+		)
+
+		assert.Contains(t, jasmineOverallResult, ", 0 failures")
+		assert.NoErrorf(t, err, "chromedp run")
+	})
 }

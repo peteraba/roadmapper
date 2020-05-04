@@ -1,9 +1,9 @@
-import { roadmapForm } from './roadmap-form.mjs';
+import { formElements, roadmapForm } from './roadmap-form.mjs';
 import { refreshSvg } from './roadmap-svg.mjs';
 import { privacyPolicy } from './privacy-policy.mjs';
 
 const app = () => {
-    roadmapForm();
+    roadmapForm(formElements);
     privacyPolicy();
 
     if (!hasRoadmap) {

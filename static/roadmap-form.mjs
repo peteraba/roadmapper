@@ -1,15 +1,36 @@
-export const roadmapForm = () => {
-    const form = document.getElementById('roadmap-form'),
-        titleField = document.getElementById('title'),
-        txtField = document.getElementById('txt'),
-        txtFieldValid = document.getElementById('txt-valid'),
-        txtFieldInvalid = document.getElementById('txt-invalid'),
-        dateFormatField = document.getElementById('date-format'),
-        baseUrlField = document.getElementById('base-url'),
-        saveBtn = document.getElementById('form-submit'),
-        resetBtn = document.getElementById('reset-btn'),
-        loadExampleBtn = document.getElementById('load-example-btn'),
-        resetData = {'txt': txtField.value, 'dateFormat': dateFormatField.value, 'baseUrl': baseUrlField.value};
+export const formElements = {
+    form: document.getElementById('roadmap-form'),
+    titleField: document.getElementById('title'),
+    txtField: document.getElementById('txt'),
+    txtFieldValid: document.getElementById('txt-valid'),
+    txtFieldInvalid: document.getElementById('txt-invalid'),
+    dateFormatField: document.getElementById('base-url'),
+    baseUrlField: document.getElementById('form-submit'),
+    saveBtn: document.getElementById('form-submit'),
+    resetBtn: document.getElementById('reset-btn'),
+    loadExampleBtn: document.getElementById('load-example-btn'),
+    areYouAHumanGroup: document.getElementById('are-you-a-human-group'),
+    ts: document.getElementById('ts')
+}
+
+export const roadmapForm = elems => {
+    const form = elems.form,
+        titleField = elems.titleField,
+        txtField = elems.txtField,
+        txtFieldValid = elems.txtFieldValid,
+        txtFieldInvalid = elems.txtFieldInvalid,
+        dateFormatField = elems.dateFormatField,
+        baseUrlField = elems.baseUrlField,
+        saveBtn = elems.saveBtn,
+        resetBtn = elems.resetBtn,
+        loadExampleBtn = elems.loadExampleBtn,
+        resetData = {
+            'txt': txtField.value,
+            'dateFormat': dateFormatField.value,
+            'baseUrl': baseUrlField.value
+        },
+        areYouAHumanGroup = elems.areYouAHumanGroup,
+        ts = elems.ts;
 
     let validationTimeout = false,
         txtFieldHistory = [txtField.value],
@@ -365,21 +386,24 @@ Muji enim
         saveHistory(titleField);
     });
 
-    document.getElementById('are-you-a-human-group').remove();
+    areYouAHumanGroup.remove();
 
-    saveBtn.disabled = true;
+    const disableSaveForTime = secs => {
+        let t = Math.floor(ts.value);
 
-    const ts = document.getElementById('ts');
-    let t = Math.floor(ts.value);
+        saveBtn.disabled = true;
 
-    setInterval(
-        _ => {
-            t++;
-            ts.value = `${t}`;
-            if (t === 5) {
-                saveBtn.disabled = false;
-            }
-        },
-        1000
-    )
+        let si = setInterval(
+            _ => {
+                t++;
+                ts.value = `${t}`;
+                if (t === secs) {
+                    saveBtn.disabled = false;
+                    window.clearInterval(si);
+                }
+            },
+            1000
+        )
+    }
+    disableSaveForTime(5);
 };
