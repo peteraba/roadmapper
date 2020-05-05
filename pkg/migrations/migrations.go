@@ -52,7 +52,7 @@ func (m *Migrations) Down(steps int) (int, error) {
 	source := &migrate.AssetMigrationSource{
 		Asset:    bindata.Asset,
 		AssetDir: bindata.AssetDir,
-		Dir:      "../../res/migrations",
+		Dir:      "res/migrations",
 	}
 
 	n, err := migrate.ExecMax(m.conn, "postgres", source, migrate.Down, steps)
@@ -67,7 +67,7 @@ func (m *Migrations) Up(steps int) (int, error) {
 	source := &migrate.AssetMigrationSource{
 		Asset:    bindata.Asset,
 		AssetDir: bindata.AssetDir,
-		Dir:      "../../res/migrations",
+		Dir:      "res/migrations",
 	}
 
 	n, err := migrate.ExecMax(m.conn, "postgres", source, migrate.Up, steps)

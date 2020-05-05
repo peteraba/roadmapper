@@ -45,7 +45,7 @@ var dateFormatMap = map[string]string{
 func (r *Roadmap) viewHtml(appVersion, matomoDomain, docBaseURL, currentURL string, selfHosted bool, origErr error) (string, error) {
 	writer := bytes.NewBufferString("")
 
-	layoutTemplate := bindata.MustAsset("../../res/templates/index.html")
+	layoutTemplate := bindata.MustAsset("res/templates/index.html")
 
 	t, err := template.New("layout").Parse(string(layoutTemplate))
 	if err != nil {

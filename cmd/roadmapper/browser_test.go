@@ -23,38 +23,41 @@ const (
 	e2eDbUser       = "rdmp"
 	e2eDbPass       = "secret"
 	e2eBaseUrl      = "http://localhost:9876/"
-	e2eTitle        = "Example Roadmap"
-	e2eTxt          = `Monocle ipsum dolor sit amet
-Ettinger punctual izakaya concierge [2020-02-02, 2020-02-20, 60%]
-	Zürich Baggu bureaux [/issues/1]
-		Toto Comme des Garçons liveable [2020-02-04, 2020-02-25, 100%, /issues/2]
-		Winkreative boutique St Moritz [2020-02-06, 2020-02-22, 55%, /issues/3]
-	Toto joy perfect Porter [2020-02-25, 2020-03-01, 100%, |1]
-Craftsmanship artisanal
-	Marylebone exclusive [2020-03-03, 2020-03-10, 100%]
-	Beams elegant destination [2020-03-08, 2020-03-12, 100%, |1]
-	Winkreative ryokan hand-crafted [2020-03-13, 2020-03-31, 20%]
-Nordic Toto first-class Singap
-	Concierge cutting-edge Zürich global bureaux
-		Sunspel sophisticated lovely uniforms [2020-03-17, 2020-03-31]
-		Share blog post on social media [2020-03-17, 2020-03-31, 80%]
-	Talk about the tool in relevant meetups [2020-04-01, 2020-06-15, 20%]
-Melbourne handsome boutique
-	Boutique magna iconic
-		Carefully curated laborum destination [2020-03-28, 2020-05-01, 60%]
-	Qui incididunt sleepy
-		Scandinavian occaecat culpa [2020-03-26, 2020-04-01, 90%]
-Hand-crafted K-pop boulevard
-	Charming sed quality [2020-03-18, 2020-05-31, 20%]
-	Sunspel alluring ut dolore [2020-04-15, 2020-04-30, 30%]
-Business class Shinkansen [2020-04-01, 2020-05-31, 45%]
-	Nisi excepteur hand-crafted hub
-	Ettinger Airbus A380
-Essential conversation bespoke
-Muji enim
+	e2eTitle        = "How To Start a Startup"
+	e2eTxt          = `Find the idea [2019-07-20, 2020-01-20, 100%]
+	Look for things missing in life
+	Formalize your idea, run thought experiments [https://example.com/initial-plans]
+	Survey friends, potential users or customers [https://example.com/survey-results]
+	Go back to the drawing board [https://example.com/reworked-plans]
+Validate the idea [2020-01-21, 2020-04-20]
+	Make a prototype #1 [2020-01-21, 2020-04-10, 100%, TCK-1, https://github.com/peteraba/roadmapper, |1]
+	Show the prototype to 100 people #1 [2020-04-11, 2020-04-20, 80%, TCK-123]
+	Analyse results [2020-04-21, 2020-05-05]
+	Improve prototype [2020-05-06, 2020-06-06]
+	Show the prototype to 100 people #2 [2020-06-07, 2020-06-16]
+	Analyse results [2020-06-16, 2020-06-30]
+	Improve prototype [2020-07-01, 2020-07-16]
+	Show the prototype to 100 people #2 [2020-07-17, 2020-07-25]
+Start a business
+	Learn about your options about various company types [2019-07-20, 2020-08-31]
+	Learn about your options for managing equity [2019-07-20, 2020-08-01]
+	Find a co-founder [2020-04-20, 2020-08-31]
+	Register your business [2020-08-01, 2020-09-30, |2]
+	Look for funding [2020-08-01, 2020-10-31]
+	Build a team [2020-11-01, 2020-12-15]
+Build version one [2021-01-01, 2021-04-15]
+	Build version one [2021-01-01, 2021-03-31]
+	Launch [2021-04-01, 2021-04-15, |3]
+Grow [2021-04-16, 2021-12-31]
+	Follow up with users
+	Iterate / Pivot
+	Launch again
+	Get to 1,000 users
+	Plan next steps
 
-|Laboris ullamco
-|Muji enim finest [2020-02-12, https://example.com/abc, bcdef]`
+|Create the first prototype
+|Start your business
+|Lunch version one`
 	e2eBaseURL = "https://example.com/foo"
 )
 
@@ -95,7 +98,7 @@ func TestE2E_Browser(t *testing.T) {
 			txt:      e2eTxt,
 			title:    e2eTitle,
 			baseURL:  e2eBaseURL,
-			svgMatch: "Monocle ipsum dolor sit",
+			svgMatch: "Find the idea",
 		},
 	}
 	for _, tt := range tests {
