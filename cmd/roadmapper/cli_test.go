@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/peteraba/roadmapper/pkg/roadmap"
+	"github.com/peteraba/roadmapper/pkg/testutils"
 )
 
 func TestE2E_CLI(t *testing.T) {
@@ -28,6 +28,7 @@ func TestE2E_CLI(t *testing.T) {
 		format              string
 		dateFormat, baseUrl string
 		fw, lh              uint64
+		mt                  bool
 	}
 
 	tests := []struct {
@@ -45,6 +46,7 @@ func TestE2E_CLI(t *testing.T) {
 				e2eBaseURL,
 				fw,
 				lh,
+				false,
 			},
 		},
 		{
@@ -58,12 +60,15 @@ func TestE2E_CLI(t *testing.T) {
 				e2eBaseURL,
 				fw,
 				lh,
+				false,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			logger := zap.NewNop()
+
+			expectedData := testutils.LoadFile(t, "golden_files", tt.args.output)
 
 			err := Render(
 				rw,
@@ -75,20 +80,25 @@ func TestE2E_CLI(t *testing.T) {
 				tt.args.baseUrl,
 				tt.args.fw,
 				tt.args.lh,
+				tt.args.mt,
 			)
 
 			require.NoError(t, err)
 
-			expectedData, err := ioutil.ReadFile(fmt.Sprintf("../../res/golden_files/%s", tt.args.output))
-			require.NoError(t, err)
 			actualData, err := ioutil.ReadFile(tt.args.output)
 			require.NoError(t, err)
 
-			ed0, ad0 := float64(len(expectedData)), float64(len(actualData))
-			ed1, ad1 := ed0*1.2, ad0*1.2
+			if testutils.ShouldUpdateGoldenFiles() {
+				testutils.SaveFile(t, actualData, "golden_files", tt.args.output)
+			}
 
-			assert.Greater(t, ed1, ad0, "generated and golden files differ a lot")
-			assert.Less(t, ed0, ad1, "generated and golden files differ a lot")
+			assert.Equal(t, expectedData, actualData)
+
+			// ed0, ad0 := float64(len(expectedData)), float64(len(actualData))
+			// ed1, ad1 := ed0*1.2, ad0*1.2
+			//
+			// assert.Greater(t, ed1, ad0, "generated and golden files differ a lot")
+			// assert.Less(t, ed0, ad1, "generated and golden files differ a lot")
 
 			if !t.Failed() {
 				err = os.Remove(tt.args.output) // remove a single file

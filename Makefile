@@ -18,6 +18,7 @@ generate:
 	find pkg -name "mocks" -type d -exec rm -rf {} +
 
 goldenfiles:
+	go test -mod=readonly -tags=e2e,integration ./cmd/roadmapper -update
 	go test -mod=readonly ./pkg/roadmap -update
 
 test:

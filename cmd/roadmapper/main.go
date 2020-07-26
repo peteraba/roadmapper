@@ -104,6 +104,7 @@ func createCLICommand(logger *zap.Logger) *cli.Command {
 			&cli.Uint64Flag{Name: "lineHeight", Usage: "width of output file", Aliases: []string{"lh"}},
 			&cli.StringFlag{Name: "dateFormat", Usage: "date format to use", Value: "2006-01-02", EnvVars: []string{"DATE_FORMAT"}},
 			&cli.StringFlag{Name: "baseURL", Usage: "base url to use for non-color, non-date extra values", Value: "", EnvVars: []string{"BASE_URL"}},
+			&cli.StringFlag{Name: "markToday", Usage: "weather or not to add a line to mark the current day", Value: "", EnvVars: []string{"MARK_TODAY"}},
 		},
 		Action: func(c *cli.Context) error {
 			io := roadmap.NewIO()
@@ -117,6 +118,7 @@ func createCLICommand(logger *zap.Logger) *cli.Command {
 				c.String("baseURL"),
 				c.Uint64("width"),
 				c.Uint64("lineHeight"),
+				c.Bool("markToday"),
 			)
 			if err != nil {
 				logger.Error("failed to render roadmap", zap.Error(err))

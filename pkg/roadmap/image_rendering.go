@@ -17,7 +17,7 @@ var myDarkGray = color.RGBA{R: 95, G: 95, B: 95, A: 255}
 var defaultMilestoneColor = &canvas.Darkgray
 
 // Draw will draw a roadmap on a canvas.Canvas
-func (vr *VisualRoadmap) Draw(fullW, lineH float64) *canvas.Canvas {
+func (vr *VisualRoadmap) Draw(fullW, lineH float64, withToday bool) *canvas.Canvas {
 	headerH := 0.0
 	if vr.Dates != nil {
 		headerH = lineH * 3
@@ -54,7 +54,7 @@ func (vr *VisualRoadmap) Draw(fullW, lineH float64) *canvas.Canvas {
 
 	vr.drawLines(ctx, fullW, fullH, headerH, lineH)
 
-	vr.drawToday(ctx, fullW, fullH, lineH)
+	vr.drawToday(ctx, fullW, fullH, lineH, withToday)
 
 	vr.writeTitle(ctx, fullW, fullH, lineH)
 
@@ -237,12 +237,15 @@ func (vr *VisualRoadmap) drawMilestones(ctx *canvas.Context, fullW, fullH, heade
 	ctx.SetDashes(0.0)
 }
 
-func (vr *VisualRoadmap) drawToday(ctx *canvas.Context, fullW, fullH, lineH float64) {
-	if vr.Dates == nil {
+func (vr *VisualRoadmap) drawToday(ctx *canvas.Context, fullW, fullH, lineH float64, withToday bool) {
+	if vr.Dates == nil || !withToday {
 		return
 	}
 
 	now := time.Now()
+	if vr.Dates.StartAt.After(now) || vr.Dates.EndAt.Before(now) {
+		return
+	}
 
 	if now.Before(vr.Dates.StartAt) || now.After(vr.Dates.EndAt) {
 		return

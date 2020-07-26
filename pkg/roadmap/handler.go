@@ -272,16 +272,18 @@ func (h *Handler) GetRoadmapImage(ctx echo.Context) error {
 
 	lh, _ := strconv.ParseUint(ctx.QueryParam("lineHeight"), 10, 64)
 
+	mt, _ := strconv.ParseBool(ctx.QueryParam("markToday"))
+
 	fw, lh = GetCanvasSizes(fw, lh)
 
-	roadmap, err := load(h.repo, h.cb, ctx.Param("identifier"))
+	r, err := load(h.repo, h.cb, ctx.Param("identifier"))
 	if err != nil {
 		h.Logger.Info("roadmap not found", zap.Error(err))
 
 		return ctx.String(herr.ToHttpCode(err, http.StatusNotFound), "roadmap not found")
 	}
 
-	cvs := roadmap.ToVisual().Draw(float64(fw), float64(lh))
+	cvs := r.ToVisual().Draw(float64(fw), float64(lh), mt)
 
 	img := RenderImg(cvs, format)
 
