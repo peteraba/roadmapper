@@ -47,8 +47,10 @@ func NewServer(handler *roadmap.Handler, assetsDir, certFile, keyFile string) *S
 	e.POST("/:identifier", handler.CreateRoadmapHTML)
 
 	apiGroup := e.Group("/api")
-	apiGroup.GET("/:identifier", handler.GetRoadmapJSON)
-	apiGroup.POST("/", handler.CreateRoadmapJSON)
+
+	roadmapsGroup := apiGroup.Group("/roadmaps")
+	roadmapsGroup.GET("/:identifier", handler.GetRoadmapJSON)
+	roadmapsGroup.POST("", handler.CreateRoadmapJSON)
 
 	return &Server{
 		echo:      e,

@@ -35,7 +35,7 @@ func testApp(baseRepo repository.PgRepository, logger *zap.Logger, port uint, as
 func TestE2E_API(t *testing.T) {
 	var (
 		apiPort    uint = 9877
-		apiBaseUrl      = "http://localhost:9877/"
+		apiBaseUrl      = "http://localhost:9877/api/"
 		apiDbUser       = "rdmp"
 		apiDbPass       = "rdmp"
 		apiDbName       = "rdmp"
@@ -99,7 +99,7 @@ func newCreateRoadmapRequest(t *testing.T, re roadmap.RoadmapExchange, baseUrl s
 	marshaled, err := json.Marshal(re)
 	require.NoError(t, err)
 
-	url := fmt.Sprintf("%s/api/", strings.TrimRight(baseUrl, "/"))
+	url := fmt.Sprintf("%s/roadmaps", strings.TrimRight(baseUrl, "/"))
 	req, err := http.NewRequest("POST", url, bytes.NewReader(marshaled))
 	require.NoError(t, err)
 

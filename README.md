@@ -39,10 +39,11 @@ And probably so many others that came before them.
 
 ### Current TODO
 
+- [ ] Change sizing from `mm` to `px`
 - [ ] Fix displaying multiline project titles
 - [ ] Out of the box alerting
 - [ ] JS Unit tests
-- [ ] Static files from bindata
+- [ ] Embed all static files
 
 ### Long term ideas
 

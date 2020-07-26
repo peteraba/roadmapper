@@ -1,5 +1,13 @@
 openapi: "3.0.3"
 
+tags:
+  - name: Roadmap
+    description: Operation is related to Roadmaps
+  - name: Create
+    description: Operation is used to create a single new entity
+  - name: Retrieve
+    description: Operation is used to retrieve a single entity
+
 info:
   version: 0.0.1
   title: Roadmapper API
@@ -18,10 +26,13 @@ servers:
   - url: http://localhost:9877/api
 
 paths:
-  /:
+  /roadmaps:
     post:
       description: Creates a new roadmap
       operationId: createRoadmap
+      tags:
+        - Roadmap
+        - Create
       requestBody:
         description: Roadmap to create
         required: true
@@ -43,10 +54,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
 
-  /{roadmap_id}:
+  /roadmaps/{roadmap_id}:
     get:
       description: Retrieves a roadmap
       operationId: getRoadmap
+      tags:
+        - Roadmap
+        - Retrieve
       parameters:
         - name: roadmap_id
           in: path
@@ -77,16 +91,13 @@ components:
     RoadmapResponse:
       allOf:
         - $ref: '#/components/schemas/Roadmap'
-      required:
-        - id
       properties:
         id:
           type: string
+      required:
+        - id
 
     Roadmap:
-      required:
-        - title
-        - date_format
       properties:
         prev_id:
           type: string
@@ -104,10 +115,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Milestone'
-
-    Project:
       required:
         - title
+        - date_format
+
+    Project:
       properties:
         indentation:
           type: integer
@@ -127,6 +139,8 @@ components:
         milestone:
           type: integer
           minimum: 1
+      required:
+        - title
 
     Dates:
       required:
@@ -150,9 +164,6 @@ components:
             type: string
 
     Problem:
-      required:
-        - type
-        - title
       properties:
         type:
           type: string
@@ -191,3 +202,6 @@ components:
           description: |
             An absolute URI that identifies the specific occurrence of the problem.
             It may or may not yield further information if dereferenced.
+      required:
+        - type
+        - title
