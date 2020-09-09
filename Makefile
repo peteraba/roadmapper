@@ -1,7 +1,7 @@
 VERSION			:= snapshot
 NAME			:= roadmapper
 
-PACKAGES		:= $(shell find -name "*.go" 2>&1 | grep -v "Permission denied" | grep -v -e bindata | grep -v -e server | xargs -n1 dirname | uniq | sort -u)
+PACKAGES		:= $(shell find . -name "*.go" 2>&1 | grep -v "Permission denied" | grep -v -e bindata | grep -v -e server | xargs -n1 dirname | uniq | sort -u)
 MAIN_DIR		:= ./cmd/$(NAME)
 BUILD_OUTPUT	:= ./build/$(NAME)
 DOCKER_OUTPUT	:= ./docker/$(NAME)
