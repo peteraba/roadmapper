@@ -56,7 +56,7 @@ docker: test
 	docker build -t $(DOCKER_IMAGE) $(DOCKER_DIR)
 	rm -f $(DOCKER_OUTPUT)
 
-install:
+dependencies.linux:
 	# Install golangci-lint
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ${GOPATH}/bin v1.23.8
 	# Install goreleaser
@@ -85,4 +85,4 @@ deploy:
 clean:
 	rm -rvf coverfileprofile.txt
 
-.PHONY: default debug generate goldenfiles test e2e codecov build docker install update release deploy clean
+.PHONY: default debug generate goldenfiles test e2e codecov build docker dependencies.linux update release deploy clean
