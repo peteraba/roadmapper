@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -107,11 +110,17 @@ func createCLICommand(logger *zap.Logger) *cli.Command {
 			&cli.StringFlag{Name: "markToday", Usage: "weather or not to add a line to mark the current day", Value: "", EnvVars: []string{"MARK_TODAY"}},
 		},
 		Action: func(c *cli.Context) error {
+			content, err := readContent(c.String("input"))
+			if err != nil {
+				logger.Error("failed to render roadmap", zap.Error(err))
+				return err
+			}
+
 			io := roadmap.NewIO()
-			err := Render(
+			err = Render(
 				io,
 				logger,
-				c.String("input"),
+				content,
 				c.String("output"),
 				c.String("formatFile"),
 				c.String("dateFormat"),
@@ -127,6 +136,24 @@ func createCLICommand(logger *zap.Logger) *cli.Command {
 			return err
 		},
 	}
+}
+
+func readContent(input string) (string, error) {
+	if input != "" {
+		content, err := ioutil.ReadFile(input)
+		if err != nil {
+			return "", err
+		}
+		return string(content), nil
+	}
+
+	lines := []string{}
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+ 	}
+
+	return strings.Join(lines, "\n"), nil
 }
 
 func createVersionCommand() *cli.Command {

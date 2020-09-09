@@ -1,6 +1,7 @@
 .idea
 *.pem
 *.log
+bin
 docker\-compose.yml
 airtmp/
 build/
